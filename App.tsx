@@ -30,13 +30,12 @@ import AskAnExpert from './components/AskAnExpert';
 import UpgradeModal from './components/UpgradeModal';
 import CrownIcon from './components/icons/CrownIcon';
 import SparklesIcon from './components/icons/SparklesIcon';
-import MealPlanner from './components/MealPlanner';
-import CalendarDaysIcon from './components/icons/CalendarDaysIcon';
+import LoginModal from './components/LoginModal';
+import UserMenu from './components/UserMenu';
 
 const ITEMS_PER_PAGE = 12;
 
 type View = 'all' | 'saved' | 'plans' | 'videos';
-type PlanView = 'curated' | 'ai';
 
 const App: React.FC = () => {
     // States for browsing static recipes
@@ -46,8 +45,12 @@ const App: React.FC = () => {
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [savedRecipeTitles, setSavedRecipeTitles] = useState<string[]>([]);
     const [currentView, setCurrentView] = useState<View>('all');
+    
+    // States for user authentication and premium status
     const [isPremium, setIsPremium] = useState(userService.getPremiumStatus());
-
+    const [currentUser, setCurrentUser] = useState<string | null>(null);
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    
     // States for premium upgrade flow
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
     const [showUpgradeConfirmation, setShowUpgradeConfirmation] = useState(false);
@@ -65,8 +68,6 @@ const App: React.FC = () => {
 
     // States for Meal Plans
     const [selectedPlan, setSelectedPlan] = useState<MealPlan | null>(null);
-    const [planView, setPlanView] = useState<PlanView>('curated');
-
 
     // State for Cook Mode
     const [cookingRecipe, setCookingRecipe] = useState<Recipe | null>(null);
@@ -83,6 +84,7 @@ const App: React.FC = () => {
 
     useEffect(() => {
         setSavedRecipeTitles(favoritesService.getSavedRecipeTitles());
+        setCurrentUser(userService.getCurrentUser());
 
         // Check for Stripe checkout redirect
         const query = new URLSearchParams(window.location.search);
@@ -205,7 +207,7 @@ const App: React.FC = () => {
         if (!selectedPlan) return;
 
         const recipeTitlesInPlan = selectedPlan.plan.map(day => day.recipeTitle);
-        const recipesInPlan = allRecipes.filter(recipe => recipeTitlesInPlan.includes(recipe.title));
+        const recipesInPlan = recipeData.filter(recipe => recipeTitlesInPlan.includes(recipe.title));
         const allIngredients = recipesInPlan.flatMap(recipe => recipe.ingredients);
 
         setIsGeneratingList(true);
@@ -270,6 +272,17 @@ const App: React.FC = () => {
         setSearchQuery(''); // Reset search
         setSelectedTags([]); // Reset tags
     }
+
+    const handleLogin = (email: string) => {
+        userService.loginUser(email);
+        setCurrentUser(email);
+        setIsLoginModalOpen(false);
+    };
+
+    const handleLogout = () => {
+        userService.logoutUser();
+        setCurrentUser(null);
+    };
 
     const renderContent = () => {
         if (isGenerating) {
@@ -349,52 +362,21 @@ const App: React.FC = () => {
 
 
         if (currentView === 'plans') {
+            if (selectedPlan) {
+                return <MealPlanDetail 
+                    plan={selectedPlan}
+                    recipes={recipeData}
+                    onSelectRecipe={setSelectedRecipe}
+                    onBack={() => setSelectedPlan(null)}
+                    onGenerateList={handleGeneratePlanShoppingList}
+                    isGeneratingList={isGeneratingList}
+                />;
+            }
             return (
-                <div className="animate-fade-in">
-                    <div className="flex justify-center mb-8 gap-1.5 p-1 bg-gray-200 rounded-lg max-w-sm mx-auto">
-                        <button
-                            onClick={() => setPlanView('curated')}
-                            className={`w-full flex justify-center items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-colors ${planView === 'curated' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
-                        >
-                            <CalendarDaysIcon className="w-5 h-5" />
-                            <span>Curated Plans</span>
-                        </button>
-                        <button
-                            onClick={() => setPlanView('ai')}
-                            className={`w-full flex justify-center items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-colors ${planView === 'ai' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
-                        >
-                            <SparklesIcon className="w-5 h-5" />
-                            <span>AI Planner</span>
-                        </button>
-                    </div>
-
-                    {planView === 'ai' && (
-                        <MealPlanner 
-                            allRecipes={allRecipes} 
-                            onSelectRecipe={setSelectedRecipe}
-                            setShoppingList={setShoppingList}
-                            setListGenerationError={setListGenerationError}
-                        />
-                    )}
-
-                    {planView === 'curated' && (
-                        selectedPlan ? (
-                            <MealPlanDetail 
-                                plan={selectedPlan}
-                                recipes={allRecipes}
-                                onSelectRecipe={setSelectedRecipe}
-                                onBack={() => setSelectedPlan(null)}
-                                onGenerateList={handleGeneratePlanShoppingList}
-                                isGeneratingList={isGeneratingList}
-                            />
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                                {mealPlans.map(plan => (
-                                    <MealPlanCard key={plan.title} plan={plan} onClick={() => setSelectedPlan(plan)} />
-                                ))}
-                            </div>
-                        )
-                    )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 animate-fade-in">
+                    {mealPlans.map(plan => (
+                        <MealPlanCard key={plan.title} plan={plan} onClick={() => setSelectedPlan(plan)} />
+                    ))}
                 </div>
             );
         }
@@ -466,15 +448,25 @@ const App: React.FC = () => {
 
         return (
             <>
-                <div className="flex justify-between items-center mb-4">
-                    <div className="font-semibold text-text-secondary">My Profile</div>
-                    {isPremium && (
+                <div className="flex justify-end items-center mb-4 gap-4">
+                    {currentUser && isPremium && (
                         <div className="flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">
                             <CrownIcon className="w-4 h-4 text-yellow-500" />
-                            <span>Premium Member</span>
+                            <span>Premium</span>
                         </div>
                     )}
+                    {currentUser ? (
+                        <UserMenu userEmail={currentUser} onLogout={handleLogout} />
+                    ) : (
+                        <button
+                            onClick={() => setIsLoginModalOpen(true)}
+                            className="px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-focus transition-colors duration-200"
+                        >
+                            Sign In
+                        </button>
+                    )}
                 </div>
+
 
                 <Header />
 
@@ -588,6 +580,13 @@ const App: React.FC = () => {
 
             {isUpgradeModalOpen && (
                 <UpgradeModal onClose={() => setIsUpgradeModalOpen(false)} />
+            )}
+
+            {isLoginModalOpen && (
+                <LoginModal
+                    onClose={() => setIsLoginModalOpen(false)}
+                    onLogin={handleLogin}
+                />
             )}
 
             {showUpgradeConfirmation && (
