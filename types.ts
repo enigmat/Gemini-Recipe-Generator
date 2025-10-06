@@ -1,24 +1,8 @@
-
-export interface NutritionInfo {
-  calories: string;
-  protein: string;
-  carbs: string;
-  fat: string;
-}
-
 export interface Recipe {
-  recipeName: string;
+  title: string;
   description: string;
-  ingredients: {
-    name: string;
-    quantity: string;
-    isAvailable: boolean;
-  }[];
+  imageUrl: string;
+  ingredients: string[];
   instructions: string[];
-  prepTime: string;
-  cookTime: string;
-  servings: string;
-  imagePrompt: string;
-  nutrition: NutritionInfo;
-  imageUrl?: string;
+  tags: string[];
 }

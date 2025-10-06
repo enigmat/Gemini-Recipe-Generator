@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Recipe } from '../types';
 
@@ -10,13 +11,20 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const singleRecipeSchemaProperties = {
     type: Type.OBJECT,
     properties: {
-        recipeName: {
+        title: {
             type: Type.STRING,
-            description: "The name of the recipe."
+            description: "The title of the recipe."
         },
         description: {
             type: Type.STRING,
             description: "A short, enticing description of the dish."
+        },
+        tags: {
+            type: Type.ARRAY,
+            description: "A list of relevant tags for the recipe (e.g., 'Vegan', 'Quick & Easy', 'Pasta').",
+            items: {
+                type: Type.STRING
+            }
         },
         ingredients: {
             type: Type.ARRAY,
@@ -57,7 +65,7 @@ const singleRecipeSchemaProperties = {
             description: "A detailed, descriptive prompt for a text-to-image model to generate a photorealistic and appetizing image of the final dish."
         },
     },
-    required: ["recipeName", "description", "ingredients", "instructions", "prepTime", "cookTime", "servings", "nutrition", "imagePrompt"]
+    required: ["title", "description", "tags", "ingredients", "instructions", "prepTime", "cookTime", "servings", "nutrition", "imagePrompt"]
 };
 
 const recipeSchema = {
@@ -83,6 +91,7 @@ export const generateRecipes = async (ingredients: string[]): Promise<Recipe[]> 
       You are a creative chef and nutritionist. Based on the ingredients provided, generate 3-5 diverse and delicious recipes. 
       Prioritize using the available ingredients, but you can include a few common pantry staples (like salt, pepper, oil, water) if necessary.
       For each ingredient in the recipes, clearly indicate if it was part of the user's provided list.
+      For each recipe, provide a title, a short description, and a list of relevant tags (e.g., 'Vegan', 'Quick & Easy').
       For each recipe, provide an estimated nutrition guide per serving, including calories, protein, carbs, and fat.
       For each recipe, also create a detailed, descriptive prompt that a text-to-image model could use to generate a photorealistic and appetizing photo of the final dish. The prompt should describe the food, the plating, and the background.
       
@@ -105,7 +114,22 @@ export const generateRecipes = async (ingredients: string[]): Promise<Recipe[]> 
         const parsedJson = JSON.parse(jsonText);
         
         if (parsedJson.recipes && Array.isArray(parsedJson.recipes)) {
-            return parsedJson.recipes as Recipe[];
+            const richRecipes: any[] = parsedJson.recipes;
+
+            const recipes: Recipe[] = await Promise.all(
+                richRecipes.map(async (recipe) => {
+                    const imageUrl = await generateImage(recipe.imagePrompt);
+                    return {
+                        title: recipe.title,
+                        description: recipe.description,
+                        imageUrl: imageUrl,
+                        ingredients: recipe.ingredients.map((ing: { quantity: string; name: string; }) => `${ing.quantity} ${ing.name}`.trim()).filter(Boolean),
+                        instructions: recipe.instructions,
+                        tags: recipe.tags,
+                    };
+                })
+            );
+            return recipes;
         } else {
             throw new Error("Invalid response format from API. Expected a 'recipes' array.");
         }
@@ -239,15 +263,15 @@ export const identifyIngredientsFromImage = async (base64ImageData: string): Pro
     }
 };
 
-export const generateNewImagePrompt = async (recipeName: string, recipeDescription: string): Promise<string> => {
+export const generateNewImagePrompt = async (recipeTitle: string, recipeDescription: string): Promise<string> => {
     const prompt = `
         The text-to-image model failed to generate an image for a recipe with the initial prompt. 
         Your task is to create a new, highly detailed, and creative prompt for the text-to-image model.
         The prompt should describe a photorealistic and appetizing image of the final dish. 
         Focus on the food's texture, plating, lighting, and background to ensure a successful image generation.
-        Do not just repeat the recipe name.
+        Do not just repeat the recipe title.
 
-        Recipe Name: ${recipeName}
+        Recipe Title: ${recipeTitle}
         Recipe Description: ${recipeDescription}
 
         Generate a new prompt. Return it as a JSON object with a single key "newPrompt".
@@ -285,7 +309,7 @@ export const generateNewImagePrompt = async (recipeName: string, recipeDescripti
     } catch (error) {
         console.error("Error generating new image prompt:", error);
         // Fallback to a simple prompt if generation fails
-        return `A delicious plate of ${recipeName}, professionally photographed.`;
+        return `A delicious plate of ${recipeTitle}, professionally photographed.`;
     }
 };
 
@@ -294,14 +318,15 @@ export const generateRecipeVariation = async (originalRecipe: Recipe, variationR
         You are a creative chef. A user wants a variation of an existing recipe.
         Your task is to modify the original recipe based on the user's request.
         Generate a completely new version of the recipe that incorporates the requested changes. 
-        You must update the recipe name (e.g., "Spicy..."), description, ingredients, instructions, and nutrition info.
+        You must update the recipe title, description, tags, ingredients, instructions, and nutrition info.
         For the ingredients, you must still mark which ones are available from the user's original list.
         Create a new, detailed image prompt for the new version of the dish.
 
         Original Recipe:
-        - Name: ${originalRecipe.recipeName}
+        - Title: ${originalRecipe.title}
         - Description: ${originalRecipe.description}
-        - Ingredients: ${originalRecipe.ingredients.map(i => `${i.quantity} ${i.name}`).join(', ')}
+        - Tags: ${originalRecipe.tags.join(', ')}
+        - Ingredients: ${originalRecipe.ingredients.join(', ')}
         - Instructions: ${originalRecipe.instructions.join(' ')}
 
         User's Variation Request: "${variationRequest}"
@@ -324,7 +349,16 @@ export const generateRecipeVariation = async (originalRecipe: Recipe, variationR
         const jsonText = response.text.trim();
         const newRecipe = JSON.parse(jsonText);
         
-        return newRecipe as Recipe;
+        const imageUrl = await generateImage(newRecipe.imagePrompt);
+
+        return {
+            title: newRecipe.title,
+            description: newRecipe.description,
+            imageUrl: imageUrl,
+            ingredients: newRecipe.ingredients.map((ing: { quantity: string; name: string; }) => `${ing.quantity} ${ing.name}`.trim()).filter(Boolean),
+            instructions: newRecipe.instructions,
+            tags: newRecipe.tags,
+        };
 
     } catch (error) {
         console.error("Error generating recipe variation:", error);
