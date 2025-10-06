@@ -218,6 +218,53 @@ export const extractIngredientsFromUrl = async (url: string): Promise<string[]> 
     }
 };
 
+export const importRecipeFromUrl = async (url: string): Promise<Recipe> => {
+    const prompt = `
+        You are an expert recipe parsing assistant. Your task is to extract a full recipe from the content of the provided URL.
+        You must extract the following information:
+        1.  **title**: The name of the recipe.
+        2.  **description**: A short, enticing description of the dish.
+        3.  **tags**: A list of relevant tags (e.g., 'Vegan', 'Dinner', 'Italian').
+        4.  **ingredients**: A list of all ingredients. For each ingredient, specify the name, quantity, and ensure the quantity is in METRIC units (grams, ml, etc.). Mark 'isAvailable' as false since we don't know the user's pantry.
+        5.  **instructions**: The step-by-step cooking instructions.
+        6.  **prepTime**, **cookTime**, **servings**: Extract these if available.
+        7.  **nutrition**: Extract nutritional info (calories, protein, carbs, fat) if available.
+        8.  **imagePrompt**: Based on the title and description, create a detailed, descriptive prompt for a text-to-image model to generate a photorealistic and appetizing image of the final dish.
+
+        URL: ${url}
+
+        Please return the result as a single, valid JSON object that conforms to the provided schema.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: singleRecipeSchema as any,
+            },
+        });
+
+        const jsonText = response.text.trim();
+        const importedData = JSON.parse(jsonText);
+
+        const imageUrl = await generateImage(importedData.imagePrompt);
+
+        return {
+            title: importedData.title,
+            description: importedData.description,
+            imageUrl: imageUrl,
+            ingredients: importedData.ingredients.map((ing: { quantity: string; name: string; }) => `${ing.quantity} ${ing.name}`.trim()).filter(Boolean),
+            instructions: importedData.instructions,
+            tags: importedData.tags,
+        };
+    } catch (error) {
+        console.error("Error importing recipe from URL:", error);
+        throw new Error("Failed to import the recipe from the URL. Please ensure it is a valid recipe page.");
+    }
+};
+
 export const identifyIngredientsFromImage = async (base64ImageData: string): Promise<string[]> => {
     const prompt = "Identify all the food ingredients in this image. Only return the names of the ingredients, not quantities. For example, 'tomato', 'lettuce', 'cheese'.";
 

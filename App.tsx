@@ -89,12 +89,8 @@ const App: React.FC = () => {
         const user = userService.getCurrentUser();
         setCurrentUser(user);
 
-        // Grant premium access if user is admin or has paid
-        if (user?.isAdmin) {
-            setIsPremium(true);
-        } else {
-            setIsPremium(userService.getPremiumStatus());
-        }
+        const hasPaid = userService.getPremiumStatus();
+        setIsPremium(hasPaid || (user?.isAdmin ?? false));
 
         setSavedRecipeTitles(favoritesService.getSavedRecipeTitles());
 
@@ -286,9 +282,8 @@ const App: React.FC = () => {
         userService.loginUser(email);
         const user = userService.getCurrentUser();
         setCurrentUser(user);
-        if (user?.isAdmin) {
-            setIsPremium(true);
-        }
+        const hasPaid = userService.getPremiumStatus();
+        setIsPremium(hasPaid || (user?.isAdmin ?? false));
         setIsLoginModalOpen(false);
     };
 
