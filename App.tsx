@@ -1,14 +1,19 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
-import { Recipe, ShoppingList, MealPlan } from './types';
+import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass } from './types';
 import Header from './components/Header';
 import RecipeCard from './components/RecipeCard';
 import SearchBar from './components/SearchBar';
 import RecipeModal from './components/RecipeModal';
 import TagFilter from './components/TagFilter';
 import { recipes as recipeData } from './data/recipes';
+import { recipes as newRecipes } from './data/newRecipes';
 import { mealPlans } from './data/mealPlans';
+import { videoData } from './data/videos';
+import { cookingClasses as cookingClassesData } from './data/cookingClasses';
 import * as favoritesService from './services/favoritesService';
+import * as userService from './services/userService';
 import IngredientInput from './components/IngredientInput';
 import { generateRecipes, generateShoppingList } from './services/geminiService';
 import Spinner from './components/Spinner';
@@ -16,10 +21,19 @@ import ShoppingListModal from './components/ShoppingListModal';
 import MealPlanCard from './components/MealPlanCard';
 import MealPlanDetail from './components/MealPlanDetail';
 import CookMode from './components/CookMode';
+import VideoCard from './components/VideoCard';
+import VideoPlayerModal from './components/VideoPlayerModal';
+import PremiumContent from './components/PremiumContent';
+import AdvancedClasses from './components/AdvancedClasses';
+import CookingClassDetail from './components/CookingClassDetail';
+import AskAnExpert from './components/AskAnExpert';
+import UpgradeModal from './components/UpgradeModal';
+import CrownIcon from './components/icons/CrownIcon';
+import SparklesIcon from './components/icons/SparklesIcon';
 
 const ITEMS_PER_PAGE = 12;
 
-type View = 'all' | 'saved' | 'plans';
+type View = 'all' | 'saved' | 'plans' | 'videos';
 
 const App: React.FC = () => {
     // States for browsing static recipes
@@ -29,6 +43,11 @@ const App: React.FC = () => {
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [savedRecipeTitles, setSavedRecipeTitles] = useState<string[]>([]);
     const [currentView, setCurrentView] = useState<View>('all');
+    const [isPremium, setIsPremium] = useState(userService.getPremiumStatus());
+
+    // States for premium upgrade flow
+    const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+    const [showUpgradeConfirmation, setShowUpgradeConfirmation] = useState(false);
 
     // States for ingredient-based generation
     const [ingredients, setIngredients] = useState<string[]>([]);
@@ -47,10 +66,36 @@ const App: React.FC = () => {
     // State for Cook Mode
     const [cookingRecipe, setCookingRecipe] = useState<Recipe | null>(null);
 
+    // State for Videos
+    const [playingVideo, setPlayingVideo] = useState<Video | null>(null);
+
+    // State for Advanced Classes
+    const [selectedClass, setSelectedClass] = useState<CookingClass | null>(null);
+
+    // State for Ask an Expert
+    const [isQuestionSubmitted, setIsQuestionSubmitted] = useState(false);
+
 
     useEffect(() => {
         setSavedRecipeTitles(favoritesService.getSavedRecipeTitles());
+
+        // Check for Stripe checkout redirect
+        const query = new URLSearchParams(window.location.search);
+        if (query.get('checkout') === 'success') {
+            setIsPremium(true);
+            userService.setPremiumStatus(true);
+            setShowUpgradeConfirmation(true);
+            // Clean up the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        if (query.get('checkout') === 'cancel') {
+             // Clean up the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
     }, []);
+
+    const allRecipes = useMemo(() => [...recipeData, ...newRecipes], []);
 
     const allTags = useMemo(() => {
         const tags = new Set<string>();
@@ -73,7 +118,7 @@ const App: React.FC = () => {
 
     const filteredRecipes = useMemo(() => {
         let recipes = currentView === 'saved'
-            ? recipeData.filter(recipe => savedRecipeTitles.includes(recipe.title))
+            ? allRecipes.filter(recipe => savedRecipeTitles.includes(recipe.title))
             : recipeData;
 
         return recipes.filter(recipe => {
@@ -91,7 +136,7 @@ const App: React.FC = () => {
 
             return matchesSearch && matchesTags;
         });
-    }, [searchQuery, selectedTags, currentView, savedRecipeTitles]);
+    }, [searchQuery, selectedTags, currentView, savedRecipeTitles, allRecipes]);
 
     const handleTagClick = (tag: string) => {
         setSelectedTags(prevTags =>
@@ -188,6 +233,26 @@ const App: React.FC = () => {
         setCookingRecipe(null);
     };
 
+    const handlePlayLesson = (lesson: Lesson) => {
+        if (!selectedClass) return;
+        setPlayingVideo({
+            title: lesson.title,
+            description: `A lesson from "${selectedClass.title}". Duration: ${lesson.duration}`,
+            thumbnailUrl: lesson.thumbnailUrl,
+            videoUrl: lesson.videoUrl,
+        });
+    };
+
+    const handleQuestionSubmit = (question: string) => {
+        // In a real app, this would send the question to a backend service
+        console.log("Submitted question to expert:", question);
+        setIsQuestionSubmitted(true);
+    };
+
+    const handleAskAnotherQuestion = () => {
+        setIsQuestionSubmitted(false);
+    };
+
 
     const handleBackToBrowse = () => {
         setGeneratedRecipes(null);
@@ -259,6 +324,24 @@ const App: React.FC = () => {
                 </div>
             );
         }
+        
+        if (currentView === 'videos') {
+            return (
+                 <div className="space-y-12 animate-fade-in">
+                    {videoData.map(category => (
+                        <section key={category.title}>
+                            <h2 className="text-2xl font-bold text-text-primary mb-6 border-b-2 border-primary/20 pb-2">{category.title}</h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                                {category.videos.map(video => (
+                                    <VideoCard key={video.title} video={video} onClick={() => setPlayingVideo(video)} />
+                                ))}
+                            </div>
+                        </section>
+                    ))}
+                </div>
+            )
+        }
+
 
         if (currentView === 'plans') {
             if (selectedPlan) {
@@ -333,10 +416,30 @@ const App: React.FC = () => {
             </>
         );
     };
+    
+    const renderMainContent = () => {
+        if (selectedClass) {
+            return (
+                <CookingClassDetail
+                    cookingClass={selectedClass}
+                    onBack={() => setSelectedClass(null)}
+                    onPlayLesson={handlePlayLesson}
+                />
+            );
+        }
 
-    return (
-        <div className="min-h-screen bg-secondary text-text-primary">
-            <main className="container mx-auto px-4 py-8">
+        return (
+            <>
+                <div className="flex justify-between items-center mb-4">
+                    <div className="font-semibold text-text-secondary">My Profile</div>
+                    {isPremium && (
+                        <div className="flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">
+                            <CrownIcon className="w-4 h-4 text-yellow-500" />
+                            <span>Premium Member</span>
+                        </div>
+                    )}
+                </div>
+
                 <Header />
 
                 <div className="bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto mb-12 border border-border-color">
@@ -353,7 +456,31 @@ const App: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="flex justify-center mb-8 gap-2 p-1 bg-gray-200 rounded-lg max-w-sm mx-auto">
+                <PremiumContent
+                    isPremium={isPremium}
+                    onUpgrade={() => setIsUpgradeModalOpen(true)}
+                    recipes={newRecipes}
+                    onSelectRecipe={setSelectedRecipe}
+                    savedRecipeTitles={savedRecipeTitles}
+                    onToggleSave={handleToggleSave}
+                />
+                
+                <AdvancedClasses
+                    isPremium={isPremium}
+                    onUpgrade={() => setIsUpgradeModalOpen(true)}
+                    classes={cookingClassesData}
+                    onSelectClass={setSelectedClass}
+                />
+
+                <AskAnExpert
+                    isPremium={isPremium}
+                    onUpgrade={() => setIsUpgradeModalOpen(true)}
+                    isSubmitted={isQuestionSubmitted}
+                    onSubmitQuestion={handleQuestionSubmit}
+                    onAskAnother={handleAskAnotherQuestion}
+                />
+
+                <div className="flex justify-center mb-8 gap-1.5 p-1 bg-gray-200 rounded-lg max-w-md mx-auto">
                     <button
                         onClick={() => handleViewChange('all')}
                         className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors ${currentView === 'all' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
@@ -372,10 +499,23 @@ const App: React.FC = () => {
                     >
                         Meal Plans
                     </button>
+                    <button
+                        onClick={() => handleViewChange('videos')}
+                        className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors ${currentView === 'videos' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
+                    >
+                        Videos
+                    </button>
                 </div>
 
                 {renderContent()}
+            </>
+        );
+    }
 
+    return (
+        <div className="min-h-screen bg-secondary text-text-primary">
+            <main className="container mx-auto px-4 py-8">
+                {renderMainContent()}
             </main>
 
             {selectedRecipe && (
@@ -394,6 +534,9 @@ const App: React.FC = () => {
                 <CookMode recipe={cookingRecipe} onExit={handleExitCookMode} />
             )}
 
+            {playingVideo && (
+                <VideoPlayerModal video={playingVideo} onClose={() => setPlayingVideo(null)} />
+            )}
 
             {(shoppingList || listGenerationError) && (
                  <ShoppingListModal
@@ -405,6 +548,28 @@ const App: React.FC = () => {
                         setListGenerationError(null);
                     }}
                  />
+            )}
+
+            {isUpgradeModalOpen && (
+                <UpgradeModal onClose={() => setIsUpgradeModalOpen(false)} />
+            )}
+
+            {showUpgradeConfirmation && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => setShowUpgradeConfirmation(false)}>
+                    <div className="bg-white rounded-lg shadow-xl text-center p-8 max-w-sm" onClick={(e) => e.stopPropagation()}>
+                        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                           <SparklesIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-text-primary mt-4">Welcome to Premium!</h2>
+                        <p className="text-text-secondary mt-2">You've successfully upgraded. You now have access to all exclusive recipes, classes, and expert help.</p>
+                        <button 
+                            onClick={() => setShowUpgradeConfirmation(false)}
+                            className="mt-6 w-full px-6 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus"
+                        >
+                            Start Exploring
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );

@@ -25,3 +25,36 @@ export interface MealPlan {
     imageUrl: string;
     plan: MealPlanDay[];
 }
+
+export interface Video {
+  title: string;
+  description: string;
+  thumbnailUrl: string;
+  videoUrl: string;
+}
+
+export interface VideoCategory {
+  title: string;
+  videos: Video[];
+}
+
+export interface Lesson {
+  title: string;
+  duration: string;
+  thumbnailUrl: string;
+  videoUrl: string;
+}
+
+export interface CookingClass {
+  title: string;
+  description: string;
+  chef: string;
+  imageUrl: string;
+  lessons: Lesson[];
+}
+
+declare global {
+  interface Window {
+    Stripe: any;
+  }
+}

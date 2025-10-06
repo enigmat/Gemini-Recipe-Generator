@@ -41,7 +41,7 @@ const VariationModal: React.FC<VariationModalProps> = ({ recipe, onClose, onGene
                         Create a Variation
                     </h2>
                     <p className="text-text-secondary mb-4">
-                        How would you like to change <strong className="text-primary">{recipe.recipeName}</strong>?
+                        How would you like to change <strong className="text-primary">{recipe.title}</strong>?
                     </p>
 
                     <form onSubmit={handleSubmit}>
