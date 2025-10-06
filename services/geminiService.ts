@@ -1,6 +1,7 @@
 
+
 import { GoogleGenAI, Type } from "@google/genai";
-import { Recipe } from '../types';
+import { Recipe, ShoppingList } from '../types';
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable is not set.");
@@ -33,7 +34,7 @@ const singleRecipeSchemaProperties = {
                 type: Type.OBJECT,
                 properties: {
                     name: { type: Type.STRING, description: "Ingredient name." },
-                    quantity: { type: Type.STRING, description: "e.g., '2 cups' or '1 tbsp'." },
+                    quantity: { type: Type.STRING, description: "e.g., '100g' or '250ml'. Must be in metric units." },
                     isAvailable: { type: Type.BOOLEAN, description: "True if this ingredient was in the user's provided list." }
                 },
                 required: ["name", "quantity", "isAvailable"]
@@ -90,6 +91,7 @@ export const generateRecipes = async (ingredients: string[]): Promise<Recipe[]> 
     const prompt = `
       You are a creative chef and nutritionist. Based on the ingredients provided, generate 3-5 diverse and delicious recipes. 
       Prioritize using the available ingredients, but you can include a few common pantry staples (like salt, pepper, oil, water) if necessary.
+      All ingredient quantities must be in metric units (e.g., grams, ml, liters). Do not use imperial units like cups, oz, or tbsp.
       For each ingredient in the recipes, clearly indicate if it was part of the user's provided list.
       For each recipe, provide a title, a short description, and a list of relevant tags (e.g., 'Vegan', 'Quick & Easy').
       For each recipe, provide an estimated nutrition guide per serving, including calories, protein, carbs, and fat.
@@ -320,6 +322,7 @@ export const generateRecipeVariation = async (originalRecipe: Recipe, variationR
         Generate a completely new version of the recipe that incorporates the requested changes. 
         You must update the recipe title, description, tags, ingredients, instructions, and nutrition info.
         For the ingredients, you must still mark which ones are available from the user's original list.
+        Ensure the new, modified recipe uses metric units for all ingredients (e.g., grams, ml).
         Create a new, detailed image prompt for the new version of the dish.
 
         Original Recipe:
@@ -363,5 +366,70 @@ export const generateRecipeVariation = async (originalRecipe: Recipe, variationR
     } catch (error) {
         console.error("Error generating recipe variation:", error);
         throw new Error("Failed to generate a variation for the recipe. The model may have been unable to fulfill the request.");
+    }
+};
+
+export const generateShoppingList = async (ingredients: string[]): Promise<ShoppingList> => {
+    const prompt = `
+        You are an expert shopping list assistant. Your task is to take a list of recipe ingredients and create a clean, categorized shopping list.
+        1. Analyze the list of ingredients.
+        2. Combine quantities for any identical ingredients. For example, if "100g flour" and "25g flour" appear, combine them into "125g flour". If units are different, like "1 cup chicken broth" and "250ml chicken broth", combine them into a single metric unit like "500ml chicken broth", assuming 1 cup is approx 250ml.
+        3. Group the combined ingredients into logical grocery store categories (e.g., "Produce", "Meat & Poultry", "Dairy & Eggs", "Pantry", "Bakery", "Spices & Seasonings").
+        4. Do not include common items like "water", "salt", or "pepper" unless a specific, non-standard quantity or type is mentioned (e.g., 'coarse sea salt').
+        5. Return the result as a valid JSON object according to the provided schema.
+
+        Ingredient list:
+        ${ingredients.join('\n')}
+    `;
+
+    const shoppingListSchema = {
+        type: Type.OBJECT,
+        properties: {
+            shoppingList: {
+                type: Type.ARRAY,
+                description: "A categorized shopping list. Each element in the array is an object with a category and a list of items.",
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        category: {
+                            type: Type.STRING,
+                            description: "The name of the grocery store category (e.g., 'Produce', 'Dairy & Eggs')."
+                        },
+                        items: {
+                            type: Type.ARRAY,
+                            description: "The list of ingredients for this category, with combined quantities.",
+                            items: {
+                                type: Type.STRING
+                            }
+                        }
+                    },
+                    required: ["category", "items"]
+                }
+            }
+        },
+        required: ["shoppingList"]
+    };
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: shoppingListSchema,
+            },
+        });
+
+        const jsonText = response.text.trim();
+        const parsedJson = JSON.parse(jsonText);
+
+        if (parsedJson.shoppingList && Array.isArray(parsedJson.shoppingList)) {
+            return parsedJson.shoppingList as ShoppingList;
+        } else {
+            throw new Error("Invalid response format from API. Expected a 'shoppingList' array.");
+        }
+    } catch (error) {
+        console.error("Error generating shopping list:", error);
+        throw new Error("Failed to generate a shopping list. The model may have been unable to process the ingredients.");
     }
 };

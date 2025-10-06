@@ -7,7 +7,7 @@ const Header: React.FC = () => {
                 Simple Recipes
             </h1>
             <p className="text-lg text-text-secondary">
-                Your daily dose of culinary inspiration.
+                Browse our collection or enter your ingredients to find a new recipe.
             </p>
         </header>
     );

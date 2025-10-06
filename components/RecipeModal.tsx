@@ -1,16 +1,22 @@
+
 import React from 'react';
 import { Recipe } from '../types';
 import XIcon from './icons/XIcon';
 import HeartIcon from './icons/HeartIcon';
+import ShoppingCartIcon from './icons/ShoppingCartIcon';
+import ChefHatIcon from './icons/ChefHatIcon';
 
 interface RecipeModalProps {
     recipe: Recipe;
     onClose: () => void;
     isSaved: boolean;
     onToggleSave: () => void;
+    onGenerateShoppingList: () => void;
+    isGeneratingList: boolean;
+    onStartCookMode: () => void;
 }
 
-const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onToggleSave }) => {
+const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onToggleSave, onGenerateShoppingList, isGeneratingList, onStartCookMode }) => {
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 animate-fade-in"
@@ -43,13 +49,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onT
                         <h2 id="recipe-modal-title" className="text-3xl font-bold text-text-primary mb-2 flex-1 pr-4">
                             {recipe.title}
                         </h2>
-                        <button
-                            onClick={onToggleSave}
-                            className={`flex items-center gap-2 px-4 py-2 border-2 rounded-lg font-semibold transition-colors duration-200 ${isSaved ? 'border-red-500 bg-red-50 text-red-600' : 'border-border-color bg-white text-text-secondary hover:bg-gray-100'}`}
-                        >
-                            <HeartIcon isFilled={isSaved} className="w-5 h-5" />
-                            <span>{isSaved ? 'Saved' : 'Save'}</span>
-                        </button>
+                        
                     </div>
 
                     <div className="mb-4 flex flex-wrap gap-2">
@@ -58,6 +58,35 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onT
                         ))}
                     </div>
                     <p className="text-text-secondary mb-6">{recipe.description}</p>
+                    
+                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                        <button
+                            onClick={onToggleSave}
+                            className={`flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg font-semibold transition-colors duration-200 ${isSaved ? 'border-red-500 bg-red-50 text-red-600' : 'border-border-color bg-white text-text-secondary hover:bg-gray-100'}`}
+                        >
+                            <HeartIcon isFilled={isSaved} className="w-5 h-5" />
+                            <span>{isSaved ? 'Saved' : 'Save'}</span>
+                        </button>
+                         <button
+                            onClick={onGenerateShoppingList}
+                            disabled={isGeneratingList}
+                            className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-primary/50 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg font-semibold transition-colors duration-200 disabled:bg-gray-200 disabled:cursor-not-allowed disabled:text-gray-500"
+                        >
+                            {isGeneratingList ? (
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                            ) : (
+                                <ShoppingCartIcon className="w-5 h-5" />
+                            )}
+                            <span>{isGeneratingList ? 'Generating...' : 'Shopping List'}</span>
+                        </button>
+                        <button
+                            onClick={onStartCookMode}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-semibold shadow-sm hover:bg-primary-focus transition-colors duration-200"
+                        >
+                            <ChefHatIcon className="w-5 h-5" />
+                            <span>Cook Mode</span>
+                        </button>
+                    </div>
 
 
                     <div className="mb-6">
