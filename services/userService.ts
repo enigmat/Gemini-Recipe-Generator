@@ -1,3 +1,5 @@
+import { User } from '../types';
+
 const PREMIUM_STATUS_KEY = 'marshmellowRecipesPremiumStatus';
 const USER_KEY = 'marshmellowRecipesUser';
 
@@ -19,7 +21,7 @@ export const setPremiumStatus = (isPremium: boolean): void => {
     }
 };
 
-export const getCurrentUser = (): string | null => {
+export const getCurrentUser = (): User | null => {
     try {
         const userJson = localStorage.getItem(USER_KEY);
         return userJson ? JSON.parse(userJson) : null;
@@ -31,7 +33,9 @@ export const getCurrentUser = (): string | null => {
 
 export const loginUser = (email: string): void => {
     try {
-        localStorage.setItem(USER_KEY, JSON.stringify(email));
+        const isAdmin = email.toLowerCase() === 'billhanoman@gmail.com';
+        const user: User = { email, isAdmin };
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
     } catch (error) {
         console.error("Error saving user to localStorage", error);
     }

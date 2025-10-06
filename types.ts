@@ -53,6 +53,11 @@ export interface CookingClass {
   lessons: Lesson[];
 }
 
+export interface User {
+  email: string;
+  isAdmin: boolean;
+}
+
 declare global {
   interface Window {
     Stripe: any;

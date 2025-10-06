@@ -1,7 +1,8 @@
 
 
+
 import React, { useState, useMemo, useEffect } from 'react';
-import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass } from './types';
+import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass, User } from './types';
 import Header from './components/Header';
 import RecipeCard from './components/RecipeCard';
 import SearchBar from './components/SearchBar';
@@ -32,6 +33,7 @@ import CrownIcon from './components/icons/CrownIcon';
 import SparklesIcon from './components/icons/SparklesIcon';
 import LoginModal from './components/LoginModal';
 import UserMenu from './components/UserMenu';
+import ShieldIcon from './components/icons/ShieldIcon';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -48,7 +50,7 @@ const App: React.FC = () => {
     
     // States for user authentication and premium status
     const [isPremium, setIsPremium] = useState(userService.getPremiumStatus());
-    const [currentUser, setCurrentUser] = useState<string | null>(null);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     
     // States for premium upgrade flow
@@ -275,7 +277,7 @@ const App: React.FC = () => {
 
     const handleLogin = (email: string) => {
         userService.loginUser(email);
-        setCurrentUser(email);
+        setCurrentUser(userService.getCurrentUser());
         setIsLoginModalOpen(false);
     };
 
@@ -449,6 +451,12 @@ const App: React.FC = () => {
         return (
             <>
                 <div className="flex justify-end items-center mb-4 gap-4">
+                    {currentUser && currentUser.isAdmin && (
+                        <div className="flex items-center gap-2 px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-semibold">
+                            <ShieldIcon className="w-4 h-4 text-indigo-500" />
+                            <span>Admin</span>
+                        </div>
+                    )}
                     {currentUser && isPremium && (
                         <div className="flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">
                             <CrownIcon className="w-4 h-4 text-yellow-500" />
@@ -456,7 +464,7 @@ const App: React.FC = () => {
                         </div>
                     )}
                     {currentUser ? (
-                        <UserMenu userEmail={currentUser} onLogout={handleLogout} />
+                        <UserMenu userEmail={currentUser.email} onLogout={handleLogout} />
                     ) : (
                         <button
                             onClick={() => setIsLoginModalOpen(true)}
