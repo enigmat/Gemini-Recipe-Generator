@@ -30,10 +30,13 @@ import AskAnExpert from './components/AskAnExpert';
 import UpgradeModal from './components/UpgradeModal';
 import CrownIcon from './components/icons/CrownIcon';
 import SparklesIcon from './components/icons/SparklesIcon';
+import MealPlanner from './components/MealPlanner';
+import CalendarDaysIcon from './components/icons/CalendarDaysIcon';
 
 const ITEMS_PER_PAGE = 12;
 
 type View = 'all' | 'saved' | 'plans' | 'videos';
+type PlanView = 'curated' | 'ai';
 
 const App: React.FC = () => {
     // States for browsing static recipes
@@ -62,6 +65,8 @@ const App: React.FC = () => {
 
     // States for Meal Plans
     const [selectedPlan, setSelectedPlan] = useState<MealPlan | null>(null);
+    const [planView, setPlanView] = useState<PlanView>('curated');
+
 
     // State for Cook Mode
     const [cookingRecipe, setCookingRecipe] = useState<Recipe | null>(null);
@@ -200,7 +205,7 @@ const App: React.FC = () => {
         if (!selectedPlan) return;
 
         const recipeTitlesInPlan = selectedPlan.plan.map(day => day.recipeTitle);
-        const recipesInPlan = recipeData.filter(recipe => recipeTitlesInPlan.includes(recipe.title));
+        const recipesInPlan = allRecipes.filter(recipe => recipeTitlesInPlan.includes(recipe.title));
         const allIngredients = recipesInPlan.flatMap(recipe => recipe.ingredients);
 
         setIsGeneratingList(true);
@@ -344,21 +349,52 @@ const App: React.FC = () => {
 
 
         if (currentView === 'plans') {
-            if (selectedPlan) {
-                return <MealPlanDetail 
-                    plan={selectedPlan}
-                    recipes={recipeData}
-                    onSelectRecipe={setSelectedRecipe}
-                    onBack={() => setSelectedPlan(null)}
-                    onGenerateList={handleGeneratePlanShoppingList}
-                    isGeneratingList={isGeneratingList}
-                />;
-            }
             return (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 animate-fade-in">
-                    {mealPlans.map(plan => (
-                        <MealPlanCard key={plan.title} plan={plan} onClick={() => setSelectedPlan(plan)} />
-                    ))}
+                <div className="animate-fade-in">
+                    <div className="flex justify-center mb-8 gap-1.5 p-1 bg-gray-200 rounded-lg max-w-sm mx-auto">
+                        <button
+                            onClick={() => setPlanView('curated')}
+                            className={`w-full flex justify-center items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-colors ${planView === 'curated' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
+                        >
+                            <CalendarDaysIcon className="w-5 h-5" />
+                            <span>Curated Plans</span>
+                        </button>
+                        <button
+                            onClick={() => setPlanView('ai')}
+                            className={`w-full flex justify-center items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-colors ${planView === 'ai' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
+                        >
+                            <SparklesIcon className="w-5 h-5" />
+                            <span>AI Planner</span>
+                        </button>
+                    </div>
+
+                    {planView === 'ai' && (
+                        <MealPlanner 
+                            allRecipes={allRecipes} 
+                            onSelectRecipe={setSelectedRecipe}
+                            setShoppingList={setShoppingList}
+                            setListGenerationError={setListGenerationError}
+                        />
+                    )}
+
+                    {planView === 'curated' && (
+                        selectedPlan ? (
+                            <MealPlanDetail 
+                                plan={selectedPlan}
+                                recipes={allRecipes}
+                                onSelectRecipe={setSelectedRecipe}
+                                onBack={() => setSelectedPlan(null)}
+                                onGenerateList={handleGeneratePlanShoppingList}
+                                isGeneratingList={isGeneratingList}
+                            />
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                                {mealPlans.map(plan => (
+                                    <MealPlanCard key={plan.title} plan={plan} onClick={() => setSelectedPlan(plan)} />
+                                ))}
+                            </div>
+                        )
+                    )}
                 </div>
             );
         }

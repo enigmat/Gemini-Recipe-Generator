@@ -1,7 +1,7 @@
 
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { Recipe, ShoppingList } from '../types';
+import { Recipe, ShoppingList, AiGeneratedPlan } from '../types';
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable is not set.");
@@ -431,5 +431,104 @@ export const generateShoppingList = async (ingredients: string[]): Promise<Shopp
     } catch (error) {
         console.error("Error generating shopping list:", error);
         throw new Error("Failed to generate a shopping list. The model may have been unable to process the ingredients.");
+    }
+};
+
+
+export interface MealPlanPreferences {
+    dietary: string[];
+    days: number;
+    meals: string[];
+    goal: string;
+}
+
+const mealPlanSchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: {
+            type: Type.STRING,
+            description: "A creative and fitting title for the meal plan based on the user's goal."
+        },
+        plan: {
+            type: Type.ARRAY,
+            description: "The list of days in the meal plan.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    day: {
+                        type: Type.STRING,
+                        description: "The day of the plan (e.g., 'Day 1', 'Monday')."
+                    },
+                    breakfast: {
+                        type: Type.OBJECT,
+                        properties: {
+                            recipeTitle: { type: Type.STRING },
+                            reasoning: { type: Type.STRING }
+                        }
+                    },
+                    lunch: {
+                        type: Type.OBJECT,
+                        properties: {
+                            recipeTitle: { type: Type.STRING },
+                            reasoning: { type: Type.STRING }
+                        }
+                    },
+                    dinner: {
+                        type: Type.OBJECT,
+                        properties: {
+                            recipeTitle: { type: Type.STRING },
+                            reasoning: { type: Type.STRING }
+                        }
+                    }
+                },
+                required: ["day"]
+            }
+        }
+    },
+    required: ["title", "plan"]
+};
+
+
+export const generateMealPlan = async (preferences: MealPlanPreferences, recipeTitles: string[]): Promise<AiGeneratedPlan> => {
+    const prompt = `
+        You are a helpful meal planning assistant. Your task is to create a personalized meal plan based on the user's preferences.
+        You MUST ONLY use recipes from the provided list of available recipes. Do not invent new recipes.
+        For each meal you select, provide a brief 'reasoning' for why it fits the user's preferences (e.g., 'A light and healthy option to start your day', 'A quick and easy dinner perfect for a busy weeknight').
+        Generate a creative 'title' for the meal plan that reflects the user's goal.
+        The plan should cover ${preferences.days} day(s).
+        For each day, you should suggest meals for: ${preferences.meals.join(', ')}. If a meal type (e.g., breakfast) is not requested, do not include it in the day's plan.
+        
+        User Preferences:
+        - Dietary Needs: ${preferences.dietary.join(', ') || 'None'}
+        - Cooking Goal/Theme: ${preferences.goal}
+
+        Available Recipes (choose from this list only):
+        ${recipeTitles.join('\n')}
+
+        Return a valid JSON object that conforms to the provided schema.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: mealPlanSchema as any,
+            },
+        });
+
+        const jsonText = response.text.trim();
+        const parsedJson = JSON.parse(jsonText);
+
+        if (parsedJson.title && parsedJson.plan) {
+            return parsedJson as AiGeneratedPlan;
+        } else {
+            throw new Error("Invalid response format from API. Could not generate a meal plan.");
+        }
+
+    } catch (error) {
+        console.error("Error generating meal plan:", error);
+        throw new Error("Failed to generate a meal plan. The model may have been unable to create a plan with your preferences.");
     }
 };

@@ -1,4 +1,4 @@
-const RATINGS_STORAGE_KEY = 'recipeGeniusRatings';
+const RATINGS_STORAGE_KEY = 'marshmellowRecipesRatings';
 
 interface AllRatings {
     [recipeName: string]: number[];

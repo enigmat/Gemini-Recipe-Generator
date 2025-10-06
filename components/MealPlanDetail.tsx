@@ -26,7 +26,7 @@ const MealPlanDetail: React.FC<MealPlanDetailProps> = ({ plan, recipes, onSelect
                         onClick={onBack}
                         className="mb-2 px-4 py-2 bg-gray-200 text-text-secondary font-semibold rounded-lg hover:bg-gray-300 transition-colors text-sm"
                     >
-                        &larr; Back to Meal Plans
+                        &larr; Back to Curated Plans
                     </button>
                     <h2 className="text-3xl md:text-4xl font-bold text-text-primary">{plan.title}</h2>
                     <p className="text-text-secondary mt-1">{plan.description}</p>

@@ -39,7 +39,7 @@ export interface VideoCategory {
 }
 
 export interface Lesson {
-  title: string;
+  title:string;
   duration: string;
   thumbnailUrl: string;
   videoUrl: string;
@@ -51,6 +51,23 @@ export interface CookingClass {
   chef: string;
   imageUrl: string;
   lessons: Lesson[];
+}
+
+export interface AiGeneratedMeal {
+    recipeTitle: string;
+    reasoning: string;
+}
+
+export interface AiGeneratedDay {
+    day: string;
+    breakfast?: AiGeneratedMeal;
+    lunch?: AiGeneratedMeal;
+    dinner?: AiGeneratedMeal;
+}
+
+export interface AiGeneratedPlan {
+    title: string;
+    plan: AiGeneratedDay[];
 }
 
 declare global {

@@ -1,4 +1,4 @@
-const PREMIUM_STATUS_KEY = 'simpleRecipesPremiumStatus';
+const PREMIUM_STATUS_KEY = 'marshmellowRecipesPremiumStatus';
 
 export const getPremiumStatus = (): boolean => {
     try {
