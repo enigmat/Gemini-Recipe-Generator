@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import UserCircleIcon from './icons/UserCircleIcon';
 import LogoutIcon from './icons/LogoutIcon';
+import LayoutDashboardIcon from './icons/LayoutDashboardIcon';
+import { User } from '../types';
 
 interface UserMenuProps {
-    userEmail: string;
+    user: User;
     onLogout: () => void;
+    onShowDashboard: () => void;
 }
 
-const UserMenu: React.FC<UserMenuProps> = ({ userEmail, onLogout }) => {
+const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout, onShowDashboard }) => {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -15,6 +18,11 @@ const UserMenu: React.FC<UserMenuProps> = ({ userEmail, onLogout }) => {
         if (event.key === 'Escape') {
             setIsOpen(false);
         }
+    };
+
+    const handleShowDashboard = () => {
+        onShowDashboard();
+        setIsOpen(false);
     };
 
     useEffect(() => {
@@ -44,7 +52,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ userEmail, onLogout }) => {
                 aria-expanded={isOpen}
             >
                 <UserCircleIcon className="h-7 w-7 text-gray-500" />
-                <span className="hidden md:inline">{userEmail}</span>
+                <span className="hidden md:inline">{user.email}</span>
             </button>
             
             {isOpen && (
@@ -54,6 +62,16 @@ const UserMenu: React.FC<UserMenuProps> = ({ userEmail, onLogout }) => {
                     aria-orientation="vertical"
                     aria-labelledby="user-menu-button"
                 >
+                    {user.isAdmin && (
+                         <button
+                            onClick={handleShowDashboard}
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-gray-100"
+                            role="menuitem"
+                        >
+                            <LayoutDashboardIcon className="h-5 w-5" />
+                            <span>Admin Dashboard</span>
+                        </button>
+                    )}
                     <button
                         onClick={onLogout}
                         className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50"

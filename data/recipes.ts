@@ -4,7 +4,7 @@ export const recipes: Recipe[] = [
   {
     title: 'Spaghetti Carbonara',
     description: 'A classic Roman pasta dish made with eggs, cheese, pancetta, and black pepper. Incredibly creamy without any cream.',
-    imageUrl: 'https://images.unsplash.com/photo-1608796881204-681349a1d1b7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1588013273468-31508b94231d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
     ingredients: ['400g spaghetti', '3 large eggs', '50g grated Pecorino Romano', '50g grated Parmesan', '115g pancetta', '2 cloves garlic', 'Black pepper', 'Salt'],
     instructions: [
       'Bring a large pot of salted water to a boil. Cook spaghetti until al dente.',
@@ -19,7 +19,7 @@ export const recipes: Recipe[] = [
   {
     title: 'Classic Tomato Bruschetta',
     description: 'A simple and refreshing Italian appetizer of grilled bread rubbed with garlic and topped with fresh tomatoes, basil, and olive oil.',
-    imageUrl: 'https://images.unsplash.com/photo-1579979119565-3c4155142518?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1505252585461-1457eb2d41f3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
     ingredients: ['1 baguette', '4 ripe tomatoes', '15g fresh basil', '2 cloves garlic', '30ml olive oil', '15ml balsamic vinegar', 'Salt and pepper'],
     instructions: [
       'Preheat oven to 190°C (375°F). Slice baguette and arrange on a baking sheet.',
@@ -34,7 +34,7 @@ export const recipes: Recipe[] = [
   {
     title: 'Chicken Avocado Salad',
     description: 'A creamy and healthy salad with shredded chicken and avocado, perfect for a light lunch or a filling for sandwiches.',
-    imageUrl: 'https://images.unsplash.com/photo-1592417817038-d13fd7342605?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1603055416869-3a1ea407c72f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
     ingredients: ['300g cooked chicken, shredded', '1 large avocado, diced', '40g red onion, finely chopped', '10g cilantro, chopped', '30ml lime juice', 'Salt and pepper to taste'],
     instructions: [
       'In a medium bowl, combine the shredded chicken, diced avocado, chopped red onion, and cilantro.',

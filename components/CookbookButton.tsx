@@ -5,7 +5,7 @@ import DownloadIcon from './icons/DownloadIcon';
 
 interface CookbookButtonProps {
     elementIdToPrint: string;
-    ingredients: string[];
+    ingredients?: string[];
 }
 
 const CookbookButton: React.FC<CookbookButtonProps> = ({ elementIdToPrint, ingredients }) => {
@@ -63,13 +63,17 @@ const CookbookButton: React.FC<CookbookButtonProps> = ({ elementIdToPrint, ingre
 
             pdf.setFontSize(16);
             pdf.setFont('helvetica', 'normal');
-            pdf.text("A collection of recipes based on your ingredients:", pdfWidth / 2, 150, { align: 'center' });
             
-            pdf.setFontSize(12);
-            pdf.setFont('helvetica', 'italic');
-            const ingredientText = ingredients.join(', ');
-            const splitIngredients = pdf.splitTextToSize(ingredientText, pdfWidth - (margin * 2));
-            pdf.text(splitIngredients, pdfWidth / 2, 180, { align: 'center' });
+            if (ingredients && ingredients.length > 0) {
+                pdf.text("A collection of recipes based on your ingredients:", pdfWidth / 2, 150, { align: 'center' });
+                pdf.setFontSize(12);
+                pdf.setFont('helvetica', 'italic');
+                const ingredientText = ingredients.join(', ');
+                const splitIngredients = pdf.splitTextToSize(ingredientText, pdfWidth - (margin * 2));
+                pdf.text(splitIngredients, pdfWidth / 2, 180, { align: 'center' });
+            } else {
+                 pdf.text("A personal collection of your favorite recipes.", pdfWidth / 2, 150, { align: 'center' });
+            }
             
             pdf.addPage();
             

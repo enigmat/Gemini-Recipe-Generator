@@ -4,7 +4,7 @@ export const recipes: Recipe[] = [
   {
     title: 'Spicy Gochujang Noodles',
     description: 'A quick, fiery, and deeply flavorful noodle dish featuring the popular Korean chili paste. Perfect for a fast and satisfying weeknight meal.',
-    imageUrl: 'https://images.unsplash.com/photo-1626083099243-918455113c4a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1695694354222-c8429388b140?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
     ingredients: ['200g ramen or udon noodles', '30g gochujang paste', '15ml soy sauce', '10ml sesame oil', '5g minced garlic', '15g honey or maple syrup', '60ml water', '1 soft-boiled egg', 'Spring onions, chopped', 'Toasted sesame seeds'],
     instructions: [
       'Cook noodles according to package directions. Drain and set aside.',
@@ -19,7 +19,7 @@ export const recipes: Recipe[] = [
   {
     title: 'Seared Scallops with Lemon-Butter Sauce',
     description: 'Perfectly seared scallops with a golden-brown crust, bathed in a luxurious and tangy lemon-butter pan sauce with fresh herbs.',
-    imageUrl: 'https://images.unsplash.com/photo-1599599810694-b5b3834351ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1601823438344-93e108151322?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
     ingredients: ['450g large sea scallops', 'Salt and black pepper', '30ml olive oil', '45g unsalted butter', '3 cloves garlic, minced', '60ml dry white wine', 'Juice of 1 lemon', '15g fresh parsley, chopped'],
     instructions: [
       'Pat the scallops completely dry with paper towels and season both sides with salt and pepper.',
@@ -36,7 +36,7 @@ export const recipes: Recipe[] = [
   {
     title: 'Whipped Feta Dip with Roasted Tomatoes',
     description: 'A creamy, tangy, and utterly addictive whipped feta dip topped with sweet, juicy cherry tomatoes roasted with garlic and herbs.',
-    imageUrl: 'https://images.unsplash.com/photo-1654922349382-3534e14f1712?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1561043433-9265f8337609?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
     ingredients: ['200g block of feta cheese', '85g cream cheese', '60ml extra virgin olive oil', '1 clove garlic', 'Juice of half a lemon', '250g cherry tomatoes', '2 cloves garlic, smashed', 'Fresh thyme sprigs', 'Pita bread or crackers for serving'],
     instructions: [
       'Preheat oven to 200°C (400°F).',

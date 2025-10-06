@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass, User } from './types';
 import Header from './components/Header';
@@ -34,6 +31,9 @@ import SparklesIcon from './components/icons/SparklesIcon';
 import LoginModal from './components/LoginModal';
 import UserMenu from './components/UserMenu';
 import ShieldIcon from './components/icons/ShieldIcon';
+import AdminDashboard from './components/AdminDashboard';
+import CookbookButton from './components/CookbookButton';
+import LockClosedIcon from './components/icons/LockClosedIcon';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -49,9 +49,10 @@ const App: React.FC = () => {
     const [currentView, setCurrentView] = useState<View>('all');
     
     // States for user authentication and premium status
-    const [isPremium, setIsPremium] = useState(userService.getPremiumStatus());
+    const [isPremium, setIsPremium] = useState(false);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    const [isDashboardVisible, setIsDashboardVisible] = useState(false);
     
     // States for premium upgrade flow
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
@@ -85,8 +86,17 @@ const App: React.FC = () => {
 
 
     useEffect(() => {
+        const user = userService.getCurrentUser();
+        setCurrentUser(user);
+
+        // Grant premium access if user is admin or has paid
+        if (user?.isAdmin) {
+            setIsPremium(true);
+        } else {
+            setIsPremium(userService.getPremiumStatus());
+        }
+
         setSavedRecipeTitles(favoritesService.getSavedRecipeTitles());
-        setCurrentUser(userService.getCurrentUser());
 
         // Check for Stripe checkout redirect
         const query = new URLSearchParams(window.location.search);
@@ -94,14 +104,11 @@ const App: React.FC = () => {
             setIsPremium(true);
             userService.setPremiumStatus(true);
             setShowUpgradeConfirmation(true);
-            // Clean up the URL
             window.history.replaceState({}, document.title, window.location.pathname);
         }
         if (query.get('checkout') === 'cancel') {
-             // Clean up the URL
-            window.history.replaceState({}, document.title, window.location.pathname);
+             window.history.replaceState({}, document.title, window.location.pathname);
         }
-
     }, []);
 
     const allRecipes = useMemo(() => [...recipeData, ...newRecipes], []);
@@ -277,13 +284,20 @@ const App: React.FC = () => {
 
     const handleLogin = (email: string) => {
         userService.loginUser(email);
-        setCurrentUser(userService.getCurrentUser());
+        const user = userService.getCurrentUser();
+        setCurrentUser(user);
+        if (user?.isAdmin) {
+            setIsPremium(true);
+        }
         setIsLoginModalOpen(false);
     };
 
     const handleLogout = () => {
         userService.logoutUser();
         setCurrentUser(null);
+        // Revert to stored premium status for non-admin users
+        setIsPremium(userService.getPremiumStatus());
+        setIsDashboardVisible(false);
     };
 
     const renderContent = () => {
@@ -316,15 +330,32 @@ const App: React.FC = () => {
                 <div>
                     <div className="flex justify-between items-center mb-8">
                         <h2 className="text-2xl font-bold">Recipes for You</h2>
-                        <button
-                            onClick={handleBackToBrowse}
-                            className="px-4 py-2 bg-gray-200 text-text-secondary font-semibold rounded-lg hover:bg-gray-300 transition-colors"
-                        >
-                            &larr; Browse All Recipes
-                        </button>
+                        <div className="flex items-center gap-4">
+                            {isPremium ? (
+                                <CookbookButton
+                                    elementIdToPrint="generated-recipes-grid"
+                                    ingredients={ingredients}
+                                />
+                            ) : (
+                                <button
+                                    onClick={() => setIsUpgradeModalOpen(true)}
+                                    className="px-4 py-2 bg-white border border-gray-300 text-gray-500 font-semibold rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 ease-in-out flex items-center gap-2"
+                                    title="Upgrade to Premium to create a cookbook"
+                                >
+                                    <LockClosedIcon className="h-5 w-5 text-gray-400" />
+                                    <span>Create Cookbook</span>
+                                </button>
+                            )}
+                            <button
+                                onClick={handleBackToBrowse}
+                                className="px-4 py-2 bg-gray-200 text-text-secondary font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                            >
+                                &larr; Browse All Recipes
+                            </button>
+                        </div>
                     </div>
                     {generatedRecipes.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+                        <div id="generated-recipes-grid" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
                             {generatedRecipes.map((recipe) => (
                                 <RecipeCard
                                     key={recipe.title}
@@ -394,9 +425,30 @@ const App: React.FC = () => {
                         onTagClick={handleTagClick}
                     />
                 </div>
+                 <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-text-primary">
+                        {currentView === 'saved' ? 'My Saved Recipes' : 'All Recipes'}
+                    </h2>
+                    {currentView === 'saved' && currentRecipes.length > 0 && (
+                        isPremium ? (
+                            <CookbookButton
+                                elementIdToPrint="recipes-grid"
+                            />
+                        ) : (
+                            <button
+                                onClick={() => setIsUpgradeModalOpen(true)}
+                                className="px-4 py-2 bg-white border border-gray-300 text-gray-500 font-semibold rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 ease-in-out flex items-center gap-2"
+                                title="Upgrade to Premium to create a cookbook"
+                            >
+                                <LockClosedIcon className="h-5 w-5 text-gray-400" />
+                                <span>Create Cookbook</span>
+                            </button>
+                        )
+                    )}
+                </div>
                 {currentRecipes.length > 0 ? (
                     <>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+                        <div id="recipes-grid" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
                             {currentRecipes.map((recipe) => (
                                 <RecipeCard
                                     key={recipe.title}
@@ -438,6 +490,10 @@ const App: React.FC = () => {
     };
     
     const renderMainContent = () => {
+        if (isDashboardVisible && currentUser?.isAdmin) {
+            return <AdminDashboard onBackToApp={() => setIsDashboardVisible(false)} />;
+        }
+
         if (selectedClass) {
             return (
                 <CookingClassDetail
@@ -451,20 +507,27 @@ const App: React.FC = () => {
         return (
             <>
                 <div className="flex justify-end items-center mb-4 gap-4">
-                    {currentUser && currentUser.isAdmin && (
+                    {currentUser?.isAdmin && (
                         <div className="flex items-center gap-2 px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-semibold">
                             <ShieldIcon className="w-4 h-4 text-indigo-500" />
                             <span>Admin</span>
                         </div>
                     )}
-                    {currentUser && isPremium && (
+                    {currentUser && isPremium && !currentUser.isAdmin && (
                         <div className="flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">
                             <CrownIcon className="w-4 h-4 text-yellow-500" />
                             <span>Premium</span>
                         </div>
                     )}
                     {currentUser ? (
-                        <UserMenu userEmail={currentUser.email} onLogout={handleLogout} />
+                        <UserMenu
+                            user={currentUser}
+                            onLogout={handleLogout}
+                            onShowDashboard={() => {
+                                setSelectedClass(null); // Ensure other views are closed
+                                setIsDashboardVisible(true);
+                            }}
+                        />
                     ) : (
                         <button
                             onClick={() => setIsLoginModalOpen(true)}
