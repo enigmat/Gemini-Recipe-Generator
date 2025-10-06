@@ -41,6 +41,7 @@ type View = 'all' | 'saved' | 'plans' | 'videos';
 
 const App: React.FC = () => {
     // States for browsing static recipes
+    const [mainRecipes, setMainRecipes] = useState<Recipe[]>(recipeData);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [itemsToShow, setItemsToShow] = useState(ITEMS_PER_PAGE);
@@ -107,15 +108,15 @@ const App: React.FC = () => {
         }
     }, []);
 
-    const allRecipes = useMemo(() => [...recipeData, ...newRecipes], []);
+    const allRecipes = useMemo(() => [...mainRecipes, ...newRecipes], [mainRecipes]);
 
     const allTags = useMemo(() => {
         const tags = new Set<string>();
-        recipeData.forEach(recipe => {
+        mainRecipes.forEach(recipe => {
             recipe.tags.forEach(tag => tags.add(tag));
         });
         return Array.from(tags).sort();
-    }, []);
+    }, [mainRecipes]);
 
     const handleToggleSave = (recipeTitle: string) => {
         const isSaved = savedRecipeTitles.includes(recipeTitle);
@@ -131,7 +132,7 @@ const App: React.FC = () => {
     const filteredRecipes = useMemo(() => {
         let recipes = currentView === 'saved'
             ? allRecipes.filter(recipe => savedRecipeTitles.includes(recipe.title))
-            : recipeData;
+            : mainRecipes;
 
         return recipes.filter(recipe => {
             const searchLower = searchQuery.toLowerCase();
@@ -148,7 +149,7 @@ const App: React.FC = () => {
 
             return matchesSearch && matchesTags;
         });
-    }, [searchQuery, selectedTags, currentView, savedRecipeTitles, allRecipes]);
+    }, [searchQuery, selectedTags, currentView, savedRecipeTitles, allRecipes, mainRecipes]);
 
     const handleTagClick = (tag: string) => {
         setSelectedTags(prevTags =>
@@ -212,7 +213,7 @@ const App: React.FC = () => {
         if (!selectedPlan) return;
 
         const recipeTitlesInPlan = selectedPlan.plan.map(day => day.recipeTitle);
-        const recipesInPlan = recipeData.filter(recipe => recipeTitlesInPlan.includes(recipe.title));
+        const recipesInPlan = mainRecipes.filter(recipe => recipeTitlesInPlan.includes(recipe.title));
         const allIngredients = recipesInPlan.flatMap(recipe => recipe.ingredients);
 
         setIsGeneratingList(true);
@@ -293,6 +294,10 @@ const App: React.FC = () => {
         // Revert to stored premium status for non-admin users
         setIsPremium(userService.getPremiumStatus());
         setIsDashboardVisible(false);
+    };
+
+    const handleAddRecipe = (newRecipe: Recipe) => {
+        setMainRecipes(prevRecipes => [newRecipe, ...prevRecipes]);
     };
 
     const renderContent = () => {
@@ -393,7 +398,7 @@ const App: React.FC = () => {
             if (selectedPlan) {
                 return <MealPlanDetail 
                     plan={selectedPlan}
-                    recipes={recipeData}
+                    recipes={mainRecipes}
                     onSelectRecipe={setSelectedRecipe}
                     onBack={() => setSelectedPlan(null)}
                     onGenerateList={handleGeneratePlanShoppingList}
@@ -486,7 +491,7 @@ const App: React.FC = () => {
     
     const renderMainContent = () => {
         if (isDashboardVisible && currentUser?.isAdmin) {
-            return <AdminDashboard onBackToApp={() => setIsDashboardVisible(false)} />;
+            return <AdminDashboard onBackToApp={() => setIsDashboardVisible(false)} onAddRecipe={handleAddRecipe} />;
         }
 
         if (selectedClass) {
