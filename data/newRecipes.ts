@@ -1,3 +1,4 @@
+
 import { Recipe } from '../types';
 
 export const recipes: Recipe[] = [
@@ -14,7 +15,16 @@ export const recipes: Recipe[] = [
       'Transfer the noodles to a bowl.',
       'Top with a halved soft-boiled egg, a generous sprinkle of chopped spring onions, and toasted sesame seeds before serving.'
     ],
-    tags: ['Premium', 'Spicy', 'Korean', 'Quick & Easy', 'Noodles']
+    tags: ['Premium', 'Spicy', 'Korean', 'Quick & Easy', 'Noodles'],
+    servings: '2 servings',
+    prepTime: '5 minutes',
+    cookTime: '10 minutes',
+    nutrition: {
+        calories: '550 kcal',
+        protein: '15g',
+        carbs: '95g',
+        fat: '12g'
+    }
   },
   {
     title: 'Seared Scallops with Lemon-Butter Sauce',
@@ -31,7 +41,16 @@ export const recipes: Recipe[] = [
       'Stir in the lemon juice and parsley. Return the scallops to the pan and toss to coat in the sauce.',
       'Serve immediately, spooning extra sauce over the top.'
     ],
-    tags: ['Premium', 'Seafood', 'Elegant', 'Dinner', 'Gluten-Free']
+    tags: ['Premium', 'Seafood', 'Elegant', 'Dinner', 'Gluten-Free'],
+    servings: '4 servings',
+    prepTime: '10 minutes',
+    cookTime: '10 minutes',
+    nutrition: {
+        calories: '380 kcal',
+        protein: '30g',
+        carbs: '5g',
+        fat: '25g'
+    }
   },
   {
     title: 'Whipped Feta Dip with Roasted Tomatoes',
@@ -47,6 +66,15 @@ export const recipes: Recipe[] = [
       'Once roasted, spoon the warm tomatoes and all their juices over the whipped feta.',
       'Serve immediately with warm pita bread, crostini, or fresh vegetables.'
     ],
-    tags: ['Premium', 'Appetizer', 'Vegetarian', 'Mediterranean', 'Party Food']
+    tags: ['Premium', 'Appetizer', 'Vegetarian', 'Mediterranean', 'Party Food'],
+    servings: '6 servings',
+    prepTime: '10 minutes',
+    cookTime: '20 minutes',
+    nutrition: {
+        calories: '250 kcal',
+        protein: '8g',
+        carbs: '6g',
+        fat: '22g'
+    }
   }
 ];

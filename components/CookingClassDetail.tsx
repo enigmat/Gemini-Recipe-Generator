@@ -36,7 +36,7 @@ const CookingClassDetail: React.FC<CookingClassDetailProps> = ({ cookingClass, o
                     >
                         <div className="text-3xl font-bold text-primary/50 flex-shrink-0 w-8 text-center">{index + 1}</div>
                         <div className="w-32 h-20 rounded-md overflow-hidden flex-shrink-0 relative group">
-                            <img src={lesson.thumbnailUrl} alt={lesson.title} className="w-full h-full object-cover" />
+                            <img src={lesson.thumbnailUrl} alt={lesson.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                              <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex items-center justify-center">
                                 <PlayCircleIcon className="w-8 h-8 text-white/80" />
                             </div>

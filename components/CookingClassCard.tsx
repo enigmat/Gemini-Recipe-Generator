@@ -23,6 +23,7 @@ const CookingClassCard: React.FC<CookingClassCardProps> = ({ cookingClass, onCli
                     src={cookingClass.imageUrl}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     loading="lazy"
+                    referrerPolicy="no-referrer"
                 />
             </div>
             <div className="p-4 sm:p-6">

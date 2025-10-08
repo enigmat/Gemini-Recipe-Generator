@@ -1,3 +1,4 @@
+
 export interface Recipe {
   title: string;
   description: string;
@@ -5,6 +6,15 @@ export interface Recipe {
   ingredients: string[];
   instructions: string[];
   tags: string[];
+  servings: string;
+  prepTime: string;
+  cookTime: string;
+  nutrition: {
+    calories: string;
+    protein: string;
+    carbs: string;
+    fat: string;
+  };
 }
 
 export interface ShoppingListItem {

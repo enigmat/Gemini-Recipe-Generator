@@ -1,3 +1,4 @@
+
 import { Recipe } from '../types';
 
 export const recipes: Recipe[] = [
@@ -14,7 +15,16 @@ export const recipes: Recipe[] = [
       'Remove from heat. Slowly pour in egg mixture, stirring quickly until a creamy sauce forms. Add pasta water if too thick.',
       'Serve immediately with extra cheese and pepper.'
     ],
-    tags: ['Pasta', 'Italian', 'Dinner', 'Classic']
+    tags: ['Pasta', 'Italian', 'Dinner', 'Classic'],
+    servings: '4 servings',
+    prepTime: '10 minutes',
+    cookTime: '20 minutes',
+    nutrition: {
+        calories: '650 kcal',
+        protein: '25g',
+        carbs: '80g',
+        fat: '28g'
+    }
   },
   {
     title: 'Classic Tomato Bruschetta',
@@ -29,7 +39,16 @@ export const recipes: Recipe[] = [
       'Rub the toasted bread slices with a whole garlic clove for extra flavor.',
       'Top each slice with the tomato mixture and serve immediately.'
     ],
-    tags: ['Appetizer', 'Italian', 'Vegetarian', 'Quick & Easy']
+    tags: ['Appetizer', 'Italian', 'Vegetarian', 'Quick & Easy'],
+    servings: '8 servings',
+    prepTime: '15 minutes',
+    cookTime: '10 minutes',
+    nutrition: {
+        calories: '150 kcal',
+        protein: '3g',
+        carbs: '20g',
+        fat: '6g'
+    }
   },
   {
     title: 'Chicken Avocado Salad',
@@ -43,7 +62,16 @@ export const recipes: Recipe[] = [
       'Season with salt and pepper to your liking.',
       'Serve chilled on its own, in a sandwich, or with crackers.'
     ],
-    tags: ['Salad', 'Lunch', 'Healthy', 'Gluten-Free', 'Quick & Easy']
+    tags: ['Salad', 'Lunch', 'Healthy', 'Gluten-Free', 'Quick & Easy'],
+    servings: '3 servings',
+    prepTime: '15 minutes',
+    cookTime: '0 minutes',
+    nutrition: {
+        calories: '350 kcal',
+        protein: '28g',
+        carbs: '8g',
+        fat: '24g'
+    }
   },
   {
     title: 'Simple Beef Tacos',
@@ -57,7 +85,16 @@ export const recipes: Recipe[] = [
       'Assemble the tacos by filling each shell with the beef mixture.',
       'Top with lettuce, tomatoes, cheese, and a dollop of sour cream.'
     ],
-    tags: ['Dinner', 'Mexican', 'Family-Friendly', 'Quick & Easy']
+    tags: ['Dinner', 'Mexican', 'Family-Friendly', 'Quick & Easy'],
+    servings: '4 servings',
+    prepTime: '10 minutes',
+    cookTime: '15 minutes',
+    nutrition: {
+        calories: '450 kcal',
+        protein: '22g',
+        carbs: '35g',
+        fat: '25g'
+    }
   },
   {
     title: 'Creamy Tomato Soup',
@@ -72,7 +109,16 @@ export const recipes: Recipe[] = [
         'Use an immersion blender to blend the soup until smooth. Or, carefully transfer in batches to a regular blender.',
         'Stir in the heavy cream and heat through. Do not boil. Serve hot with croutons or grilled cheese.'
     ],
-    tags: ['Soup', 'Vegetarian', 'Comfort Food', 'Lunch']
+    tags: ['Soup', 'Vegetarian', 'Comfort Food', 'Lunch'],
+    servings: '4 servings',
+    prepTime: '10 minutes',
+    cookTime: '25 minutes',
+    nutrition: {
+        calories: '250 kcal',
+        protein: '5g',
+        carbs: '20g',
+        fat: '18g'
+    }
   },
   {
     title: 'Lemon Herb Roasted Chicken',
@@ -87,7 +133,16 @@ export const recipes: Recipe[] = [
         'Place the chicken in a roasting pan or large oven-proof skillet. Drizzle with olive oil.',
         'Roast for 1 hour to 1 hour 15 minutes, or until the juices run clear. Let rest for 10-15 minutes before carving.'
     ],
-    tags: ['Dinner', 'Roast', 'Gluten-Free', 'Classic']
+    tags: ['Dinner', 'Roast', 'Gluten-Free', 'Classic'],
+    servings: '6 servings',
+    prepTime: '15 minutes',
+    cookTime: '75 minutes',
+    nutrition: {
+        calories: '700 kcal',
+        protein: '65g',
+        carbs: '5g',
+        fat: '45g'
+    }
   },
   {
     title: 'Garlic Butter Shrimp Scampi',
@@ -102,7 +157,16 @@ export const recipes: Recipe[] = [
         'Return shrimp to the skillet. Stir in parsley.',
         'Add the drained linguine to the skillet and toss to combine. Serve immediately.'
     ],
-    tags: ['Pasta', 'Seafood', 'Dinner', 'Quick & Easy', 'Italian']
+    tags: ['Pasta', 'Seafood', 'Dinner', 'Quick & Easy', 'Italian'],
+    servings: '4 servings',
+    prepTime: '10 minutes',
+    cookTime: '15 minutes',
+    nutrition: {
+        calories: '550 kcal',
+        protein: '30g',
+        carbs: '60g',
+        fat: '20g'
+    }
   },
   {
     title: 'Caprese Salad',
@@ -117,7 +181,16 @@ export const recipes: Recipe[] = [
         'Season with salt and pepper to taste.',
         'Serve immediately as a fresh and simple appetizer or side dish.'
     ],
-    tags: ['Salad', 'Appetizer', 'Italian', 'Vegetarian', 'Gluten-Free', 'Quick & Easy']
+    tags: ['Salad', 'Appetizer', 'Italian', 'Vegetarian', 'Gluten-Free', 'Quick & Easy'],
+    servings: '4 servings',
+    prepTime: '10 minutes',
+    cookTime: '0 minutes',
+    nutrition: {
+        calories: '280 kcal',
+        protein: '12g',
+        carbs: '6g',
+        fat: '22g'
+    }
   },
    {
     title: 'Classic Fluffy Pancakes',
@@ -133,7 +206,16 @@ export const recipes: Recipe[] = [
         'Cook until bubbles appear on the surface, then flip and cook until golden brown on the other side.',
         'Serve hot with maple syrup and fresh berries.'
     ],
-    tags: ['Breakfast', 'Family-Friendly', 'Quick & Easy', 'Classic']
+    tags: ['Breakfast', 'Family-Friendly', 'Quick & Easy', 'Classic'],
+    servings: '4 servings',
+    prepTime: '10 minutes',
+    cookTime: '15 minutes',
+    nutrition: {
+        calories: '300 kcal',
+        protein: '8g',
+        carbs: '45g',
+        fat: '10g'
+    }
   },
   {
     title: 'Healthy Quinoa Salad',
@@ -148,7 +230,16 @@ export const recipes: Recipe[] = [
         'Drizzle with lemon vinaigrette and toss to combine.',
         'Serve chilled or at room temperature. It\'s a great make-ahead lunch!'
     ],
-    tags: ['Salad', 'Healthy', 'Vegan', 'Vegetarian', 'Gluten-Free', 'Lunch', 'Meal Prep']
+    tags: ['Salad', 'Healthy', 'Vegan', 'Vegetarian', 'Gluten-Free', 'Lunch', 'Meal Prep'],
+    servings: '4 servings',
+    prepTime: '15 minutes',
+    cookTime: '20 minutes',
+    nutrition: {
+        calories: '380 kcal',
+        protein: '15g',
+        carbs: '60g',
+        fat: '10g'
+    }
   },
   {
     title: 'Ultimate Chocolate Chip Cookies',
@@ -164,7 +255,16 @@ export const recipes: Recipe[] = [
         'Drop rounded tablespoons of dough onto ungreased baking sheets.',
         'Bake for 9 to 11 minutes, or until the edges are golden brown. Let cool on the baking sheets for a few minutes before transferring to wire racks to cool completely.'
     ],
-    tags: ['Dessert', 'Baking', 'Family-Friendly', 'Classic']
+    tags: ['Dessert', 'Baking', 'Family-Friendly', 'Classic'],
+    servings: '24 cookies',
+    prepTime: '15 minutes',
+    cookTime: '10 minutes',
+    nutrition: {
+        calories: '180 kcal',
+        protein: '2g',
+        carbs: '22g',
+        fat: '10g'
+    }
   },
   {
     title: 'Classic Beef Chili',
@@ -179,7 +279,16 @@ export const recipes: Recipe[] = [
         'Bring the chili to a boil, then reduce the heat to low, cover, and simmer for at least 1 hour, stirring occasionally.',
         'Serve hot with your favorite toppings like shredded cheese, sour cream, or chopped onions.'
     ],
-    tags: ['Dinner', 'Comfort Food', 'Soup', 'Family-Friendly', 'Meal Prep']
+    tags: ['Dinner', 'Comfort Food', 'Soup', 'Family-Friendly', 'Meal Prep'],
+    servings: '8 servings',
+    prepTime: '15 minutes',
+    cookTime: '75 minutes',
+    nutrition: {
+        calories: '420 kcal',
+        protein: '25g',
+        carbs: '40g',
+        fat: '18g'
+    }
   },
   {
     title: 'Vegan Lentil Soup',
@@ -194,7 +303,16 @@ export const recipes: Recipe[] = [
         'Remove bay leaves. Season with salt and pepper. For a creamier soup, blend one or two cups and stir it back in.',
         'Serve hot, garnished with fresh parsley.'
     ],
-    tags: ['Soup', 'Vegan', 'Vegetarian', 'Healthy', 'Gluten-Free', 'Meal Prep', 'Dinner']
+    tags: ['Soup', 'Vegan', 'Vegetarian', 'Healthy', 'Gluten-Free', 'Meal Prep', 'Dinner'],
+    servings: '6 servings',
+    prepTime: '15 minutes',
+    cookTime: '60 minutes',
+    nutrition: {
+        calories: '280 kcal',
+        protein: '15g',
+        carbs: '45g',
+        fat: '4g'
+    }
   },
   {
     title: 'Black Bean Burgers',
@@ -209,7 +327,16 @@ export const recipes: Recipe[] = [
         'Place patties on a lightly greased baking sheet. Bake for 10 minutes on each side.',
         'Serve on buns with your favorite burger toppings.'
     ],
-    tags: ['Vegetarian', 'Dinner', 'Family-Friendly', 'Healthy']
+    tags: ['Vegetarian', 'Dinner', 'Family-Friendly', 'Healthy'],
+    servings: '4 servings',
+    prepTime: '15 minutes',
+    cookTime: '20 minutes',
+    nutrition: {
+        calories: '320 kcal',
+        protein: '14g',
+        carbs: '50g',
+        fat: '8g'
+    }
   },
   {
     title: 'Sheet Pan Lemon Herb Chicken & Veggies',
@@ -224,7 +351,16 @@ export const recipes: Recipe[] = [
         'Roast for another 20-25 minutes, or until the chicken is cooked through and the vegetables are tender.',
         'Squeeze the second lemon over the dish before serving.'
     ],
-    tags: ['Dinner', 'One-Pan', 'Healthy', 'Quick & Easy', 'Gluten-Free', 'Meal Prep']
+    tags: ['Dinner', 'One-Pan', 'Healthy', 'Quick & Easy', 'Gluten-Free', 'Meal Prep'],
+    servings: '4 servings',
+    prepTime: '15 minutes',
+    cookTime: '40 minutes',
+    nutrition: {
+        calories: '500 kcal',
+        protein: '45g',
+        carbs: '30g',
+        fat: '22g'
+    }
   },
   {
     title: 'Banana Bread',
@@ -239,7 +375,16 @@ export const recipes: Recipe[] = [
         'Pour the batter into the prepared loaf pan.',
         'Bake for 50 to 60 minutes, or until a toothpick inserted into the center comes out clean. Let cool in the pan for a few minutes before transferring to a wire rack to cool completely.'
     ],
-    tags: ['Baking', 'Dessert', 'Breakfast', 'Family-Friendly', 'Classic']
+    tags: ['Baking', 'Dessert', 'Breakfast', 'Family-Friendly', 'Classic'],
+    servings: '8 servings',
+    prepTime: '10 minutes',
+    cookTime: '55 minutes',
+    nutrition: {
+        calories: '320 kcal',
+        protein: '4g',
+        carbs: '45g',
+        fat: '15g'
+    }
   },
   {
     title: 'Chicken Tikka Masala',
@@ -254,7 +399,16 @@ export const recipes: Recipe[] = [
       'Reduce heat and stir in heavy cream. Simmer for another 5 minutes.',
       'Garnish with fresh cilantro and serve with rice or naan bread.'
     ],
-    tags: ['Dinner', 'Indian', 'Curry', 'Classic']
+    tags: ['Dinner', 'Indian', 'Curry', 'Classic'],
+    servings: '4 servings',
+    prepTime: '20 minutes',
+    cookTime: '30 minutes',
+    nutrition: {
+        calories: '550 kcal',
+        protein: '35g',
+        carbs: '25g',
+        fat: '35g'
+    }
   },
   {
     title: 'Thai Green Curry with Chicken',
@@ -269,7 +423,16 @@ export const recipes: Recipe[] = [
       'Stir in the Thai basil leaves just before serving.',
       'Serve hot with jasmine rice.'
     ],
-    tags: ['Dinner', 'Thai', 'Curry', 'Spicy', 'Quick & Easy']
+    tags: ['Dinner', 'Thai', 'Curry', 'Spicy', 'Quick & Easy'],
+    servings: '4 servings',
+    prepTime: '15 minutes',
+    cookTime: '20 minutes',
+    nutrition: {
+        calories: '480 kcal',
+        protein: '30g',
+        carbs: '15g',
+        fat: '32g'
+    }
   },
   {
     title: 'Quick Salmon Teriyaki',
@@ -284,7 +447,16 @@ export const recipes: Recipe[] = [
       'Pour the teriyaki sauce over the salmon fillets. Cook for 1-2 minutes, spooning the sauce over the fish, until the glaze thickens.',
       'Serve immediately over steamed rice with a side of vegetables, garnished with sesame seeds.'
     ],
-    tags: ['Dinner', 'Japanese', 'Seafood', 'Quick & Easy']
+    tags: ['Dinner', 'Japanese', 'Seafood', 'Quick & Easy'],
+    servings: '4 servings',
+    prepTime: '5 minutes',
+    cookTime: '15 minutes',
+    nutrition: {
+        calories: '450 kcal',
+        protein: '35g',
+        carbs: '25g',
+        fat: '20g'
+    }
   },
   {
     title: 'Classic Guacamole',
@@ -299,7 +471,16 @@ export const recipes: Recipe[] = [
       'Season with salt and stir everything together until well combined.',
       'Taste and adjust seasoning if needed. Serve immediately with tortilla chips.'
     ],
-    tags: ['Appetizer', 'Mexican', 'Vegan', 'Vegetarian', 'Quick & Easy', 'Party Food']
+    tags: ['Appetizer', 'Mexican', 'Vegan', 'Vegetarian', 'Quick & Easy', 'Party Food'],
+    servings: '6 servings',
+    prepTime: '10 minutes',
+    cookTime: '0 minutes',
+    nutrition: {
+        calories: '150 kcal',
+        protein: '2g',
+        carbs: '8g',
+        fat: '14g'
+    }
   },
   {
     title: 'Spicy Kung Pao Chicken',
@@ -315,7 +496,16 @@ export const recipes: Recipe[] = [
       'Return the chicken to the wok. Pour in the sauce and bring to a boil, stirring until the sauce thickens.',
       'Stir in the peanuts and spring onions. Serve immediately with steamed rice.'
     ],
-    tags: ['Dinner', 'Asian', 'Chinese', 'Spicy', 'Stir-fry']
+    tags: ['Dinner', 'Asian', 'Chinese', 'Spicy', 'Stir-fry'],
+    servings: '4 servings',
+    prepTime: '20 minutes',
+    cookTime: '15 minutes',
+    nutrition: {
+        calories: '520 kcal',
+        protein: '35g',
+        carbs: '25g',
+        fat: '30g'
+    }
   },
   {
     title: 'Authentic Jamaican Jerk Chicken',
@@ -330,6 +520,15 @@ export const recipes: Recipe[] = [
       'Grill the chicken for 20-30 minutes, turning occasionally, until cooked through and slightly charred on the outside. If baking, place on a rack over a baking sheet and bake for 35-45 minutes.',
       'Let the chicken rest for a few minutes before serving. Traditionally served with rice and peas.'
     ],
-    tags: ['Dinner', 'Jamaican', 'Caribbean', 'Spicy', 'Grill']
+    tags: ['Dinner', 'Jamaican', 'Caribbean', 'Spicy', 'Grill'],
+    servings: '6 servings',
+    prepTime: '15 minutes',
+    cookTime: '30 minutes',
+    nutrition: {
+        calories: '600 kcal',
+        protein: '55g',
+        carbs: '10g',
+        fat: '38g'
+    }
   }
 ];

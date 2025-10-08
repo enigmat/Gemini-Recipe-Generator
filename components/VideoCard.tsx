@@ -23,6 +23,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
                     src={video.thumbnailUrl}
                     className="absolute inset-0 h-full w-full object-cover"
                     loading="lazy"
+                    referrerPolicy="no-referrer"
                 />
                 <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex items-center justify-center">
                     <PlayCircleIcon className="w-16 h-16 text-white/80 transform group-hover:scale-110 transition-transform" />

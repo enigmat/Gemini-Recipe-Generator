@@ -1,10 +1,14 @@
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Recipe } from '../types';
 import XIcon from './icons/XIcon';
 import HeartIcon from './icons/HeartIcon';
 import ShoppingCartIcon from './icons/ShoppingCartIcon';
 import ChefHatIcon from './icons/ChefHatIcon';
+import { parseIngredient, parseServings, convertToAmerican } from '../utils/recipeUtils';
+import ClockIcon from './icons/ClockIcon';
+import UsersIcon from './icons/UsersIcon';
+import FireIcon from './icons/FireIcon';
 
 interface RecipeModalProps {
     recipe: Recipe;
@@ -17,6 +21,47 @@ interface RecipeModalProps {
 }
 
 const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onToggleSave, onGenerateShoppingList, isGeneratingList, onStartCookMode }) => {
+    
+    const originalServings = useMemo(() => parseServings(recipe.servings), [recipe.servings]);
+    const [targetServings, setTargetServings] = useState(originalServings);
+
+    const handleServingChange = (change: number) => {
+        setTargetServings(prev => Math.max(1, prev + change));
+    };
+
+    const adjustedIngredients = useMemo(() => {
+        if (!originalServings || originalServings === 0 || !recipe.ingredients) {
+            return recipe.ingredients || [];
+        }
+        
+        const multiplier = targetServings / originalServings;
+
+        return recipe.ingredients.map(ingStr => {
+            const parsed = parseIngredient(ingStr);
+
+            if (!parsed || parsed.quantity === 0) {
+                return ingStr; // Return original string if not parsable or no quantity
+            }
+
+            const newQuantity = parsed.quantity * multiplier;
+            
+            if (newQuantity === 0) return parsed.name;
+
+            const { newQuantityStr, newUnit } = convertToAmerican(newQuantity, parsed.unit);
+            
+            const formattedString = `${newQuantityStr} ${newUnit} ${parsed.name}`.replace(/\s+/g, ' ').trim();
+            // Handle pluralization for non-standard units
+            if (newQuantity > 1 && !newUnit.endsWith('s')) {
+                 if (parsed.unit && !convertToAmerican(1, parsed.unit).newUnit.endsWith('s')) {
+                    return `${newQuantityStr} ${newUnit}s ${parsed.name}`.replace(/\s+/g, ' ').trim();
+                 }
+            }
+
+            return formattedString;
+        });
+
+    }, [recipe.ingredients, originalServings, targetServings]);
+    
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 animate-fade-in"
@@ -34,6 +79,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onT
                         src={recipe.imageUrl}
                         alt={recipe.title}
                         className="absolute inset-0 w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
                     />
                     <button
                         onClick={onClose}
@@ -59,6 +105,29 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onT
                     </div>
                     <p className="text-text-secondary mb-6">{recipe.description}</p>
                     
+                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-6 border-y border-border-color py-4">
+                        <div>
+                            <ClockIcon className="w-6 h-6 mx-auto text-primary mb-1" />
+                            <p className="text-xs text-text-secondary font-bold uppercase tracking-wider">Prep Time</p>
+                            <p className="font-semibold text-text-primary">{recipe.prepTime}</p>
+                        </div>
+                        <div>
+                            <ClockIcon className="w-6 h-6 mx-auto text-primary mb-1" />
+                            <p className="text-xs text-text-secondary font-bold uppercase tracking-wider">Cook Time</p>
+                            <p className="font-semibold text-text-primary">{recipe.cookTime}</p>
+                        </div>
+                        <div>
+                            <UsersIcon className="w-6 h-6 mx-auto text-primary mb-1" />
+                            <p className="text-xs text-text-secondary font-bold uppercase tracking-wider">Servings</p>
+                            <p className="font-semibold text-text-primary">{parseServings(recipe.servings)}</p>
+                        </div>
+                        <div>
+                            <FireIcon className="w-6 h-6 mx-auto text-primary mb-1" />
+                            <p className="text-xs text-text-secondary font-bold uppercase tracking-wider">Calories</p>
+                            <p className="font-semibold text-text-primary">{recipe.nutrition.calories}</p>
+                        </div>
+                    </div>
+
                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                         <button
                             onClick={onToggleSave}
@@ -91,8 +160,30 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onT
 
                     <div className="mb-6">
                         <h3 className="text-xl font-semibold text-primary mb-3 border-b-2 border-primary/20 pb-1">Ingredients</h3>
+                         {/* Servings Adjuster */}
+                        <div className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg my-4 border border-border-color">
+                            <span className="font-semibold text-text-secondary">Servings:</span>
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => handleServingChange(-1)}
+                                    disabled={targetServings <= 1}
+                                    className="p-1 w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full text-lg font-bold text-text-secondary hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    aria-label="Decrease servings"
+                                >
+                                    -
+                                </button>
+                                <span className="text-lg font-bold text-text-primary w-10 text-center" aria-live="polite">{targetServings}</span>
+                                <button 
+                                    onClick={() => handleServingChange(1)}
+                                    className="p-1 w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full text-lg font-bold text-text-secondary hover:bg-gray-300"
+                                    aria-label="Increase servings"
+                                >
+                                    +
+                                </button>
+                            </div>
+                        </div>
                         <ul className="list-disc list-inside space-y-1.5 text-text-secondary pl-2">
-                            {recipe.ingredients.map((ingredient, index) => (
+                            {adjustedIngredients.map((ingredient, index) => (
                                 <li key={index}>{ingredient}</li>
                             ))}
                         </ul>

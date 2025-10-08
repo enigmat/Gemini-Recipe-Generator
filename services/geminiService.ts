@@ -1,5 +1,4 @@
 
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Recipe, ShoppingList } from '../types';
 
@@ -128,6 +127,10 @@ export const generateRecipes = async (ingredients: string[]): Promise<Recipe[]> 
                         ingredients: recipe.ingredients.map((ing: { quantity: string; name: string; }) => `${ing.quantity} ${ing.name}`.trim()).filter(Boolean),
                         instructions: recipe.instructions,
                         tags: recipe.tags,
+                        servings: recipe.servings,
+                        prepTime: recipe.prepTime,
+                        cookTime: recipe.cookTime,
+                        nutrition: recipe.nutrition,
                     };
                 })
             );
@@ -258,6 +261,10 @@ export const importRecipeFromUrl = async (url: string): Promise<Recipe> => {
             ingredients: importedData.ingredients.map((ing: { quantity: string; name: string; }) => `${ing.quantity} ${ing.name}`.trim()).filter(Boolean),
             instructions: importedData.instructions,
             tags: importedData.tags,
+            servings: importedData.servings,
+            prepTime: importedData.prepTime,
+            cookTime: importedData.cookTime,
+            nutrition: importedData.nutrition,
         };
     } catch (error) {
         console.error("Error importing recipe from URL:", error);
@@ -408,6 +415,10 @@ export const generateRecipeVariation = async (originalRecipe: Recipe, variationR
             ingredients: newRecipe.ingredients.map((ing: { quantity: string; name: string; }) => `${ing.quantity} ${ing.name}`.trim()).filter(Boolean),
             instructions: newRecipe.instructions,
             tags: newRecipe.tags,
+            servings: newRecipe.servings,
+            prepTime: newRecipe.prepTime,
+            cookTime: newRecipe.cookTime,
+            nutrition: newRecipe.nutrition,
         };
 
     } catch (error) {

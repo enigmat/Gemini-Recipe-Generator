@@ -62,7 +62,7 @@ const MealPlanDetail: React.FC<MealPlanDetailProps> = ({ plan, recipes, onSelect
                             className="bg-white rounded-lg shadow-sm border border-border-color p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 cursor-pointer hover:shadow-md hover:border-primary/50 transition-all duration-200"
                         >
                             <div className="w-full sm:w-32 h-24 sm:h-20 rounded-md overflow-hidden flex-shrink-0">
-                                <img src={recipe.imageUrl} alt={recipe.title} className="w-full h-full object-cover" />
+                                <img src={recipe.imageUrl} alt={recipe.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                             </div>
                             <div className="flex-grow">
                                 <p className="font-bold text-primary text-sm uppercase tracking-wide">{day}</p>
