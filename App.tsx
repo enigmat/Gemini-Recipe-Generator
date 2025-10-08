@@ -37,6 +37,7 @@ import LockClosedIcon from './components/icons/LockClosedIcon';
 import UrlInput from './components/UrlInput';
 import CameraInput from './components/CameraInput';
 import CameraModal from './components/CameraModal';
+import DownloadApp from './components/DownloadApp';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -655,6 +656,8 @@ const App: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                <DownloadApp />
 
                 <PremiumContent
                     isPremium={isPremium}
