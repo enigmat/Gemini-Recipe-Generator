@@ -240,5 +240,96 @@ export const recipes: Recipe[] = [
         'Bake for 50 to 60 minutes, or until a toothpick inserted into the center comes out clean. Let cool in the pan for a few minutes before transferring to a wire rack to cool completely.'
     ],
     tags: ['Baking', 'Dessert', 'Breakfast', 'Family-Friendly', 'Classic']
+  },
+  {
+    title: 'Chicken Tikka Masala',
+    description: 'A rich and creamy curry with tender, marinated chicken pieces in a spiced tomato-based sauce. A global favorite for a reason.',
+    imageUrl: 'https://images.unsplash.com/photo-1588166421598-a001b332d52d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+    ingredients: ['500g boneless chicken breast, cubed', '120g plain yogurt', '15ml lemon juice', '5g minced ginger', '5g minced garlic', '3g garam masala', '3g turmeric', '3g cumin powder', '30ml vegetable oil', '1 large onion, chopped', '400g crushed tomatoes', '120ml heavy cream', 'Fresh cilantro for garnish'],
+    instructions: [
+      'In a bowl, mix yogurt, lemon juice, ginger, garlic, garam masala, turmeric, and cumin. Add chicken and marinate for at least 1 hour.',
+      'Heat oil in a large pot. Sauté onion until golden.',
+      'Add the marinated chicken and cook until browned on all sides.',
+      'Stir in crushed tomatoes and bring to a simmer. Cook for 15-20 minutes, until chicken is cooked through.',
+      'Reduce heat and stir in heavy cream. Simmer for another 5 minutes.',
+      'Garnish with fresh cilantro and serve with rice or naan bread.'
+    ],
+    tags: ['Dinner', 'Indian', 'Curry', 'Classic']
+  },
+  {
+    title: 'Thai Green Curry with Chicken',
+    description: 'A fragrant and aromatic Thai curry with a perfect balance of spicy, sweet, and savory flavors, featuring coconut milk and fresh basil.',
+    imageUrl: 'https://images.unsplash.com/photo-1572455014494-3a681b452a8a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+    ingredients: ['400ml coconut milk', '50g green curry paste', '500g boneless chicken breast, sliced', '100g bamboo shoots', '1 red bell pepper, sliced', '15ml fish sauce', '10g sugar', '30g fresh Thai basil leaves', 'Jasmine rice for serving'],
+    instructions: [
+      'In a wok or large pot, bring half the coconut milk to a simmer. Stir in the green curry paste until fragrant.',
+      'Add the chicken and cook until it\'s no longer pink.',
+      'Add the remaining coconut milk, bamboo shoots, and red bell pepper. Bring back to a simmer.',
+      'Season with fish sauce and sugar. Cook for 5-7 minutes, until vegetables are tender-crisp.',
+      'Stir in the Thai basil leaves just before serving.',
+      'Serve hot with jasmine rice.'
+    ],
+    tags: ['Dinner', 'Thai', 'Curry', 'Spicy', 'Quick & Easy']
+  },
+  {
+    title: 'Quick Salmon Teriyaki',
+    description: 'A simple yet elegant Japanese dish featuring pan-seared salmon fillets glazed with a sweet and savory homemade teriyaki sauce.',
+    imageUrl: 'https://images.unsplash.com/photo-1559847844-5315695d0464?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+    ingredients: ['4 salmon fillets (150g each)', '30ml vegetable oil', '60ml soy sauce', '60ml mirin', '30g sugar', '5g minced ginger', 'Toasted sesame seeds for garnish', 'Steamed rice and vegetables for serving'],
+    instructions: [
+      'In a small saucepan, combine soy sauce, mirin, sugar, and ginger. Bring to a simmer and cook for 2-3 minutes until slightly thickened. This is your teriyaki sauce.',
+      'Pat the salmon fillets dry and season lightly with salt.',
+      'Heat vegetable oil in a skillet over medium-high heat. Place salmon skin-side down and cook for 4-5 minutes until the skin is crispy.',
+      'Flip the salmon and cook for another 2-3 minutes.',
+      'Pour the teriyaki sauce over the salmon fillets. Cook for 1-2 minutes, spooning the sauce over the fish, until the glaze thickens.',
+      'Serve immediately over steamed rice with a side of vegetables, garnished with sesame seeds.'
+    ],
+    tags: ['Dinner', 'Japanese', 'Seafood', 'Quick & Easy']
+  },
+  {
+    title: 'Classic Guacamole',
+    description: 'The perfect party dip. A fresh and flavorful mix of ripe avocados, onion, cilantro, jalapeño, and lime juice.',
+    imageUrl: 'https://images.unsplash.com/photo-1598515214211-89d3c7373014?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+    ingredients: ['3 ripe avocados', '60g red onion, finely chopped', '1 jalapeño, minced', '15g cilantro, chopped', 'Juice of 1 lime', 'Salt to taste', 'Tortilla chips for serving'],
+    instructions: [
+      'Halve the avocados, remove the pits, and scoop the flesh into a medium bowl.',
+      'Gently mash the avocado with a fork to your desired consistency (chunky or smooth).',
+      'Add the chopped red onion, minced jalapeño, and chopped cilantro to the bowl.',
+      'Squeeze the lime juice over the mixture.',
+      'Season with salt and stir everything together until well combined.',
+      'Taste and adjust seasoning if needed. Serve immediately with tortilla chips.'
+    ],
+    tags: ['Appetizer', 'Mexican', 'Vegan', 'Vegetarian', 'Quick & Easy', 'Party Food']
+  },
+  {
+    title: 'Spicy Kung Pao Chicken',
+    description: 'A classic Sichuan stir-fry with tender chicken, crunchy peanuts, and a savory, sweet, and spicy sauce that will tantalize your taste buds.',
+    imageUrl: 'https://images.unsplash.com/photo-1599921841793-91e43a22c502?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+    ingredients: ['500g boneless, skinless chicken breast, cubed', '60ml soy sauce, divided', '10ml Shaoxing wine (or dry sherry)', '5g cornstarch', '30ml black vinegar (or rice vinegar)', '15g sugar', '5ml sesame oil', '30ml vegetable oil', '10 dried red chilies', '5g Sichuan peppercorns', '3 cloves garlic, sliced', '5g ginger, sliced', '1 red bell pepper, diced', '100g roasted unsalted peanuts', '4 spring onions, chopped'],
+    instructions: [
+      'In a bowl, combine chicken cubes with 15ml of the soy sauce, Shaoxing wine, and cornstarch. Let it marinate for 15 minutes.',
+      'In another small bowl, whisk together the remaining 45ml soy sauce, black vinegar, sugar, and sesame oil to create the sauce.',
+      'Heat vegetable oil in a wok or large skillet over high heat. Add the dried chilies and Sichuan peppercorns and stir-fry for 30 seconds until fragrant.',
+      'Add the marinated chicken and stir-fry until golden and cooked through. Remove from wok.',
+      'Add a little more oil if needed. Sauté garlic and ginger until fragrant. Add the bell pepper and cook for 2 minutes until tender-crisp.',
+      'Return the chicken to the wok. Pour in the sauce and bring to a boil, stirring until the sauce thickens.',
+      'Stir in the peanuts and spring onions. Serve immediately with steamed rice.'
+    ],
+    tags: ['Dinner', 'Asian', 'Chinese', 'Spicy', 'Stir-fry']
+  },
+  {
+    title: 'Authentic Jamaican Jerk Chicken',
+    description: 'Smoky, spicy, and incredibly flavorful chicken marinated in a traditional blend of allspice, scotch bonnet peppers, and herbs, then grilled to perfection.',
+    imageUrl: 'https://images.unsplash.com/photo-1610341951557-b3609cb5a697?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+    ingredients: ['1.5kg chicken pieces (thighs and drumsticks)', '2 scotch bonnet peppers, minced', '4 spring onions, chopped', '3 cloves garlic, chopped', '15g fresh thyme leaves', '10g ground allspice', '5g ground nutmeg', '5g cinnamon powder', '60ml soy sauce', '30ml olive oil', 'Juice of 1 lime'],
+    instructions: [
+      'To make the jerk marinade, combine scotch bonnet peppers, spring onions, garlic, thyme, allspice, nutmeg, cinnamon, soy sauce, olive oil, and lime juice in a blender.',
+      'Blend until you have a relatively smooth paste. Be careful when handling scotch bonnet peppers.',
+      'Place the chicken pieces in a large bowl or resealable bag. Pour the marinade over the chicken, ensuring every piece is well-coated. Marinate in the refrigerator for at least 4 hours, or preferably overnight.',
+      'Preheat your grill to medium-high heat. You can also use an oven at 200°C (400°F).',
+      'Grill the chicken for 20-30 minutes, turning occasionally, until cooked through and slightly charred on the outside. If baking, place on a rack over a baking sheet and bake for 35-45 minutes.',
+      'Let the chicken rest for a few minutes before serving. Traditionally served with rice and peas.'
+    ],
+    tags: ['Dinner', 'Jamaican', 'Caribbean', 'Spicy', 'Grill']
   }
 ];
