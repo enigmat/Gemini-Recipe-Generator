@@ -1,5 +1,7 @@
 {
   "name": "Marshmellow Recipes",
   "description": "Your go-to app for delicious recipes, from quick meals to gourmet dishes.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera"
+  ]
 }

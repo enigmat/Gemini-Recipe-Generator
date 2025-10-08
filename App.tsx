@@ -13,7 +13,7 @@ import { cookingClasses as cookingClassesData } from './data/cookingClasses';
 import * as favoritesService from './services/favoritesService';
 import * as userService from './services/userService';
 import IngredientInput from './components/IngredientInput';
-import { generateRecipes, generateShoppingList } from './services/geminiService';
+import { generateRecipes, generateShoppingList, importRecipeFromUrl } from './services/geminiService';
 import Spinner from './components/Spinner';
 import ShoppingListModal from './components/ShoppingListModal';
 import MealPlanCard from './components/MealPlanCard';
@@ -34,6 +34,9 @@ import ShieldIcon from './components/icons/ShieldIcon';
 import AdminDashboard from './components/AdminDashboard';
 import CookbookButton from './components/CookbookButton';
 import LockClosedIcon from './components/icons/LockClosedIcon';
+import UrlInput from './components/UrlInput';
+import CameraInput from './components/CameraInput';
+import CameraModal from './components/CameraModal';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -64,6 +67,15 @@ const App: React.FC = () => {
     const [generatedRecipes, setGeneratedRecipes] = useState<Recipe[] | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [generationError, setGenerationError] = useState<string | null>(null);
+
+    // States for URL import
+    const [recipeUrl, setRecipeUrl] = useState('');
+    const [isImporting, setIsImporting] = useState(false);
+    const [importError, setImportError] = useState<string | null>(null);
+    const [importSuccessMessage, setImportSuccessMessage] = useState<string | null>(null);
+
+    // State for Camera Modal
+    const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
 
     // States for shopping list
     const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
@@ -187,6 +199,48 @@ const App: React.FC = () => {
         } finally {
             setIsGenerating(false);
         }
+    };
+
+    const handleImportRecipe = async () => {
+        if (!isPremium) {
+            setIsUpgradeModalOpen(true);
+            return;
+        }
+        if (!recipeUrl) {
+            setImportError("Please enter a URL.");
+            return;
+        }
+        setIsImporting(true);
+        setImportError(null);
+        setImportSuccessMessage(null);
+        try {
+            const newRecipe = await importRecipeFromUrl(recipeUrl);
+            setMainRecipes(prev => [newRecipe, ...prev]);
+            
+            // Ensure it's saved if not already
+            if (!savedRecipeTitles.includes(newRecipe.title)) {
+                 handleToggleSave(newRecipe.title);
+            }
+    
+            setImportSuccessMessage(`Successfully imported "${newRecipe.title}"! Find it in "My Recipes".`);
+            setRecipeUrl('');
+            setTimeout(() => setImportSuccessMessage(null), 5000);
+        } catch (error) {
+            console.error("Error importing recipe:", error);
+            if (error instanceof Error) {
+                setImportError(error.message);
+            } else {
+                setImportError("An unknown error occurred while importing the recipe.");
+            }
+        } finally {
+            setIsImporting(false);
+        }
+    };
+    
+    const handleIngredientsScanned = (scannedIngredients: string[]) => {
+        const newIngredients = scannedIngredients.filter(ing => !ingredients.includes(ing.toLowerCase()));
+        setIngredients(prev => [...prev, ...newIngredients]);
+        setIsCameraModalOpen(false);
     };
 
     const handleGenerateRecipeShoppingList = async () => {
@@ -541,17 +595,64 @@ const App: React.FC = () => {
 
                 <Header />
 
-                <div className="bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto mb-12 border border-border-color">
-                    <h2 className="text-xl font-bold text-text-primary mb-4 text-center">Have ingredients? Find a recipe!</h2>
-                    <IngredientInput ingredients={ingredients} setIngredients={setIngredients} />
-                    <div className="mt-4 text-center">
-                        <button
-                            onClick={handleGenerateRecipes}
-                            disabled={isGenerating || ingredients.length === 0}
-                            className="px-8 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                        >
-                            {isGenerating ? 'Finding Recipes...' : 'Find Recipes'}
-                        </button>
+                <div className="bg-white p-8 rounded-2xl shadow-lg max-w-5xl mx-auto mb-12 border border-border-color">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                        {/* Left Side: Generate */}
+                        <div className="flex flex-col">
+                            <h2 className="text-2xl font-bold text-text-primary mb-4 text-center md:text-left">Find Recipes You Can Make</h2>
+                            <p className="text-text-secondary mb-4 text-center md:text-left">Enter ingredients you have, or scan them with your camera.</p>
+                            <IngredientInput ingredients={ingredients} setIngredients={setIngredients} />
+                            <div className="relative flex py-5 items-center">
+                                <div className="flex-grow border-t border-gray-200"></div>
+                                <span className="flex-shrink mx-4 text-gray-400 text-xs font-semibold uppercase">Or</span>
+                                <div className="flex-grow border-t border-gray-200"></div>
+                            </div>
+                            <CameraInput onClick={() => setIsCameraModalOpen(true)} disabled={isGenerating} />
+                            <div className="mt-6">
+                                <button
+                                    onClick={handleGenerateRecipes}
+                                    disabled={isGenerating || ingredients.length === 0}
+                                    className="w-full px-8 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    <SparklesIcon className="w-5 h-5"/>
+                                    <span>{isGenerating ? 'Finding Recipes...' : 'Find Recipes'}</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Right Side: Import */}
+                        <div className="flex flex-col">
+                            <h2 className="text-2xl font-bold text-text-primary mb-4 flex items-center gap-2 justify-center md:justify-start">
+                                Import from the Web
+                                {!isPremium && <span className="text-xs font-bold bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Premium</span>}
+                            </h2>
+                            <p className="text-text-secondary mb-4 text-center md:text-left">Found a recipe online? Paste the URL here to add it to your cookbook.</p>
+                            {isPremium ? (
+                                <div className="flex-grow flex flex-col">
+                                    <UrlInput 
+                                        recipeUrl={recipeUrl} 
+                                        setRecipeUrl={setRecipeUrl} 
+                                        onFetch={handleImportRecipe}
+                                        isLoading={isImporting}
+                                    />
+                                    {importError && (
+                                        <div className="mt-4 text-red-600 bg-red-50 p-3 rounded-md text-sm">{importError}</div>
+                                    )}
+                                    {importSuccessMessage && (
+                                        <div className="mt-4 text-green-700 bg-green-50 p-3 rounded-md text-sm">{importSuccessMessage}</div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="relative p-6 border-2 border-dashed border-gray-300 rounded-lg text-center flex-grow flex flex-col justify-center items-center bg-gray-50">
+                                    <LockClosedIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                    <p className="text-text-secondary font-semibold">This is a Premium feature</p>
+                                    <p className="text-sm text-gray-500 mb-4">Upgrade to import recipes from any website.</p>
+                                    <button onClick={() => setIsUpgradeModalOpen(true)} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-focus">
+                                        Upgrade Now
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -635,6 +736,13 @@ const App: React.FC = () => {
 
             {playingVideo && (
                 <VideoPlayerModal video={playingVideo} onClose={() => setPlayingVideo(null)} />
+            )}
+            
+            {isCameraModalOpen && (
+                <CameraModal 
+                    onClose={() => setIsCameraModalOpen(false)} 
+                    onIngredientsScanned={handleIngredientsScanned}
+                />
             )}
 
             {(shoppingList || listGenerationError) && (
