@@ -19,7 +19,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, isSaved, onTog
     return (
         <div 
             onClick={onClick}
-            className="group relative block bg-black rounded-xl overflow-hidden cursor-pointer shadow-lg aspect-w-4 aspect-h-5"
+            className="group relative block bg-black rounded-xl overflow-hidden cursor-pointer shadow-lg aspect-w-4 aspect-h-5 printable-recipe-card"
             aria-label={`View recipe for ${recipe.title}`}
             role="button"
             tabIndex={0}
@@ -30,7 +30,6 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, isSaved, onTog
                 src={recipe.imageUrl} 
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"
-                referrerPolicy="no-referrer"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
             

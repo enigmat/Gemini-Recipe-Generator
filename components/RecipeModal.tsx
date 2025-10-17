@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { Recipe } from '../types';
 import XIcon from './icons/XIcon';
@@ -79,7 +80,6 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onT
                         src={recipe.imageUrl}
                         alt={recipe.title}
                         className="absolute inset-0 w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
                     />
                     <button
                         onClick={onClose}

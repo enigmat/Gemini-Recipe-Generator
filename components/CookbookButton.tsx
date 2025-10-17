@@ -12,40 +12,21 @@ const CookbookButton: React.FC<CookbookButtonProps> = ({ elementIdToPrint, ingre
     const [isGenerating, setIsGenerating] = useState(false);
 
     const handleCreateCookbook = async () => {
-        const element = document.getElementById(elementIdToPrint);
-        if (!element) {
+        const container = document.getElementById(elementIdToPrint);
+        if (!container) {
             console.error("Element to print not found!");
+            return;
+        }
+
+        const cards = container.querySelectorAll<HTMLElement>('.printable-recipe-card');
+        if (cards.length === 0) {
+            alert("No recipes to include in the cookbook.");
             return;
         }
 
         setIsGenerating(true);
 
         try {
-            // Temporarily modify styles for better PDF output
-            element.style.transform = 'none';
-            const cards = element.querySelectorAll<HTMLElement>('.transform');
-            cards.forEach(card => {
-                card.style.transform = 'none';
-                card.style.boxShadow = 'none';
-            });
-            
-            const canvas = await html2canvas(element, {
-                scale: 2,
-                useCORS: true, 
-                backgroundColor: null, // Use transparent background
-                windowWidth: element.scrollWidth,
-                windowHeight: element.scrollHeight,
-            });
-
-            // Restore original styles
-            element.style.transform = '';
-            cards.forEach(card => {
-                card.style.transform = '';
-                card.style.boxShadow = '';
-            });
-
-            const imgData = canvas.toDataURL('image/png');
-            
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'pt',
@@ -53,8 +34,8 @@ const CookbookButton: React.FC<CookbookButtonProps> = ({ elementIdToPrint, ingre
             });
 
             const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
             const margin = 40;
+            const contentWidth = pdfWidth - (margin * 2);
 
             // --- Add Title Page ---
             pdf.setFontSize(36);
@@ -69,7 +50,7 @@ const CookbookButton: React.FC<CookbookButtonProps> = ({ elementIdToPrint, ingre
                 pdf.setFontSize(12);
                 pdf.setFont('helvetica', 'italic');
                 const ingredientText = ingredients.join(', ');
-                const splitIngredients = pdf.splitTextToSize(ingredientText, pdfWidth - (margin * 2));
+                const splitIngredients = pdf.splitTextToSize(ingredientText, contentWidth);
                 pdf.text(splitIngredients, pdfWidth / 2, 180, { align: 'center' });
             } else {
                  pdf.text("A personal collection of your favorite recipes.", pdfWidth / 2, 150, { align: 'center' });
@@ -78,27 +59,37 @@ const CookbookButton: React.FC<CookbookButtonProps> = ({ elementIdToPrint, ingre
             pdf.addPage();
             
             // --- Add Recipes ---
-            const imgProps = pdf.getImageProperties(imgData);
-            const contentWidth = pdfWidth - (margin * 2);
-            const contentHeight = (imgProps.height * contentWidth) / imgProps.width;
-            
-            let heightLeft = contentHeight;
-            let position = 0;
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            let yPos = margin;
+            const cardSpacing = 20;
 
-            pdf.addImage(imgData, 'PNG', margin, position + margin, contentWidth, contentHeight);
-            heightLeft -= (pdfHeight - (margin * 2));
+            for (let i = 0; i < cards.length; i++) {
+                const card = cards[i];
+                
+                const canvas = await html2canvas(card, {
+                    scale: 2,
+                    useCORS: true, 
+                    backgroundColor: '#ffffff',
+                });
 
-            while (heightLeft > 0) {
-                position = heightLeft - contentHeight - margin;
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', margin, position + margin, contentWidth, contentHeight);
-                heightLeft -= (pdfHeight - (margin * 2));
+                const imgData = canvas.toDataURL('image/png');
+                const imgProps = pdf.getImageProperties(imgData);
+                const imgHeight = (imgProps.height * contentWidth) / imgProps.width;
+
+                if (yPos + imgHeight > pageHeight - margin) {
+                    pdf.addPage();
+                    yPos = margin;
+                }
+
+                pdf.addImage(imgData, 'PNG', margin, yPos, contentWidth, imgHeight);
+                yPos += imgHeight + cardSpacing;
             }
+
 
             pdf.save('Marshmellow_Recipes_Cookbook.pdf');
         } catch (error) {
             console.error("Error generating PDF:", error);
-            // You could add a user-facing error message here
+            alert("Sorry, there was an error creating your cookbook. Please try again.");
         } finally {
             setIsGenerating(false);
         }
