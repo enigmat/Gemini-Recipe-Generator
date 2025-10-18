@@ -42,13 +42,37 @@ import CocktailIcon from './components/icons/CocktailIcon';
 import NewsletterSignup from './components/NewsletterSignup';
 
 const ITEMS_PER_PAGE = 12;
+const RECIPES_STORAGE_KEY = 'marshmellowRecipes_allRecipes';
+const CLASSES_STORAGE_KEY = 'marshmellowRecipes_cookingClasses';
+
 
 type View = 'all' | 'saved' | 'plans' | 'videos' | 'bartender';
 
 const App: React.FC = () => {
-    // Single source of truth for all recipes
-    const [allRecipes, setAllRecipes] = useState<Recipe[]>(allRecipesData);
-    const [cookingClasses, setCookingClasses] = useState<CookingClass[]>(cookingClassesData);
+    // Single source of truth for all recipes, with localStorage persistence
+    const [allRecipes, setAllRecipes] = useState<Recipe[]>(() => {
+        try {
+            const storedRecipes = localStorage.getItem(RECIPES_STORAGE_KEY);
+            if (storedRecipes) {
+                return JSON.parse(storedRecipes);
+            }
+        } catch (error) {
+            console.error("Error parsing recipes from localStorage", error);
+        }
+        return allRecipesData;
+    });
+
+    const [cookingClasses, setCookingClasses] = useState<CookingClass[]>(() => {
+        try {
+            const storedClasses = localStorage.getItem(CLASSES_STORAGE_KEY);
+            if (storedClasses) {
+                return JSON.parse(storedClasses);
+            }
+        } catch (error) {
+            console.error("Error parsing cooking classes from localStorage", error);
+        }
+        return cookingClassesData;
+    });
 
     // States for browsing and filtering
     const [searchQuery, setSearchQuery] = useState('');
@@ -134,6 +158,24 @@ const App: React.FC = () => {
              window.history.replaceState({}, document.title, window.location.pathname);
         }
     }, []);
+    
+    // Persist recipes to localStorage whenever they change
+    useEffect(() => {
+        try {
+            localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(allRecipes));
+        } catch (error) {
+            console.error("Error saving recipes to localStorage", error);
+        }
+    }, [allRecipes]);
+
+    // Persist cooking classes to localStorage whenever they change
+    useEffect(() => {
+        try {
+            localStorage.setItem(CLASSES_STORAGE_KEY, JSON.stringify(cookingClasses));
+        } catch (error) {
+            console.error("Error saving cooking classes to localStorage", error);
+        }
+    }, [cookingClasses]);
 
     const allTags = useMemo(() => {
         const tags = new Set<string>();
