@@ -13,7 +13,7 @@ import { cookingClasses as cookingClassesData } from './data/cookingClasses';
 import * as favoritesService from './services/favoritesService';
 import * as userService from './services/userService';
 import IngredientInput from './components/IngredientInput';
-import { generateRecipes, generateShoppingList, importRecipeFromUrl } from './services/geminiService';
+import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage } from './services/geminiService';
 import Spinner from './components/Spinner';
 import ShoppingListModal from './components/ShoppingListModal';
 import MealPlanCard from './components/MealPlanCard';
@@ -55,6 +55,7 @@ const App: React.FC = () => {
     const [currentView, setCurrentView] = useState<View>('all');
     
     // States for user authentication and premium status
+    const [allUsers, setAllUsers] = useState<User[]>([]);
     const [isPremium, setIsPremium] = useState(false);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -106,7 +107,8 @@ const App: React.FC = () => {
 
         const hasPaid = userService.getPremiumStatus();
         setIsPremium(hasPaid || (user?.isAdmin ?? false));
-
+        
+        setAllUsers(userService.getAllUsers());
         setSavedRecipeTitles(favoritesService.getSavedRecipeTitles());
 
         // Check for Stripe checkout redirect
@@ -357,9 +359,64 @@ const App: React.FC = () => {
     const handleAddRecipe = (newRecipe: Recipe) => {
         setMainRecipes(prevRecipes => [newRecipe, ...prevRecipes]);
     };
+    
+    const handleDeleteRecipe = (recipeTitle: string) => {
+        if (window.confirm(`Are you sure you want to delete "${recipeTitle}"?`)) {
+            setMainRecipes(prev => prev.filter(r => r.title !== recipeTitle));
+        }
+    };
+    
+    const handleFixRecipeImage = async (recipeTitle: string): Promise<void> => {
+        const recipeToFix = mainRecipes.find(r => r.title === recipeTitle);
+        if (!recipeToFix) return;
+
+        try {
+            const newImageUrl = await fixRecipeImage(recipeToFix);
+            setMainRecipes(prev => prev.map(r => r.title === recipeTitle ? { ...r, imageUrl: newImageUrl } : r));
+        } catch (error) {
+            console.error("Failed to fix image in App.tsx", error);
+            alert("Could not fix the image. Please try again.");
+        }
+    };
+    
+    const handleDeleteUser = (email: string) => {
+        if (window.confirm(`Are you sure you want to delete user "${email}"?`)) {
+            userService.deleteUser(email);
+            setAllUsers(userService.getAllUsers());
+        }
+    };
+
+    const handleGrantPremium = (email: string) => {
+        userService.grantPremium(email);
+        // This is a bit of a hack for the demo to force a re-render of the premium status for the current user if they are the one being granted premium
+        if (currentUser?.email === email) {
+            setIsPremium(true);
+        }
+        alert(`Premium access granted to ${email}.`);
+    };
 
     const renderContent = () => {
         if (currentView === 'bartender') {
+            if (!isPremium) {
+                return (
+                    <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white p-8 rounded-lg shadow-lg text-center my-12 border border-yellow-400/30">
+                        <div className="flex justify-center items-center gap-3">
+                            <LockClosedIcon className="w-8 h-8 text-yellow-400" />
+                            <h2 className="text-2xl font-bold text-yellow-400">Bartender Helper</h2>
+                        </div>
+                        <p className="mt-2 text-gray-300 max-w-md mx-auto">
+                            Describe a drink and get a custom cocktail recipe from our AI mixologist. Upgrade to Premium to unlock this feature.
+                        </p>
+                        <button
+                            onClick={() => setIsUpgradeModalOpen(true)}
+                            className="mt-6 px-8 py-3 bg-yellow-400 text-gray-900 font-bold rounded-lg shadow-md hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-yellow-400 transition-colors duration-200 flex items-center gap-2 mx-auto"
+                        >
+                            <SparklesIcon className="w-5 h-5" />
+                            <span>Upgrade to Premium</span>
+                        </button>
+                    </div>
+                );
+            }
             return <BartenderHelper />;
         }
         
@@ -553,7 +610,16 @@ const App: React.FC = () => {
     
     const renderMainContent = () => {
         if (isDashboardVisible && currentUser?.isAdmin) {
-            return <AdminDashboard onBackToApp={() => setIsDashboardVisible(false)} onAddRecipe={handleAddRecipe} />;
+            return <AdminDashboard 
+                onBackToApp={() => setIsDashboardVisible(false)} 
+                onAddRecipe={handleAddRecipe}
+                allUsers={allUsers}
+                allRecipes={mainRecipes}
+                onDeleteUser={handleDeleteUser}
+                onGrantPremium={handleGrantPremium}
+                onDeleteRecipe={handleDeleteRecipe}
+                onFixImage={handleFixRecipeImage}
+            />;
         }
 
         if (selectedClass) {
@@ -724,6 +790,7 @@ const App: React.FC = () => {
                     >
                         <CocktailIcon className="h-4 w-4" />
                         <span>Bartender</span>
+                         {!isPremium && <span className="text-xs font-bold bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full ml-1">Premium</span>}
                     </button>
                 </div>
 

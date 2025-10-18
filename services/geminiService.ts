@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Recipe, ShoppingList, DrinkRecipe } from '../types';
 
@@ -366,6 +365,20 @@ export const generateNewImagePrompt = async (recipeTitle: string, recipeDescript
         console.error("Error generating new image prompt:", error);
         // Fallback to a simple prompt if generation fails
         return `A delicious plate of ${recipeTitle}, professionally photographed.`;
+    }
+};
+
+export const fixRecipeImage = async (recipe: Recipe): Promise<string> => {
+    try {
+        console.log(`Fixing image for: ${recipe.title}`);
+        const newPrompt = await generateNewImagePrompt(recipe.title, recipe.description);
+        console.log(`Generated new prompt: ${newPrompt}`);
+        const newImageUrl = await generateImage(newPrompt);
+        console.log(`Generated new image URL for ${recipe.title}`);
+        return newImageUrl;
+    } catch (error) {
+        console.error(`Failed to fix image for ${recipe.title}:`, error);
+        throw new Error("Failed to generate a new image for the recipe.");
     }
 };
 
