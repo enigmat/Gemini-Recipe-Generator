@@ -1,17 +1,17 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass, User } from './types';
+import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass, User, Lead } from './types';
 import Header from './components/Header';
 import RecipeCard from './components/RecipeCard';
 import SearchBar from './components/SearchBar';
 import RecipeModal from './components/RecipeModal';
 import TagFilter from './components/TagFilter';
-import { recipes as recipeData } from './data/recipes';
-import { recipes as newRecipes } from './data/newRecipes';
+import { recipes as allRecipesData } from './data/recipes';
 import { mealPlans } from './data/mealPlans';
 import { videoData } from './data/videos';
 import { cookingClasses as cookingClassesData } from './data/cookingClasses';
 import * as favoritesService from './services/favoritesService';
 import * as userService from './services/userService';
+import * as leadService from './services/leadService';
 import IngredientInput from './components/IngredientInput';
 import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage } from './services/geminiService';
 import Spinner from './components/Spinner';
@@ -39,14 +39,17 @@ import CameraInput from './components/CameraInput';
 import CameraModal from './components/CameraModal';
 import BartenderHelper from './components/BartenderHelper';
 import CocktailIcon from './components/icons/CocktailIcon';
+import NewsletterSignup from './components/NewsletterSignup';
 
 const ITEMS_PER_PAGE = 12;
 
 type View = 'all' | 'saved' | 'plans' | 'videos' | 'bartender';
 
 const App: React.FC = () => {
-    // States for browsing static recipes
-    const [mainRecipes, setMainRecipes] = useState<Recipe[]>(recipeData);
+    // Single source of truth for all recipes
+    const [allRecipes, setAllRecipes] = useState<Recipe[]>(allRecipesData);
+
+    // States for browsing and filtering
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [itemsToShow, setItemsToShow] = useState(ITEMS_PER_PAGE);
@@ -56,6 +59,7 @@ const App: React.FC = () => {
     
     // States for user authentication and premium status
     const [allUsers, setAllUsers] = useState<User[]>([]);
+    const [leads, setLeads] = useState<Lead[]>([]);
     const [isPremium, setIsPremium] = useState(false);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -100,6 +104,9 @@ const App: React.FC = () => {
     // State for Ask an Expert
     const [isQuestionSubmitted, setIsQuestionSubmitted] = useState(false);
 
+    // Derived recipe lists from the single source of truth
+    const activeRecipes = useMemo(() => allRecipes.filter(r => r.status === 'active'), [allRecipes]);
+    const newThisMonthRecipes = useMemo(() => allRecipes.filter(r => r.status === 'new_this_month'), [allRecipes]);
 
     useEffect(() => {
         const user = userService.getCurrentUser();
@@ -109,13 +116,16 @@ const App: React.FC = () => {
         setIsPremium(hasPaid || (user?.isAdmin ?? false));
         
         setAllUsers(userService.getAllUsers());
+        setLeads(leadService.getAllLeads());
         setSavedRecipeTitles(favoritesService.getSavedRecipeTitles());
 
         // Check for Stripe checkout redirect
         const query = new URLSearchParams(window.location.search);
         if (query.get('checkout') === 'success') {
-            setIsPremium(true);
             userService.setPremiumStatus(true);
+            const updatedUser = userService.getCurrentUser(); // Re-fetch user to get subscription
+            setCurrentUser(updatedUser);
+            setIsPremium(true);
             setShowUpgradeConfirmation(true);
             window.history.replaceState({}, document.title, window.location.pathname);
         }
@@ -124,15 +134,15 @@ const App: React.FC = () => {
         }
     }, []);
 
-    const allRecipes = useMemo(() => [...mainRecipes, ...newRecipes], [mainRecipes]);
-
     const allTags = useMemo(() => {
         const tags = new Set<string>();
-        mainRecipes.forEach(recipe => {
-            recipe.tags.forEach(tag => tags.add(tag));
+        allRecipes.forEach(recipe => {
+            if (recipe.status !== 'archived') {
+                recipe.tags.forEach(tag => tags.add(tag));
+            }
         });
         return Array.from(tags).sort();
-    }, [mainRecipes]);
+    }, [allRecipes]);
 
     const handleToggleSave = (recipeTitle: string) => {
         const isSaved = savedRecipeTitles.includes(recipeTitle);
@@ -148,7 +158,7 @@ const App: React.FC = () => {
     const filteredRecipes = useMemo(() => {
         let recipes = currentView === 'saved'
             ? allRecipes.filter(recipe => savedRecipeTitles.includes(recipe.title))
-            : mainRecipes;
+            : activeRecipes;
 
         return recipes.filter(recipe => {
             const searchLower = searchQuery.toLowerCase();
@@ -165,7 +175,7 @@ const App: React.FC = () => {
 
             return matchesSearch && matchesTags;
         });
-    }, [searchQuery, selectedTags, currentView, savedRecipeTitles, allRecipes, mainRecipes]);
+    }, [searchQuery, selectedTags, currentView, savedRecipeTitles, allRecipes, activeRecipes]);
 
     const handleTagClick = (tag: string) => {
         setSelectedTags(prevTags =>
@@ -192,7 +202,7 @@ const App: React.FC = () => {
         setGeneratedRecipes(null);
         try {
             const recipes = await generateRecipes(ingredients);
-            setGeneratedRecipes(recipes);
+            setGeneratedRecipes(recipes.map(r => ({ ...r, status: 'active' })));
         } catch (error) {
             console.error("Error generating recipes:", error);
             if (error instanceof Error) {
@@ -219,7 +229,8 @@ const App: React.FC = () => {
         setImportSuccessMessage(null);
         try {
             const newRecipe = await importRecipeFromUrl(recipeUrl);
-            setMainRecipes(prev => [newRecipe, ...prev]);
+            const recipeWithStatus: Recipe = { ...newRecipe, status: 'active' };
+            setAllRecipes(prev => [recipeWithStatus, ...prev]);
             
             // Ensure it's saved if not already
             if (!savedRecipeTitles.includes(newRecipe.title)) {
@@ -271,7 +282,7 @@ const App: React.FC = () => {
         if (!selectedPlan) return;
 
         const recipeTitlesInPlan = selectedPlan.plan.map(day => day.recipeTitle);
-        const recipesInPlan = mainRecipes.filter(recipe => recipeTitlesInPlan.includes(recipe.title));
+        const recipesInPlan = allRecipes.filter(recipe => recipeTitlesInPlan.includes(recipe.title));
         const allIngredients = recipesInPlan.flatMap(recipe => recipe.ingredients);
 
         setIsGeneratingList(true);
@@ -324,7 +335,6 @@ const App: React.FC = () => {
         setIsQuestionSubmitted(false);
     };
 
-
     const handleBackToBrowse = () => {
         setGeneratedRecipes(null);
         setGenerationError(null);
@@ -346,33 +356,39 @@ const App: React.FC = () => {
         const hasPaid = userService.getPremiumStatus();
         setIsPremium(hasPaid || (user?.isAdmin ?? false));
         setIsLoginModalOpen(false);
+        setAllUsers(userService.getAllUsers()); // Refresh user list in case a new user was created
     };
 
     const handleLogout = () => {
         userService.logoutUser();
         setCurrentUser(null);
-        // Revert to stored premium status for non-admin users
-        setIsPremium(userService.getPremiumStatus());
+        setIsPremium(false); // Reset premium status on logout
         setIsDashboardVisible(false);
     };
 
     const handleAddRecipe = (newRecipe: Recipe) => {
-        setMainRecipes(prevRecipes => [newRecipe, ...prevRecipes]);
+        setAllRecipes(prevRecipes => [newRecipe, ...prevRecipes]);
     };
     
     const handleDeleteRecipe = (recipeTitle: string) => {
         if (window.confirm(`Are you sure you want to delete "${recipeTitle}"?`)) {
-            setMainRecipes(prev => prev.filter(r => r.title !== recipeTitle));
+            setAllRecipes(prev => prev.filter(r => r.title !== recipeTitle));
         }
     };
     
+    const handleUpdateRecipeStatus = (recipeTitle: string, newStatus: Recipe['status']) => {
+        setAllRecipes(prev => 
+            prev.map(r => r.title === recipeTitle ? { ...r, status: newStatus } : r)
+        );
+    };
+
     const handleFixRecipeImage = async (recipeTitle: string): Promise<void> => {
-        const recipeToFix = mainRecipes.find(r => r.title === recipeTitle);
+        const recipeToFix = allRecipes.find(r => r.title === recipeTitle);
         if (!recipeToFix) return;
 
         try {
             const newImageUrl = await fixRecipeImage(recipeToFix);
-            setMainRecipes(prev => prev.map(r => r.title === recipeTitle ? { ...r, imageUrl: newImageUrl } : r));
+            setAllRecipes(prev => prev.map(r => r.title === recipeTitle ? { ...r, imageUrl: newImageUrl } : r));
         } catch (error) {
             console.error("Failed to fix image in App.tsx", error);
             alert("Could not fix the image. Please try again.");
@@ -386,13 +402,23 @@ const App: React.FC = () => {
         }
     };
 
-    const handleGrantPremium = (email: string) => {
-        userService.grantPremium(email);
-        // This is a bit of a hack for the demo to force a re-render of the premium status for the current user if they are the one being granted premium
-        if (currentUser?.email === email) {
-            setIsPremium(true);
+    const handleGiveFreeTime = (email: string, months: number) => {
+        userService.giveFreeTime(email, months);
+        setAllUsers(userService.getAllUsers()); // Refresh to show updated subscription
+        const updatedCurrentUser = userService.getCurrentUser();
+        if (updatedCurrentUser?.email === email) {
+            setCurrentUser(updatedCurrentUser);
+            setIsPremium(userService.getPremiumStatus());
         }
-        alert(`Premium access granted to ${email}.`);
+    };
+
+    const handleUpdateUser = (email: string, updatedData: Partial<User>) => {
+        userService.updateUser(email, updatedData);
+        setAllUsers(userService.getAllUsers());
+        const updatedCurrentUser = userService.getCurrentUser();
+        if (updatedCurrentUser?.email === email) {
+            setCurrentUser(updatedCurrentUser);
+        }
     };
 
     const renderContent = () => {
@@ -517,7 +543,7 @@ const App: React.FC = () => {
             if (selectedPlan) {
                 return <MealPlanDetail 
                     plan={selectedPlan}
-                    recipes={mainRecipes}
+                    recipes={allRecipes}
                     onSelectRecipe={setSelectedRecipe}
                     onBack={() => setSelectedPlan(null)}
                     onGenerateList={handleGeneratePlanShoppingList}
@@ -614,10 +640,13 @@ const App: React.FC = () => {
                 onBackToApp={() => setIsDashboardVisible(false)} 
                 onAddRecipe={handleAddRecipe}
                 allUsers={allUsers}
-                allRecipes={mainRecipes}
+                allRecipes={allRecipes}
+                allLeads={leads}
                 onDeleteUser={handleDeleteUser}
-                onGrantPremium={handleGrantPremium}
+                onGiveFreeTime={handleGiveFreeTime}
+                onUpdateUser={handleUpdateUser}
                 onDeleteRecipe={handleDeleteRecipe}
+                onUpdateRecipeStatus={handleUpdateRecipeStatus}
                 onFixImage={handleFixRecipeImage}
             />;
         }
@@ -735,7 +764,7 @@ const App: React.FC = () => {
                         <PremiumContent
                             isPremium={isPremium}
                             onUpgrade={() => setIsUpgradeModalOpen(true)}
-                            recipes={newRecipes}
+                            recipes={newThisMonthRecipes}
                             onSelectRecipe={setSelectedRecipe}
                             savedRecipeTitles={savedRecipeTitles}
                             onToggleSave={handleToggleSave}
@@ -755,6 +784,8 @@ const App: React.FC = () => {
                             onSubmitQuestion={handleQuestionSubmit}
                             onAskAnother={handleAskAnotherQuestion}
                         />
+
+                        <NewsletterSignup />
                     </>
                 )}
 

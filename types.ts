@@ -1,4 +1,3 @@
-
 export interface Recipe {
   title: string;
   description: string;
@@ -9,6 +8,7 @@ export interface Recipe {
   servings: string;
   prepTime: string;
   cookTime: string;
+  status: 'active' | 'new_this_month' | 'archived';
   nutrition: {
     calories: string;
     protein: string;
@@ -73,10 +73,43 @@ export interface CookingClass {
   lessons: Lesson[];
 }
 
+export interface SubscriptionHistory {
+  date: string;
+  action: string;
+  description: string;
+}
+
+export interface Subscription {
+  planType: 'monthly' | 'yearly' | 'free_trial';
+  status: 'active' | 'canceled' | 'expired';
+  startDate: string;
+  endDate: string;
+  nextBillingDate?: string;
+}
+
+
 export interface User {
+  name: string;
   email: string;
   isAdmin: boolean;
+  joinDate: string;
+  subscription?: Subscription;
+  subscriptionHistory?: SubscriptionHistory[];
 }
+
+export interface Lead {
+  email: string;
+  collectedDate: string;
+}
+
+export interface Newsletter {
+  id: string;
+  subject: string;
+  body: string;
+  sentDate: string;
+  recipientCount: number;
+}
+
 
 declare global {
   interface Window {
