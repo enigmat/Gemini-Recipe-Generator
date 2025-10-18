@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Recipe, User, Lead, Newsletter } from '../types';
+import { Recipe, User, Lead, Newsletter, CookingClass, Lesson } from '../types';
 import { generateImage } from '../services/geminiService';
 import * as newsletterService from '../services/newsletterService';
 import TrashIcon from './icons/TrashIcon';
@@ -7,6 +7,7 @@ import WrenchIcon from './icons/WrenchIcon';
 import Spinner from './Spinner';
 import PencilIcon from './icons/PencilIcon';
 import EditUserModal from './EditUserModal';
+import PlusIcon from './icons/PlusIcon';
 
 interface AdminDashboardProps {
     onBackToApp: () => void;
@@ -14,15 +15,23 @@ interface AdminDashboardProps {
     allUsers: User[];
     allRecipes: Recipe[];
     allLeads: Lead[];
+    cookingClasses: CookingClass[];
     onDeleteUser: (email: string) => void;
     onGiveFreeTime: (email: string, months: number) => void;
     onUpdateUser: (email: string, updatedData: Partial<User>) => void;
     onDeleteRecipe: (title: string) => void;
     onUpdateRecipeStatus: (title: string, status: Recipe['status']) => void;
     onFixImage: (title: string) => Promise<void>;
+    onAddCookingClass: (newClass: Omit<CookingClass, 'id'>) => void;
+    onUpdateCookingClass: (classId: string, updatedData: Partial<Omit<CookingClass, 'id' | 'lessons'>>) => void;
+    onDeleteCookingClass: (classId: string) => void;
+    onAddLesson: (classId: string) => void;
+    onUpdateLesson: (classId: string, lessonId: string, updatedData: Partial<Omit<Lesson, 'id'>>) => void;
+    onDeleteLesson: (classId: string, lessonId: string) => void;
+    onUpdateClassImage: (classId: string, prompt: string) => Promise<void>;
 }
 
-type AdminView = 'users' | 'recipes' | 'add_recipe' | 'leads' | 'newsletter';
+type AdminView = 'users' | 'recipes' | 'add_recipe' | 'leads' | 'newsletter' | 'classes';
 
 const statusMap: { [key in Recipe['status']]: string } = {
     active: 'All Recipes',
@@ -31,13 +40,17 @@ const statusMap: { [key in Recipe['status']]: string } = {
 };
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
-    onBackToApp, onAddRecipe, allUsers, allRecipes, allLeads, onDeleteUser,
-    onGiveFreeTime, onUpdateUser, onDeleteRecipe, onUpdateRecipeStatus, onFixImage
+    onBackToApp, onAddRecipe, allUsers, allRecipes, allLeads, cookingClasses, onDeleteUser,
+    onGiveFreeTime, onUpdateUser, onDeleteRecipe, onUpdateRecipeStatus, onFixImage,
+    onAddCookingClass, onUpdateCookingClass, onDeleteCookingClass, onAddLesson, onUpdateLesson,
+    onDeleteLesson, onUpdateClassImage
 }) => {
     const [currentView, setCurrentView] = useState<AdminView>('users');
     const [fixingImageTitle, setFixingImageTitle] = useState<string | null>(null);
     const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [generatingClassImageId, setGeneratingClassImageId] = useState<string | null>(null);
+    const [classImagePrompts, setClassImagePrompts] = useState<{ [key: string]: string }>({});
 
     // Add Recipe State
     const [newRecipe, setNewRecipe] = useState<Partial<Recipe>>({
@@ -54,13 +67,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     });
     const [imagePrompt, setImagePrompt] = useState('');
     const [isAddingRecipe, setIsAddingRecipe] = useState(false);
-    
+
     // Newsletter State
     const [newsletterSubject, setNewsletterSubject] = useState('');
     const [newsletterBody, setNewsletterBody] = useState('');
     const [sentNewsletters, setSentNewsletters] = useState<Newsletter[]>([]);
     const [isSending, setIsSending] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+
+    // Add Class State
+    const [showAddClassForm, setShowAddClassForm] = useState(false);
+    const [newClass, setNewClass] = useState({ title: '', chef: '', description: '' });
 
 
     useEffect(() => {
@@ -71,8 +88,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             setSentNewsletters(newsletterService.getSentNewsletters());
         }
     }, [currentView]);
-    
-    const sortedRecipes = [...allRecipes].sort((a,b) => a.title.localeCompare(b.title));
+
+    const sortedRecipes = [...allRecipes].sort((a, b) => a.title.localeCompare(b.title));
 
     const handleFixClick = async (title: string) => {
         setFixingImageTitle(title);
@@ -84,7 +101,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         setEditingUser(user);
         setIsEditUserModalOpen(true);
     };
-    
+
     const handleCloseEditModal = () => {
         setIsEditUserModalOpen(false);
         setEditingUser(null);
@@ -141,11 +158,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 2000);
     };
-    
+
     const handleSendNewsletter = () => {
         if (window.confirm(`Are you sure you want to send this newsletter to ${allLeads.length} recipients?`)) {
             setIsSending(true);
-            // Simulate network delay
             setTimeout(() => {
                 newsletterService.sendNewsletter(newsletterSubject, newsletterBody, allLeads.length);
                 setNewsletterSubject('');
@@ -155,6 +171,32 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 alert('Newsletter sent successfully!');
             }, 1000);
         }
+    };
+    
+    const handleGenerateClassImage = async (classId: string) => {
+        const prompt = classImagePrompts[classId];
+        if (!prompt) {
+            alert("Please enter an image prompt.");
+            return;
+        }
+        setGeneratingClassImageId(classId);
+        await onUpdateClassImage(classId, prompt);
+        setGeneratingClassImageId(null);
+    };
+
+    const handleAddNewClass = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newClass.title || !newClass.chef) {
+            alert("Title and Chef are required.");
+            return;
+        }
+        onAddCookingClass({
+            ...newClass,
+            imageUrl: 'https://via.placeholder.com/800x800.png?text=New+Class',
+            lessons: [],
+        });
+        setNewClass({ title: '', chef: '', description: '' });
+        setShowAddClassForm(false);
     };
 
     const renderUserManagement = () => (
@@ -423,6 +465,120 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
     );
 
+    const renderClassManagement = () => (
+        <div className="mt-6">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-text-primary">Cooking Class Management</h2>
+                <button
+                    onClick={() => setShowAddClassForm(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-focus"
+                >
+                    <PlusIcon className="w-5 h-5" />
+                    Add New Class
+                </button>
+            </div>
+
+            {showAddClassForm && (
+                <form onSubmit={handleAddNewClass} className="bg-white p-4 rounded-lg shadow-md border mb-6 space-y-3">
+                     <h3 className="font-semibold text-lg">New Class Details</h3>
+                    <input
+                        value={newClass.title}
+                        onChange={e => setNewClass(p => ({ ...p, title: e.target.value }))}
+                        placeholder="Class Title"
+                        className="w-full p-2 border rounded"
+                        required
+                    />
+                    <input
+                        value={newClass.chef}
+                        onChange={e => setNewClass(p => ({ ...p, chef: e.target.value }))}
+                        placeholder="Chef Name"
+                        className="w-full p-2 border rounded"
+                        required
+                    />
+                    <textarea
+                        value={newClass.description}
+                        onChange={e => setNewClass(p => ({ ...p, description: e.target.value }))}
+                        placeholder="Class Description"
+                        className="w-full p-2 border rounded"
+                        rows={3}
+                    />
+                    <div className="flex gap-2 justify-end">
+                        <button type="button" onClick={() => setShowAddClassForm(false)} className="px-4 py-2 bg-gray-200 rounded-lg">Cancel</button>
+                        <button type="submit" className="px-4 py-2 bg-primary text-white rounded-lg">Save Class</button>
+                    </div>
+                </form>
+            )}
+
+            <div className="space-y-6">
+                {cookingClasses.map(cls => (
+                    <div key={cls.id} className="bg-white p-4 rounded-lg shadow-md border">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Class Details */}
+                            <div className="space-y-3">
+                                <h3 className="font-semibold">Class Details</h3>
+                                <div>
+                                    <label className="text-xs font-medium">Title</label>
+                                    <input value={cls.title} onChange={e => onUpdateCookingClass(cls.id, { title: e.target.value })} className="w-full p-2 border rounded" />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-medium">Chef</label>
+                                    <input value={cls.chef} onChange={e => onUpdateCookingClass(cls.id, { chef: e.target.value })} className="w-full p-2 border rounded" />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-medium">Description</label>
+                                    <textarea value={cls.description} onChange={e => onUpdateCookingClass(cls.id, { description: e.target.value })} className="w-full p-2 border rounded" rows={4} />
+                                </div>
+                            </div>
+
+                            {/* Image */}
+                            <div className="space-y-3">
+                                <h3 className="font-semibold">Class Image</h3>
+                                <img src={cls.imageUrl} alt={cls.title} className="w-full h-40 object-cover rounded-md" />
+                                <div>
+                                    <label className="text-xs font-medium">New Image Prompt</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            value={classImagePrompts[cls.id] || ''}
+                                            onChange={e => setClassImagePrompts(p => ({ ...p, [cls.id]: e.target.value }))}
+                                            placeholder="e.g., Rustic sourdough bread on a wooden board"
+                                            className="w-full p-2 border rounded"
+                                        />
+                                        <button onClick={() => handleGenerateClassImage(cls.id)} disabled={generatingClassImageId === cls.id} className="p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-400">
+                                            {generatingClassImageId === cls.id ? <Spinner/> : 'Gen'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Lessons */}
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="font-semibold">Lessons</h3>
+                                    <button onClick={() => onAddLesson(cls.id)} className="text-sm flex items-center gap-1 text-primary hover:underline"><PlusIcon className="w-4 h-4" /> Add</button>
+                                </div>
+                                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                                    {cls.lessons.map(lesson => (
+                                        <div key={lesson.id} className="bg-gray-50 p-2 rounded border space-y-1">
+                                            <div className="flex items-center gap-2">
+                                                <input value={lesson.title} onChange={e => onUpdateLesson(cls.id, lesson.id, { title: e.target.value })} className="w-full p-1 border rounded text-sm" placeholder="Lesson Title"/>
+                                                <button onClick={() => onDeleteLesson(cls.id, lesson.id)}><TrashIcon className="w-4 h-4 text-red-500" /></button>
+                                            </div>
+                                            <input value={lesson.duration} onChange={e => onUpdateLesson(cls.id, lesson.id, { duration: e.target.value })} className="w-full p-1 border rounded text-xs" placeholder="Duration (e.g., 15:30)"/>
+                                            <input value={lesson.videoUrl} onChange={e => onUpdateLesson(cls.id, lesson.id, { videoUrl: e.target.value })} className="w-full p-1 border rounded text-xs" placeholder="Video URL"/>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-4 pt-4 border-t flex justify-end">
+                            <button onClick={() => onDeleteCookingClass(cls.id)} className="px-3 py-1 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600">Delete Class</button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+
     return (
         <div className="animate-fade-in py-8">
             <div className="flex justify-between items-center mb-8">
@@ -441,6 +597,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <button onClick={() => setCurrentView('newsletter')} className={`px-4 py-2 font-semibold ${currentView === 'newsletter' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Newsletter</button>
                 <button onClick={() => setCurrentView('recipes')} className={`px-4 py-2 font-semibold ${currentView === 'recipes' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Recipe Management</button>
                 <button onClick={() => setCurrentView('add_recipe')} className={`px-4 py-2 font-semibold ${currentView === 'add_recipe' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Add Recipe</button>
+                <button onClick={() => setCurrentView('classes')} className={`px-4 py-2 font-semibold ${currentView === 'classes' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Cooking Classes</button>
             </div>
             
             {currentView === 'users' && renderUserManagement()}
@@ -448,6 +605,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {currentView === 'recipes' && renderRecipeManagement()}
             {currentView === 'add_recipe' && renderAddRecipeForm()}
             {currentView === 'newsletter' && renderNewsletterManagement()}
+            {currentView === 'classes' && renderClassManagement()}
 
             {isEditUserModalOpen && editingUser && (
                 <EditUserModal

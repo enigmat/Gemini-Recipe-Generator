@@ -59,6 +59,7 @@ export interface VideoCategory {
 }
 
 export interface Lesson {
+  id: string;
   title: string;
   duration: string;
   thumbnailUrl: string;
@@ -66,6 +67,7 @@ export interface Lesson {
 }
 
 export interface CookingClass {
+  id: string;
   title: string;
   description: string;
   chef: string;

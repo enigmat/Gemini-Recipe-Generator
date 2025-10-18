@@ -13,7 +13,7 @@ import * as favoritesService from './services/favoritesService';
 import * as userService from './services/userService';
 import * as leadService from './services/leadService';
 import IngredientInput from './components/IngredientInput';
-import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage } from './services/geminiService';
+import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage } from './services/geminiService';
 import Spinner from './components/Spinner';
 import ShoppingListModal from './components/ShoppingListModal';
 import MealPlanCard from './components/MealPlanCard';
@@ -48,6 +48,7 @@ type View = 'all' | 'saved' | 'plans' | 'videos' | 'bartender';
 const App: React.FC = () => {
     // Single source of truth for all recipes
     const [allRecipes, setAllRecipes] = useState<Recipe[]>(allRecipesData);
+    const [cookingClasses, setCookingClasses] = useState<CookingClass[]>(cookingClassesData);
 
     // States for browsing and filtering
     const [searchQuery, setSearchQuery] = useState('');
@@ -421,6 +422,63 @@ const App: React.FC = () => {
         }
     };
 
+    // --- Cooking Class Handlers ---
+    const handleAddCookingClass = (newClass: Omit<CookingClass, 'id'>) => {
+        const classWithId: CookingClass = { ...newClass, id: `class-${new Date().getTime()}` };
+        setCookingClasses(prev => [classWithId, ...prev]);
+    };
+
+    const handleUpdateCookingClass = (classId: string, updatedData: Partial<Omit<CookingClass, 'id' | 'lessons'>>) => {
+        setCookingClasses(prev => prev.map(c => c.id === classId ? { ...c, ...updatedData } : c));
+    };
+
+    const handleDeleteCookingClass = (classId: string) => {
+        if (window.confirm("Are you sure you want to delete this entire class and all its lessons?")) {
+            setCookingClasses(prev => prev.filter(c => c.id !== classId));
+        }
+    };
+
+    const handleAddLesson = (classId: string) => {
+        const newLesson: Lesson = {
+            id: `lesson-${new Date().getTime()}`,
+            title: 'New Lesson',
+            duration: '0:00',
+            thumbnailUrl: 'https://via.placeholder.com/400x225.png?text=New+Lesson',
+            videoUrl: '',
+        };
+        setCookingClasses(prev => prev.map(c => c.id === classId ? { ...c, lessons: [...c.lessons, newLesson] } : c));
+    };
+
+    const handleUpdateLesson = (classId: string, lessonId: string, updatedData: Partial<Omit<Lesson, 'id'>>) => {
+        setCookingClasses(prev => prev.map(c => {
+            if (c.id === classId) {
+                const updatedLessons = c.lessons.map(l => l.id === lessonId ? { ...l, ...updatedData } : l);
+                return { ...c, lessons: updatedLessons };
+            }
+            return c;
+        }));
+    };
+
+    const handleDeleteLesson = (classId: string, lessonId: string) => {
+        setCookingClasses(prev => prev.map(c => {
+            if (c.id === classId) {
+                const updatedLessons = c.lessons.filter(l => l.id !== lessonId);
+                return { ...c, lessons: updatedLessons };
+            }
+            return c;
+        }));
+    };
+
+    const handleUpdateClassImage = async (classId: string, prompt: string): Promise<void> => {
+        try {
+            const newImageUrl = await generateImage(prompt);
+            setCookingClasses(prev => prev.map(c => c.id === classId ? { ...c, imageUrl: newImageUrl } : c));
+        } catch (error) {
+            console.error(`Failed to generate new image for class ${classId}:`, error);
+            alert("Could not generate a new image. Please try again.");
+        }
+    };
+
     const renderContent = () => {
         if (currentView === 'bartender') {
             if (!isPremium) {
@@ -642,12 +700,20 @@ const App: React.FC = () => {
                 allUsers={allUsers}
                 allRecipes={allRecipes}
                 allLeads={leads}
+                cookingClasses={cookingClasses}
                 onDeleteUser={handleDeleteUser}
                 onGiveFreeTime={handleGiveFreeTime}
                 onUpdateUser={handleUpdateUser}
                 onDeleteRecipe={handleDeleteRecipe}
                 onUpdateRecipeStatus={handleUpdateRecipeStatus}
                 onFixImage={handleFixRecipeImage}
+                onAddCookingClass={handleAddCookingClass}
+                onUpdateCookingClass={handleUpdateCookingClass}
+                onDeleteCookingClass={handleDeleteCookingClass}
+                onAddLesson={handleAddLesson}
+                onUpdateLesson={handleUpdateLesson}
+                onDeleteLesson={handleDeleteLesson}
+                onUpdateClassImage={handleUpdateClassImage}
             />;
         }
 
@@ -773,7 +839,7 @@ const App: React.FC = () => {
                         <AdvancedClasses
                             isPremium={isPremium}
                             onUpgrade={() => setIsUpgradeModalOpen(true)}
-                            classes={cookingClassesData}
+                            classes={cookingClasses}
                             onSelectClass={setSelectedClass}
                         />
 
