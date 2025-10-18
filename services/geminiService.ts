@@ -159,15 +159,16 @@ export const generateImage = async (prompt: string): Promise<string> => {
             },
         });
 
-        if (response.generatedImages && response.generatedImages.length > 0) {
+        if (response.generatedImages && response.generatedImages.length > 0 && response.generatedImages[0].image?.imageBytes) {
             const base64ImageBytes = response.generatedImages[0].image.imageBytes;
             return `data:image/jpeg;base64,${base64ImageBytes}`;
         } else {
-            throw new Error("No image was generated.");
+            console.warn("No image was generated, returning placeholder.");
+            return `https://via.placeholder.com/800x450.png?text=Image+Not+Available`;
         }
     } catch (error) {
         console.error("Error generating image:", error);
-        throw new Error("Failed to generate image.");
+        return `https://via.placeholder.com/800x450.png?text=Image+Generation+Failed`;
     }
 };
 
@@ -386,6 +387,59 @@ export const fixRecipeImage = async (recipe: Recipe): Promise<string> => {
     }
 };
 
+export const generateRecipeFromPrompt = async (promptText: string): Promise<Recipe> => {
+    const prompt = `
+        You are an expert chef and recipe creator. A user wants a new recipe based on their description.
+        Your task is to generate a single, complete recipe based on the user's request.
+        You must generate the following information:
+        1.  **title**: A creative and fitting name for the recipe.
+        2.  **description**: A short, enticing description of the dish.
+        3.  **tags**: A list of relevant tags (e.g., 'Vegan', 'Dinner', 'Italian').
+        4.  **ingredients**: A list of all ingredients. For each ingredient, specify the name and quantity in METRIC units (grams, ml, etc.). Mark 'isAvailable' as false.
+        5.  **instructions**: The step-by-step cooking instructions.
+        6.  **prepTime**, **cookTime**, **servings**: Provide realistic estimates.
+        7.  **nutrition**: Provide estimated nutritional info (calories, protein, carbs, fat).
+        8.  **imagePrompt**: Create a detailed, descriptive prompt for a text-to-image model to generate a photorealistic and appetizing image of the final dish.
+
+        User's Recipe Request: "${promptText}"
+
+        Please return the result as a single, valid JSON object that conforms to the provided schema.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: singleRecipeSchema as any,
+            },
+        });
+
+        const jsonText = response.text.trim();
+        const generatedData = JSON.parse(jsonText);
+
+        const imageUrl = await generateImage(generatedData.imagePrompt);
+        
+        return {
+            title: generatedData.title,
+            description: generatedData.description,
+            imageUrl: imageUrl,
+            ingredients: generatedData.ingredients.map((ing: { quantity: string; name: string; }) => `${ing.quantity} ${ing.name}`.trim()).filter(Boolean),
+            instructions: generatedData.instructions,
+            tags: generatedData.tags,
+            servings: generatedData.servings,
+            prepTime: generatedData.prepTime,
+            cookTime: generatedData.cookTime,
+            status: 'active',
+            nutrition: generatedData.nutrition,
+        };
+    } catch (error) {
+        console.error("Error generating recipe from prompt:", error);
+        throw new Error("Failed to generate the recipe from the prompt. The model may have been unable to fulfill the request.");
+    }
+};
+
 export const generateRecipeVariation = async (originalRecipe: Recipe, variationRequest: string, availableIngredients: string[]): Promise<Recipe> => {
     const prompt = `
         You are a creative chef. A user wants a variation of an existing recipe.
@@ -577,36 +631,18 @@ export const generateDrinkRecipe = async (drinkPrompt: string): Promise<DrinkRec
         const jsonText = response.text.trim();
         const parsedJson = JSON.parse(jsonText);
 
-        // For drinks, a square aspect ratio often looks best.
-        const imageUrl = await generateImage(parsedJson.imagePrompt).then(url => {
-            return generateImage(parsedJson.imagePrompt.replace('16:9', '1:1'));
-        });
+        const imageUrl = await generateImage(parsedJson.imagePrompt);
 
-        const imageResponse = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt: `Photorealistic, appealing cocktail photography of ${parsedJson.imagePrompt}, studio lighting, high detail, shallow depth of field.`,
-            config: {
-                numberOfImages: 1,
-                outputMimeType: 'image/jpeg',
-                aspectRatio: '1:1',
-            },
-        });
+        return {
+            name: parsedJson.name,
+            description: parsedJson.description,
+            imageUrl: imageUrl,
+            glassware: parsedJson.glassware,
+            ingredients: parsedJson.ingredients,
+            instructions: parsedJson.instructions,
+            garnish: parsedJson.garnish,
+        };
 
-        if (imageResponse.generatedImages && imageResponse.generatedImages.length > 0) {
-            const base64ImageBytes = imageResponse.generatedImages[0].image.imageBytes;
-            const finalImageUrl = `data:image/jpeg;base64,${base64ImageBytes}`;
-            return {
-                name: parsedJson.name,
-                description: parsedJson.description,
-                imageUrl: finalImageUrl,
-                glassware: parsedJson.glassware,
-                ingredients: parsedJson.ingredients,
-                instructions: parsedJson.instructions,
-                garnish: parsedJson.garnish,
-            };
-        } else {
-             throw new Error("No image was generated for the drink.");
-        }
     } catch (error) {
         console.error("Error generating drink recipe:", error);
         throw new Error("Failed to generate a drink recipe. The model might have been unable to fulfill the request, or there was a network issue.");

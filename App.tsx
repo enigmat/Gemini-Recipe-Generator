@@ -13,7 +13,7 @@ import * as favoritesService from './services/favoritesService';
 import * as userService from './services/userService';
 import * as leadService from './services/leadService';
 import IngredientInput from './components/IngredientInput';
-import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage } from './services/geminiService';
+import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage, generateRecipeFromPrompt } from './services/geminiService';
 import Spinner from './components/Spinner';
 import ShoppingListModal from './components/ShoppingListModal';
 import MealPlanCard from './components/MealPlanCard';
@@ -40,6 +40,11 @@ import CameraModal from './components/CameraModal';
 import BartenderHelper from './components/BartenderHelper';
 import CocktailIcon from './components/icons/CocktailIcon';
 import NewsletterSignup from './components/NewsletterSignup';
+import ClockIcon from './components/icons/ClockIcon';
+import UsersIcon from './components/icons/UsersIcon';
+import FireIcon from './components/icons/FireIcon';
+import HeartIcon from './components/icons/HeartIcon';
+import { parseServings } from './utils/recipeUtils';
 
 const ITEMS_PER_PAGE = 12;
 const RECIPES_STORAGE_KEY = 'marshmellowRecipes_allRecipes';
@@ -99,6 +104,13 @@ const App: React.FC = () => {
     const [generatedRecipes, setGeneratedRecipes] = useState<Recipe[] | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [generationError, setGenerationError] = useState<string | null>(null);
+    
+    // States for recipe from idea generation
+    const [recipePrompt, setRecipePrompt] = useState('');
+    const [promptError, setPromptError] = useState<string | null>(null);
+    const [isGeneratingFromIdea, setIsGeneratingFromIdea] = useState(false);
+    const [ideaGeneratedRecipe, setIdeaGeneratedRecipe] = useState<Recipe | null>(null);
+
 
     // States for URL import
     const [recipeUrl, setRecipeUrl] = useState('');
@@ -243,6 +255,7 @@ const App: React.FC = () => {
         setIsGenerating(true);
         setGenerationError(null);
         setGeneratedRecipes(null);
+        setIdeaGeneratedRecipe(null);
         try {
             const recipes = await generateRecipes(ingredients);
             setGeneratedRecipes(recipes.map(r => ({ ...r, status: 'active' })));
@@ -255,6 +268,48 @@ const App: React.FC = () => {
             }
         } finally {
             setIsGenerating(false);
+        }
+    };
+
+    const handleGenerateRecipeFromPrompt = async () => {
+        if (!isPremium) {
+            setIsUpgradeModalOpen(true);
+            return;
+        }
+        if (!recipePrompt.trim()) {
+            setPromptError("Please describe the recipe you want to create.");
+            return;
+        }
+        setIsGeneratingFromIdea(true);
+        setPromptError(null);
+        setIdeaGeneratedRecipe(null);
+
+        try {
+            const recipe = await generateRecipeFromPrompt(recipePrompt);
+            
+            // Add to global state so it persists
+            setAllRecipes(prev => [recipe, ...prev]);
+            
+            // Save it to user's favorites
+            if (!savedRecipeTitles.includes(recipe.title)) {
+                handleToggleSave(recipe.title);
+            }
+            
+            // Show the recipe on the page
+            setIdeaGeneratedRecipe(recipe);
+            
+            // Clear the input
+            setRecipePrompt('');
+            
+        } catch (error) {
+            console.error("Error generating recipe from prompt:", error);
+            if (error instanceof Error) {
+                setPromptError(error.message);
+            } else {
+                setPromptError("An unknown error occurred while generating the recipe.");
+            }
+        } finally {
+            setIsGeneratingFromIdea(false);
         }
     };
 
@@ -390,6 +445,7 @@ const App: React.FC = () => {
         setSelectedTags([]); // Reset tags
         setGeneratedRecipes(null);
         setGenerationError(null);
+        setIdeaGeneratedRecipe(null);
     }
 
     const handleLogin = (email: string) => {
@@ -867,6 +923,86 @@ const App: React.FC = () => {
                                     )}
                                 </div>
                             </div>
+                            <div className="mt-8 pt-8 border-t border-gray-200">
+                                <div className="flex flex-col">
+                                    <h2 className="text-2xl font-bold text-text-primary mb-4 flex items-center gap-2 justify-center md:justify-start mx-auto">
+                                        Create a Recipe from an Idea
+                                        {!isPremium && <span className="text-xs font-bold bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Premium</span>}
+                                    </h2>
+                                    <p className="text-text-secondary mb-4 text-center">Describe a dish, and our AI chef will write the recipe for you.</p>
+
+                                    {isPremium ? (
+                                        <div className="max-w-2xl mx-auto">
+                                            <textarea
+                                                value={recipePrompt}
+                                                onChange={(e) => {
+                                                    setRecipePrompt(e.target.value);
+                                                    if (promptError) setPromptError(null);
+                                                }}
+                                                placeholder="e.g., A spicy vegan curry with coconut milk and chickpeas..."
+                                                className="w-full p-3 border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
+                                                rows={3}
+                                                disabled={isGeneratingFromIdea}
+                                            />
+                                            {promptError && !isGeneratingFromIdea && (
+                                                <div className="mt-4 text-red-600 bg-red-50 p-3 rounded-md text-sm">{promptError}</div>
+                                            )}
+                                            <div className="mt-4">
+                                                <button
+                                                    onClick={handleGenerateRecipeFromPrompt}
+                                                    disabled={isGeneratingFromIdea || !recipePrompt.trim()}
+                                                    className="w-full px-8 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                                >
+                                                    <SparklesIcon className="w-5 h-5"/>
+                                                    <span>{isGeneratingFromIdea ? 'Creating Recipe...' : 'Generate Recipe'}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="relative p-6 border-2 border-dashed border-gray-300 rounded-lg text-center flex-grow flex flex-col justify-center items-center bg-gray-50 max-w-2xl mx-auto">
+                                            <LockClosedIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                            <p className="text-text-secondary font-semibold">This is a Premium feature</p>
+                                            <p className="text-sm text-gray-500 mb-4">Upgrade to generate recipes from your ideas.</p>
+                                            <button onClick={() => setIsUpgradeModalOpen(true)} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-focus">
+                                                Upgrade Now
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                             {isGeneratingFromIdea && (
+                                <div className="text-center py-8">
+                                    <Spinner />
+                                    <p className="mt-4 text-text-secondary">Your personal AI chef is creating a masterpiece...</p>
+                                </div>
+                            )}
+                            {ideaGeneratedRecipe && !isGeneratingFromIdea && (
+                                <div className="mt-8 pt-8 border-t-4 border-dashed border-primary/20 animate-fade-in">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h2 className="text-2xl font-bold text-text-primary">Here's Your Custom Recipe!</h2>
+                                        <button onClick={() => setIdeaGeneratedRecipe(null)} className="px-4 py-2 bg-gray-200 text-text-secondary font-semibold rounded-lg hover:bg-gray-300 transition-colors">&larr; Create Another</button>
+                                    </div>
+                                    <div className="bg-white rounded-lg overflow-hidden flex flex-col md:flex-row gap-8">
+                                        <div className="w-full md:w-1/3 relative aspect-w-4 aspect-h-5">
+                                            <img src={ideaGeneratedRecipe.imageUrl} alt={ideaGeneratedRecipe.title} className="absolute inset-0 w-full h-full object-cover rounded-lg" />
+                                        </div>
+                                        <div className="w-full md:w-2/3">
+                                            <h3 className="text-3xl font-bold text-text-primary">{ideaGeneratedRecipe.title}</h3>
+                                            <div className="my-2 flex flex-wrap gap-2">
+                                                {ideaGeneratedRecipe.tags.map(tag => <span key={tag} className="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full">{tag}</span>)}
+                                            </div>
+                                            <p className="text-text-secondary my-4">{ideaGeneratedRecipe.description}</p>
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center my-4 border-y border-border-color py-4">
+                                                <div><ClockIcon className="w-6 h-6 mx-auto text-primary mb-1" /><p className="text-xs font-bold uppercase">Prep</p><p>{ideaGeneratedRecipe.prepTime}</p></div>
+                                                <div><ClockIcon className="w-6 h-6 mx-auto text-primary mb-1" /><p className="text-xs font-bold uppercase">Cook</p><p>{ideaGeneratedRecipe.cookTime}</p></div>
+                                                <div><UsersIcon className="w-6 h-6 mx-auto text-primary mb-1" /><p className="text-xs font-bold uppercase">Serves</p><p>{parseServings(ideaGeneratedRecipe.servings)}</p></div>
+                                                <div><FireIcon className="w-6 h-6 mx-auto text-primary mb-1" /><p className="text-xs font-bold uppercase">Kcal</p><p>{ideaGeneratedRecipe.nutrition.calories}</p></div>
+                                            </div>
+                                            <button onClick={() => setSelectedRecipe(ideaGeneratedRecipe)} className="w-full px-6 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus">View Full Details & Options</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <PremiumContent

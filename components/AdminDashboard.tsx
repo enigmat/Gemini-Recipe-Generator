@@ -8,6 +8,7 @@ import Spinner from './Spinner';
 import PencilIcon from './icons/PencilIcon';
 import EditUserModal from './EditUserModal';
 import PlusIcon from './icons/PlusIcon';
+import SparklesIcon from './icons/SparklesIcon';
 
 interface AdminDashboardProps {
     onBackToApp: () => void;
@@ -67,6 +68,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     });
     const [imagePrompt, setImagePrompt] = useState('');
     const [isAddingRecipe, setIsAddingRecipe] = useState(false);
+    
 
     // Newsletter State
     const [newsletterSubject, setNewsletterSubject] = useState('');
