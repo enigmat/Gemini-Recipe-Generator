@@ -17,6 +17,16 @@ export interface Recipe {
   };
 }
 
+export interface DrinkRecipe {
+  name: string;
+  description: string;
+  imageUrl: string;
+  glassware: string;
+  ingredients: string[];
+  instructions: string[];
+  garnish: string;
+}
+
 export interface ShoppingListItem {
   category: string;
   items: string[];

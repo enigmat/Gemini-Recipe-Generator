@@ -37,10 +37,12 @@ import LockClosedIcon from './components/icons/LockClosedIcon';
 import UrlInput from './components/UrlInput';
 import CameraInput from './components/CameraInput';
 import CameraModal from './components/CameraModal';
+import BartenderHelper from './components/BartenderHelper';
+import CocktailIcon from './components/icons/CocktailIcon';
 
 const ITEMS_PER_PAGE = 12;
 
-type View = 'all' | 'saved' | 'plans' | 'videos';
+type View = 'all' | 'saved' | 'plans' | 'videos' | 'bartender';
 
 const App: React.FC = () => {
     // States for browsing static recipes
@@ -331,6 +333,8 @@ const App: React.FC = () => {
         setSelectedPlan(null); // Reset selected plan when changing main view
         setSearchQuery(''); // Reset search
         setSelectedTags([]); // Reset tags
+        setGeneratedRecipes(null);
+        setGenerationError(null);
     }
 
     const handleLogin = (email: string) => {
@@ -355,6 +359,10 @@ const App: React.FC = () => {
     };
 
     const renderContent = () => {
+        if (currentView === 'bartender') {
+            return <BartenderHelper />;
+        }
+        
         if (isGenerating) {
             return (
                 <div className="text-center py-16">
@@ -593,94 +601,99 @@ const App: React.FC = () => {
                 </div>
 
 
-                <Header />
+                {currentView !== 'bartender' && (
+                    <>
+                        <Header />
 
-                <div className="bg-white p-8 rounded-2xl shadow-lg max-w-5xl mx-auto mb-12 border border-border-color">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-                        {/* Left Side: Generate */}
-                        <div className="flex flex-col">
-                            <h2 className="text-2xl font-bold text-text-primary mb-4 text-center md:text-left">Find Recipes You Can Make</h2>
-                            <p className="text-text-secondary mb-4 text-center md:text-left">Enter ingredients you have, or scan them with your camera.</p>
-                            <IngredientInput ingredients={ingredients} setIngredients={setIngredients} />
-                            <div className="relative flex py-5 items-center">
-                                <div className="flex-grow border-t border-gray-200"></div>
-                                <span className="flex-shrink mx-4 text-gray-400 text-xs font-semibold uppercase">Or</span>
-                                <div className="flex-grow border-t border-gray-200"></div>
-                            </div>
-                            <CameraInput onClick={() => setIsCameraModalOpen(true)} disabled={isGenerating} />
-                            <div className="mt-6">
-                                <button
-                                    onClick={handleGenerateRecipes}
-                                    disabled={isGenerating || ingredients.length === 0}
-                                    className="w-full px-8 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                >
-                                    <SparklesIcon className="w-5 h-5"/>
-                                    <span>{isGenerating ? 'Finding Recipes...' : 'Find Recipes'}</span>
-                                </button>
+                        <div className="bg-white p-8 rounded-2xl shadow-lg max-w-5xl mx-auto mb-12 border border-border-color">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                                {/* Left Side: Generate */}
+                                <div className="flex flex-col">
+                                    <h2 className="text-2xl font-bold text-text-primary mb-4 text-center md:text-left">Find Recipes You Can Make</h2>
+                                    <p className="text-text-secondary mb-4 text-center md:text-left">Enter ingredients you have, or scan them with your camera.</p>
+                                    <IngredientInput ingredients={ingredients} setIngredients={setIngredients} />
+                                    <div className="relative flex py-5 items-center">
+                                        <div className="flex-grow border-t border-gray-200"></div>
+                                        <span className="flex-shrink mx-4 text-gray-400 text-xs font-semibold uppercase">Or</span>
+                                        <div className="flex-grow border-t border-gray-200"></div>
+                                    </div>
+                                    <CameraInput onClick={() => setIsCameraModalOpen(true)} disabled={isGenerating} />
+                                    <div className="mt-6">
+                                        <button
+                                            onClick={handleGenerateRecipes}
+                                            disabled={isGenerating || ingredients.length === 0}
+                                            className="w-full px-8 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                        >
+                                            <SparklesIcon className="w-5 h-5"/>
+                                            <span>{isGenerating ? 'Finding Recipes...' : 'Find Recipes'}</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Right Side: Import */}
+                                <div className="flex flex-col">
+                                    <h2 className="text-2xl font-bold text-text-primary mb-4 flex items-center gap-2 justify-center md:justify-start">
+                                        Import from the Web
+                                        {!isPremium && <span className="text-xs font-bold bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Premium</span>}
+                                    </h2>
+                                    <p className="text-text-secondary mb-4 text-center md:text-left">Found a recipe online? Paste the URL here to add it to your cookbook.</p>
+                                    {isPremium ? (
+                                        <div className="flex-grow flex flex-col">
+                                            <UrlInput 
+                                                recipeUrl={recipeUrl} 
+                                                setRecipeUrl={setRecipeUrl} 
+                                                onFetch={handleImportRecipe}
+                                                isLoading={isImporting}
+                                            />
+                                            {importError && (
+                                                <div className="mt-4 text-red-600 bg-red-50 p-3 rounded-md text-sm">{importError}</div>
+                                            )}
+                                            {importSuccessMessage && (
+                                                <div className="mt-4 text-green-700 bg-green-50 p-3 rounded-md text-sm">{importSuccessMessage}</div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="relative p-6 border-2 border-dashed border-gray-300 rounded-lg text-center flex-grow flex flex-col justify-center items-center bg-gray-50">
+                                            <LockClosedIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                            <p className="text-text-secondary font-semibold">This is a Premium feature</p>
+                                            <p className="text-sm text-gray-500 mb-4">Upgrade to import recipes from any website.</p>
+                                            <button onClick={() => setIsUpgradeModalOpen(true)} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-focus">
+                                                Upgrade Now
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
-                        {/* Right Side: Import */}
-                        <div className="flex flex-col">
-                            <h2 className="text-2xl font-bold text-text-primary mb-4 flex items-center gap-2 justify-center md:justify-start">
-                                Import from the Web
-                                {!isPremium && <span className="text-xs font-bold bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Premium</span>}
-                            </h2>
-                            <p className="text-text-secondary mb-4 text-center md:text-left">Found a recipe online? Paste the URL here to add it to your cookbook.</p>
-                            {isPremium ? (
-                                <div className="flex-grow flex flex-col">
-                                    <UrlInput 
-                                        recipeUrl={recipeUrl} 
-                                        setRecipeUrl={setRecipeUrl} 
-                                        onFetch={handleImportRecipe}
-                                        isLoading={isImporting}
-                                    />
-                                    {importError && (
-                                        <div className="mt-4 text-red-600 bg-red-50 p-3 rounded-md text-sm">{importError}</div>
-                                    )}
-                                    {importSuccessMessage && (
-                                        <div className="mt-4 text-green-700 bg-green-50 p-3 rounded-md text-sm">{importSuccessMessage}</div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="relative p-6 border-2 border-dashed border-gray-300 rounded-lg text-center flex-grow flex flex-col justify-center items-center bg-gray-50">
-                                    <LockClosedIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                                    <p className="text-text-secondary font-semibold">This is a Premium feature</p>
-                                    <p className="text-sm text-gray-500 mb-4">Upgrade to import recipes from any website.</p>
-                                    <button onClick={() => setIsUpgradeModalOpen(true)} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-focus">
-                                        Upgrade Now
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
+                        <PremiumContent
+                            isPremium={isPremium}
+                            onUpgrade={() => setIsUpgradeModalOpen(true)}
+                            recipes={newRecipes}
+                            onSelectRecipe={setSelectedRecipe}
+                            savedRecipeTitles={savedRecipeTitles}
+                            onToggleSave={handleToggleSave}
+                        />
+                        
+                        <AdvancedClasses
+                            isPremium={isPremium}
+                            onUpgrade={() => setIsUpgradeModalOpen(true)}
+                            classes={cookingClassesData}
+                            onSelectClass={setSelectedClass}
+                        />
 
-                <PremiumContent
-                    isPremium={isPremium}
-                    onUpgrade={() => setIsUpgradeModalOpen(true)}
-                    recipes={newRecipes}
-                    onSelectRecipe={setSelectedRecipe}
-                    savedRecipeTitles={savedRecipeTitles}
-                    onToggleSave={handleToggleSave}
-                />
-                
-                <AdvancedClasses
-                    isPremium={isPremium}
-                    onUpgrade={() => setIsUpgradeModalOpen(true)}
-                    classes={cookingClassesData}
-                    onSelectClass={setSelectedClass}
-                />
+                        <AskAnExpert
+                            isPremium={isPremium}
+                            onUpgrade={() => setIsUpgradeModalOpen(true)}
+                            isSubmitted={isQuestionSubmitted}
+                            onSubmitQuestion={handleQuestionSubmit}
+                            onAskAnother={handleAskAnotherQuestion}
+                        />
+                    </>
+                )}
 
-                <AskAnExpert
-                    isPremium={isPremium}
-                    onUpgrade={() => setIsUpgradeModalOpen(true)}
-                    isSubmitted={isQuestionSubmitted}
-                    onSubmitQuestion={handleQuestionSubmit}
-                    onAskAnother={handleAskAnotherQuestion}
-                />
 
-                <div className="flex justify-center mb-8 gap-1.5 p-1 bg-gray-200 rounded-lg max-w-md mx-auto">
+                <div className="flex justify-center mb-8 gap-1.5 p-1 bg-gray-200 rounded-lg max-w-xl mx-auto">
                     <button
                         onClick={() => handleViewChange('all')}
                         className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors ${currentView === 'all' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
@@ -704,6 +717,13 @@ const App: React.FC = () => {
                         className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors ${currentView === 'videos' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
                     >
                         Videos
+                    </button>
+                    <button
+                        onClick={() => handleViewChange('bartender')}
+                        className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5 ${currentView === 'bartender' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
+                    >
+                        <CocktailIcon className="h-4 w-4" />
+                        <span>Bartender</span>
                     </button>
                 </div>
 

@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { Recipe, ShoppingList } from '../types';
+import { Recipe, ShoppingList, DrinkRecipe } from '../types';
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable is not set.");
@@ -489,5 +489,107 @@ export const generateShoppingList = async (ingredients: string[]): Promise<Shopp
     } catch (error) {
         console.error("Error generating shopping list:", error);
         throw new Error("Failed to generate a shopping list. The model may have been unable to process the ingredients.");
+    }
+};
+
+const drinkRecipeSchema = {
+    type: Type.OBJECT,
+    properties: {
+        name: {
+            type: Type.STRING,
+            description: "The name of the cocktail."
+        },
+        description: {
+            type: Type.STRING,
+            description: "A short, enticing description of the drink."
+        },
+        glassware: {
+            type: Type.STRING,
+            description: "The recommended type of glass for serving the drink (e.g., 'Coupe glass', 'Highball glass')."
+        },
+        ingredients: {
+            type: Type.ARRAY,
+            description: "A list of ingredients with quantities. Quantities should be in metric units (ml) but can also be 'dashes' or 'parts' where appropriate.",
+            items: {
+                type: Type.STRING,
+                description: "e.g., '60ml Gin' or '2 dashes Angostura bitters'"
+            }
+        },
+        instructions: {
+            type: Type.ARRAY,
+            description: "Step-by-step instructions for making the drink.",
+            items: {
+                type: Type.STRING
+            }
+        },
+        garnish: {
+            type: Type.STRING,
+            description: "The suggested garnish for the drink (e.g., 'Lemon twist', 'Olive')."
+        },
+        imagePrompt: {
+            type: Type.STRING,
+            description: "A detailed, descriptive prompt for a text-to-image model to generate a photorealistic and appealing image of the final cocktail. Describe the drink, the glass, the garnish, and the background."
+        },
+    },
+    required: ["name", "description", "glassware", "ingredients", "instructions", "garnish", "imagePrompt"]
+};
+
+export const generateDrinkRecipe = async (drinkPrompt: string): Promise<DrinkRecipe> => {
+    const prompt = `
+      You are an expert mixologist and bartender. A user wants to make a drink. Based on their request, create a unique and delicious cocktail recipe.
+      Provide a creative name for the drink, a short description, the proper glassware, all necessary ingredients with metric quantities (ml), step-by-step instructions, and a suitable garnish.
+      Also, create a detailed, descriptive prompt for a text-to-image model to generate a photorealistic and appealing photo of the final cocktail. The image prompt should describe the drink, the glass, the garnish, the lighting, and the background setting (e.g., a cozy bar, a bright patio).
+
+      User's request: "${drinkPrompt}"
+
+      Please return the cocktail recipe in a valid JSON format according to the provided schema.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: drinkRecipeSchema,
+            },
+        });
+
+        const jsonText = response.text.trim();
+        const parsedJson = JSON.parse(jsonText);
+
+        // For drinks, a square aspect ratio often looks best.
+        const imageUrl = await generateImage(parsedJson.imagePrompt).then(url => {
+            return generateImage(parsedJson.imagePrompt.replace('16:9', '1:1'));
+        });
+
+        const imageResponse = await ai.models.generateImages({
+            model: 'imagen-4.0-generate-001',
+            prompt: `Photorealistic, appealing cocktail photography of ${parsedJson.imagePrompt}, studio lighting, high detail, shallow depth of field.`,
+            config: {
+                numberOfImages: 1,
+                outputMimeType: 'image/jpeg',
+                aspectRatio: '1:1',
+            },
+        });
+
+        if (imageResponse.generatedImages && imageResponse.generatedImages.length > 0) {
+            const base64ImageBytes = imageResponse.generatedImages[0].image.imageBytes;
+            const finalImageUrl = `data:image/jpeg;base64,${base64ImageBytes}`;
+            return {
+                name: parsedJson.name,
+                description: parsedJson.description,
+                imageUrl: finalImageUrl,
+                glassware: parsedJson.glassware,
+                ingredients: parsedJson.ingredients,
+                instructions: parsedJson.instructions,
+                garnish: parsedJson.garnish,
+            };
+        } else {
+             throw new Error("No image was generated for the drink.");
+        }
+    } catch (error) {
+        console.error("Error generating drink recipe:", error);
+        throw new Error("Failed to generate a drink recipe. The model might have been unable to fulfill the request, or there was a network issue.");
     }
 };
