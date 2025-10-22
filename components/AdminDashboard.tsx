@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Recipe, User, Lead, Newsletter, CookingClass, Lesson } from '../types';
-import { generateImage } from '../services/geminiService';
+import { generateImage, generateRecipeContentFromPrompt } from '../services/geminiService';
 import * as newsletterService from '../services/newsletterService';
 import TrashIcon from './icons/TrashIcon';
 import WrenchIcon from './icons/WrenchIcon';
@@ -68,6 +68,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     });
     const [imagePrompt, setImagePrompt] = useState('');
     const [isAddingRecipe, setIsAddingRecipe] = useState(false);
+    const [contentPrompt, setContentPrompt] = useState('');
+    const [isGeneratingContent, setIsGeneratingContent] = useState(false);
     
 
     // Newsletter State
@@ -135,6 +137,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             // Reset form
             setNewRecipe({ status: 'active' });
             setImagePrompt('');
+            setContentPrompt('');
             setCurrentView('recipes');
         } catch (error) {
             console.error("Error adding new recipe:", error);
@@ -153,6 +156,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             ...prev,
             nutrition: { ...prev.nutrition, [field]: value }
         }));
+    };
+
+    const handleGenerateContent = async () => {
+        if (!contentPrompt.trim()) {
+            alert("Please enter a recipe idea.");
+            return;
+        }
+        setIsGeneratingContent(true);
+        try {
+            const { recipeData, imagePrompt } = await generateRecipeContentFromPrompt(contentPrompt);
+            setNewRecipe(prev => ({
+                ...prev,
+                ...recipeData,
+            }));
+            setImagePrompt(imagePrompt);
+
+        } catch (error) {
+            console.error(error);
+            alert("Failed to generate recipe details. Please try a different prompt.");
+        } finally {
+            setIsGeneratingContent(false);
+        }
     };
 
     const handleSaveDraft = () => {
@@ -324,7 +349,47 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const renderAddRecipeForm = () => (
         <div className="bg-white p-6 rounded-lg shadow-md border border-border-color mt-6">
              <h2 className="text-xl font-bold text-text-primary mb-4">Add New Recipe</h2>
-             <form onSubmit={handleAddRecipeSubmit} className="space-y-4">
+             
+             <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-dashed">
+                <h3 className="text-lg font-semibold text-text-primary mb-2 flex items-center gap-2">
+                    <SparklesIcon className="w-5 h-5 text-primary" />
+                    Generate with AI
+                </h3>
+                <p className="text-sm text-text-secondary mb-3">
+                    Describe the recipe you want, and AI will fill out the details for you. You can review and edit before adding.
+                </p>
+                <textarea
+                    value={contentPrompt}
+                    onChange={e => setContentPrompt(e.target.value)}
+                    placeholder="e.g., A healthy one-pan lemon herb chicken with roasted asparagus and potatoes"
+                    className="w-full p-2 border rounded"
+                    rows={3}
+                    disabled={isGeneratingContent}
+                />
+                <button
+                    type="button"
+                    onClick={handleGenerateContent}
+                    disabled={isGeneratingContent || !contentPrompt.trim()}
+                    className="mt-3 w-full px-6 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-focus disabled:bg-gray-400 flex items-center justify-center gap-2"
+                >
+                    {isGeneratingContent ? (
+                        <>
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                            <span>Generating Details...</span>
+                        </>
+                    ) : (
+                        'Generate Recipe Details'
+                    )}
+                </button>
+             </div>
+             
+             <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t"></div>
+                <span className="flex-shrink mx-4 text-xs font-semibold uppercase text-gray-400">Or Add Manually</span>
+                <div className="flex-grow border-t"></div>
+            </div>
+
+             <form onSubmit={handleAddRecipeSubmit} className="space-y-4 mt-4">
                 <div>
                     <label className="block text-sm font-medium">Add to Section</label>
                     <div className="mt-2 flex gap-4 p-3 bg-gray-50 rounded-md border">
@@ -348,15 +413,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
                  <div>
                     <label className="block text-sm font-medium">Ingredients (one per line)</label>
-                    <textarea value={(newRecipe.ingredients || []).join('\n')} onChange={e => handleInputChange('ingredients', e.target.value.split('\n'))} className="w-full p-2 border rounded" rows={5}></textarea>
+                    <textarea value={Array.isArray(newRecipe.ingredients) ? newRecipe.ingredients.join('\n') : ''} onChange={e => handleInputChange('ingredients', e.target.value.split('\n'))} className="w-full p-2 border rounded" rows={5}></textarea>
                 </div>
                  <div>
                     <label className="block text-sm font-medium">Instructions (one per line)</label>
-                    <textarea value={(newRecipe.instructions || []).join('\n')} onChange={e => handleInputChange('instructions', e.target.value.split('\n'))} className="w-full p-2 border rounded" rows={5}></textarea>
+                    <textarea value={Array.isArray(newRecipe.instructions) ? newRecipe.instructions.join('\n') : ''} onChange={e => handleInputChange('instructions', e.target.value.split('\n'))} className="w-full p-2 border rounded" rows={5}></textarea>
                 </div>
                  <div>
                     <label className="block text-sm font-medium">Tags (comma-separated)</label>
-                    <input type="text" value={(newRecipe.tags || []).join(', ')} onChange={e => handleInputChange('tags', e.target.value.split(',').map(t => t.trim()))} className="w-full p-2 border rounded"/>
+                    <input type="text" value={Array.isArray(newRecipe.tags) ? newRecipe.tags.join(', ') : ''} onChange={e => handleInputChange('tags', e.target.value.split(',').map(t => t.trim()))} className="w-full p-2 border rounded"/>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                      <div>

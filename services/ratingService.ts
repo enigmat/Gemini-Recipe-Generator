@@ -1,3 +1,4 @@
+
 const RATINGS_STORAGE_KEY = 'marshmellowRecipesRatings';
 
 interface AllRatings {

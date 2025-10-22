@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo } from 'react';
 import { Recipe } from '../types';
 import XIcon from './icons/XIcon';
@@ -10,6 +11,8 @@ import { parseIngredient, parseServings, convertToAmerican } from '../utils/reci
 import ClockIcon from './icons/ClockIcon';
 import UsersIcon from './icons/UsersIcon';
 import FireIcon from './icons/FireIcon';
+import * as ratingService from '../services/ratingService';
+import Rating from './Rating';
 
 interface RecipeModalProps {
     recipe: Recipe;
@@ -25,6 +28,16 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onT
     
     const originalServings = useMemo(() => parseServings(recipe.servings), [recipe.servings]);
     const [targetServings, setTargetServings] = useState(originalServings);
+    const [ratings, setRatings] = useState(() => ratingService.getRatingsForRecipe(recipe.title));
+
+    const averageRating = useMemo(() => {
+        return ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
+    }, [ratings]);
+
+    const handleRateRecipe = (newRating: number) => {
+        ratingService.saveRatingForRecipe(recipe.title, newRating);
+        setRatings(prev => [...prev, newRating]);
+    };
 
     const handleServingChange = (change: number) => {
         setTargetServings(prev => Math.max(1, prev + change));
@@ -125,6 +138,18 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onT
                             <FireIcon className="w-6 h-6 mx-auto text-primary mb-1" />
                             <p className="text-xs text-text-secondary font-bold uppercase tracking-wider">Calories</p>
                             <p className="font-semibold text-text-primary">{recipe.nutrition.calories}</p>
+                        </div>
+                    </div>
+
+                    <div className="my-6 p-4 bg-gray-50 rounded-lg border border-border-color">
+                        <h4 className="text-md font-semibold text-text-primary mb-2 text-center">Rate this recipe</h4>
+                        <div className="flex justify-center">
+                            <Rating
+                                averageRating={averageRating}
+                                ratingCount={ratings.length}
+                                onRate={handleRateRecipe}
+                                size="lg"
+                            />
                         </div>
                     </div>
 

@@ -1,6 +1,9 @@
+
 import React from 'react';
 import { Recipe } from '../types';
 import HeartIcon from './icons/HeartIcon';
+import * as ratingService from '../services/ratingService';
+import Rating from './Rating';
 
 interface RecipeCardProps {
     recipe: Recipe;
@@ -15,6 +18,10 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, isSaved, onTog
         e.stopPropagation(); // Prevent the modal from opening when saving
         onToggleSave();
     };
+
+    const ratings = ratingService.getRatingsForRecipe(recipe.title);
+    const ratingCount = ratings.length;
+    const averageRating = ratingCount > 0 ? ratings.reduce((a, b) => a + b, 0) / ratingCount : 0;
 
     return (
         <div 
@@ -44,15 +51,20 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, isSaved, onTog
 
             <div className="relative p-4 h-full flex flex-col justify-end">
                 <h3 className="text-lg font-bold text-white leading-tight">{recipe.title}</h3>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                    {recipe.tags.slice(0, 2).map(tag => (
-                        <span 
-                            key={tag} 
-                            className="px-2 py-0.5 bg-white/20 text-white backdrop-blur-sm text-xs font-semibold rounded-full"
-                        >
-                            {tag}
-                        </span>
-                    ))}
+                <div className="mt-2 flex justify-between items-center">
+                    <div className="flex flex-wrap gap-1.5">
+                        {recipe.tags.slice(0, 2).map(tag => (
+                            <span 
+                                key={tag} 
+                                className="px-2 py-0.5 bg-white/20 text-white backdrop-blur-sm text-xs font-semibold rounded-full"
+                            >
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                    {ratingCount > 0 && (
+                        <Rating averageRating={averageRating} ratingCount={ratingCount} size="sm" />
+                    )}
                 </div>
             </div>
         </div>

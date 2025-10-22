@@ -649,6 +649,59 @@ export const generateDrinkRecipe = async (drinkPrompt: string): Promise<DrinkRec
     }
 };
 
+export const generateRecipeContentFromPrompt = async (promptText: string): Promise<{recipeData: Partial<Recipe>, imagePrompt: string}> => {
+    const prompt = `
+        You are an expert chef and recipe creator. A user wants a new recipe based on their description.
+        Your task is to generate a single, complete recipe based on the user's request.
+        You must generate the following information:
+        1.  **title**: A creative and fitting name for the recipe.
+        2.  **description**: A short, enticing description of the dish.
+        3.  **tags**: A list of relevant tags (e.g., 'Vegan', 'Dinner', 'Italian').
+        4.  **ingredients**: A list of all ingredients. For each ingredient, specify the name and quantity in METRIC units (grams, ml, etc.). Mark 'isAvailable' as false.
+        5.  **instructions**: The step-by-step cooking instructions.
+        6.  **prepTime**, **cookTime**, **servings**: Provide realistic estimates.
+        7.  **nutrition**: Provide estimated nutritional info (calories, protein, carbs, fat).
+        8.  **imagePrompt**: Create a detailed, descriptive prompt for a text-to-image model to generate a photorealistic and appetizing image of the final dish.
+
+        User's Recipe Request: "${promptText}"
+
+        Please return the result as a single, valid JSON object that conforms to the provided schema.
+    `;
+    
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: singleRecipeSchema as any,
+            },
+        });
+
+        const jsonText = response.text.trim();
+        const generatedData = JSON.parse(jsonText);
+
+        const recipeData: Partial<Recipe> = {
+            title: generatedData.title,
+            description: generatedData.description,
+            ingredients: generatedData.ingredients.map((ing: { quantity: string; name: string; }) => `${ing.quantity} ${ing.name}`.trim()).filter(Boolean),
+            instructions: generatedData.instructions,
+            tags: generatedData.tags,
+            servings: generatedData.servings,
+            prepTime: generatedData.prepTime,
+            cookTime: generatedData.cookTime,
+            status: 'active',
+            nutrition: generatedData.nutrition,
+        };
+        
+        return { recipeData, imagePrompt: generatedData.imagePrompt };
+
+    } catch (error) {
+        console.error("Error generating recipe content from prompt:", error);
+        throw new Error("Failed to generate recipe content from the prompt. The model may have been unable to fulfill the request.");
+    }
+};
+
 export const categorizeShoppingListItem = async (itemName: string): Promise<string> => {
     const prompt = `
         You are a shopping list assistant. Your task is to categorize a single grocery item into a standard grocery store category.
