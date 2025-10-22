@@ -43,7 +43,7 @@ const Rating: React.FC<RatingProps> = ({ averageRating, ratingCount, onRate, siz
                 })}
             </div>
             {ratingCount > 0 && (
-                 <p className={`text-xs ${size === 'sm' ? 'text-gray-100' : 'text-text-secondary'}`}>
+                 <p className={`text-xs text-text-secondary`}>
                     {averageRating.toFixed(1)} ({ratingCount})
                 </p>
             )}

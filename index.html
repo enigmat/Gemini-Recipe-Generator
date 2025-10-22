@@ -37,6 +37,23 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      /* Global override to fix input fields appearing black in some browsers/modes */
+      input[type="text"],
+      input[type="url"],
+      input[type="email"],
+      input[type="password"],
+      textarea {
+        background-color: #FFFFFF !important;
+        color: #1F2937 !important;
+      }
+      /* Ensure placeholder text is also visible */
+      input::placeholder,
+      textarea::placeholder {
+        color: #9CA3AF !important; /* A light gray, similar to Tailwind's gray-400 */
+        opacity: 1 !important; /* Firefox needs this */
+      }
+    </style>
     <script src="https://js.stripe.com/v3/"></script>
   <script type="importmap">
 {

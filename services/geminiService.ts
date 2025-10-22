@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { Recipe, ShoppingList, DrinkRecipe } from '../types';
 
 if (!process.env.API_KEY) {
@@ -118,7 +118,7 @@ export const generateRecipes = async (ingredients: string[]): Promise<Recipe[]> 
 
             const recipes: Recipe[] = await Promise.all(
                 richRecipes.map(async (recipe) => {
-                    const imageUrl = await generateImage(recipe.imagePrompt);
+                    const imageUrl = await generateImage(recipe.imagePrompt || recipe.title);
                     return {
                         title: recipe.title,
                         description: recipe.description,
@@ -147,30 +147,64 @@ export const generateRecipes = async (ingredients: string[]): Promise<Recipe[]> 
 
 export const generateImage = async (prompt: string): Promise<string> => {
     try {
-        const enhancedPrompt = `Photorealistic, appetizing food photography of ${prompt}, studio lighting, high detail, shallow depth of field.`;
-        
-        const response = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt: enhancedPrompt,
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: {
+                parts: [{ text: prompt }],
+            },
             config: {
-                numberOfImages: 1,
-                outputMimeType: 'image/jpeg',
-                aspectRatio: '16:9',
+                responseModalities: [Modality.IMAGE],
             },
         });
 
-        if (response.generatedImages && response.generatedImages.length > 0 && response.generatedImages[0].image?.imageBytes) {
-            const base64ImageBytes = response.generatedImages[0].image.imageBytes;
-            return `data:image/jpeg;base64,${base64ImageBytes}`;
-        } else {
-            console.warn("No image was generated, returning placeholder.");
-            return `https://via.placeholder.com/800x450.png?text=Image+Not+Available`;
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                const base64ImageBytes: string = part.inlineData.data;
+                const mimeType = part.inlineData.mimeType || 'image/png';
+                return `data:${mimeType};base64,${base64ImageBytes}`;
+            }
         }
+        
+        throw new Error("No image data found in the response.");
+
     } catch (error) {
-        console.error("Error generating image:", error);
-        return `https://via.placeholder.com/800x450.png?text=Image+Generation+Failed`;
+        console.error("Error generating image with AI, falling back to placeholder:", error);
+        
+        let title = "Image Failed";
+        // Attempt to extract a meaningful title from various prompt structures for the fallback.
+        const patterns = [
+            /of (?:a |an )?([^,]+)/i,          // "image of spaghetti carbonara, ..."
+            /a delicious plate of ([^,]+)/i, // "a delicious plate of ..."
+            /A photorealistic image of ([^,]+)/i,
+            /prompt for (?:an image of )?([^.]+)/i, // "prompt for an image of chicken soup."
+            /^A\s(.+?),/i, // "A robot holding a red skateboard, ..."
+        ];
+
+        let extracted = false;
+        for (const pattern of patterns) {
+            const match = prompt.match(pattern);
+            if (match && match[1]) {
+                const potentialTitle = match[1].trim();
+                if (potentialTitle.length > 3 && potentialTitle.length < 40) {
+                    title = potentialTitle;
+                    extracted = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!extracted && prompt.length < 40) {
+            // Fallback for short, direct prompts
+            title = prompt;
+        }
+
+        const formattedTitle = title.split(' ').join('\n');
+        const encodedTitle = encodeURIComponent(formattedTitle);
+        
+        return `https://placehold.co/800x450/EF4444/FFFFFF/png?text=Image+Failed\n${encodedTitle}&font=inter`;
     }
 };
+
 
 export const extractIngredientsFromUrl = async (url: string): Promise<string[]> => {
     const prompt = `
@@ -254,7 +288,7 @@ export const importRecipeFromUrl = async (url: string): Promise<Recipe> => {
         const jsonText = response.text.trim();
         const importedData = JSON.parse(jsonText);
 
-        const imageUrl = await generateImage(importedData.imagePrompt);
+        const imageUrl = await generateImage(importedData.imagePrompt || importedData.title);
 
         return {
             title: importedData.title,
@@ -419,7 +453,7 @@ export const generateRecipeFromPrompt = async (promptText: string): Promise<Reci
         const jsonText = response.text.trim();
         const generatedData = JSON.parse(jsonText);
 
-        const imageUrl = await generateImage(generatedData.imagePrompt);
+        const imageUrl = await generateImage(generatedData.imagePrompt || generatedData.title);
         
         return {
             title: generatedData.title,
@@ -477,7 +511,7 @@ export const generateRecipeVariation = async (originalRecipe: Recipe, variationR
         const jsonText = response.text.trim();
         const newRecipe = JSON.parse(jsonText);
         
-        const imageUrl = await generateImage(newRecipe.imagePrompt);
+        const imageUrl = await generateImage(newRecipe.imagePrompt || newRecipe.title);
 
         return {
             title: newRecipe.title,
@@ -631,7 +665,7 @@ export const generateDrinkRecipe = async (drinkPrompt: string): Promise<DrinkRec
         const jsonText = response.text.trim();
         const parsedJson = JSON.parse(jsonText);
 
-        const imageUrl = await generateImage(parsedJson.imagePrompt);
+        const imageUrl = await generateImage(parsedJson.imagePrompt || parsedJson.name);
 
         return {
             name: parsedJson.name,
