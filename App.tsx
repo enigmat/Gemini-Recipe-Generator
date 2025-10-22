@@ -48,6 +48,9 @@ import ManualAddItem from './components/ManualAddItem';
 import ShoppingCartIcon from './components/icons/ShoppingCartIcon';
 import DownloadIcon from './components/icons/DownloadIcon';
 import TrashIcon from './components/icons/TrashIcon';
+import Footer from './components/Footer';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import AboutUsModal from './components/AboutUsModal';
 
 const ITEMS_PER_PAGE = 12;
 const RECIPES_STORAGE_KEY = 'marshmellowRecipes_allRecipes';
@@ -144,6 +147,12 @@ const App: React.FC = () => {
 
     // State for Ask an Expert
     const [isQuestionSubmitted, setIsQuestionSubmitted] = useState(false);
+
+    // State for privacy policy modal
+    const [isPrivacyPolicyVisible, setIsPrivacyPolicyVisible] = useState(false);
+    // State for about us modal
+    const [isAboutUsVisible, setIsAboutUsVisible] = useState(false);
+
 
     // Derived recipe lists from the single source of truth
     const activeRecipes = useMemo(() => allRecipes.filter(r => r.status === 'active'), [allRecipes]);
@@ -1243,10 +1252,15 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-secondary text-text-primary">
-            <main className="container mx-auto px-4 py-8">
+        <div className="min-h-screen bg-secondary text-text-primary flex flex-col">
+            <main className="container mx-auto px-4 py-8 flex-grow">
                 {renderMainContent()}
             </main>
+
+            <Footer
+                onShowPrivacyPolicy={() => setIsPrivacyPolicyVisible(true)}
+                onShowAboutUs={() => setIsAboutUsVisible(true)}
+            />
 
             {selectedRecipe && (
                 <RecipeModal
@@ -1302,6 +1316,14 @@ const App: React.FC = () => {
                         </button>
                     </div>
                 </div>
+            )}
+            
+            {isPrivacyPolicyVisible && (
+                <PrivacyPolicy onClose={() => setIsPrivacyPolicyVisible(false)} />
+            )}
+
+            {isAboutUsVisible && (
+                <AboutUsModal onClose={() => setIsAboutUsVisible(false)} />
             )}
         </div>
     );

@@ -112,6 +112,14 @@ export interface Newsletter {
   recipientCount: number;
 }
 
+export interface AboutUsInfo {
+  companyName: string;
+  missionStatement: string;
+  history: string;
+  contactEmail: string;
+  address: string;
+}
+
 
 declare global {
   interface Window {

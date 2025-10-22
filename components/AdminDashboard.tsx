@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Recipe, User, Lead, Newsletter, CookingClass, Lesson } from '../types';
+import { Recipe, User, Lead, Newsletter, CookingClass, Lesson, AboutUsInfo } from '../types';
 import { generateImage, generateRecipeContentFromPrompt } from '../services/geminiService';
 import * as newsletterService from '../services/newsletterService';
+import * as aboutUsService from '../services/aboutUsService';
 import TrashIcon from './icons/TrashIcon';
 import WrenchIcon from './icons/WrenchIcon';
 import Spinner from './Spinner';
@@ -32,7 +33,7 @@ interface AdminDashboardProps {
     onUpdateClassImage: (classId: string, prompt: string) => Promise<void>;
 }
 
-type AdminView = 'users' | 'recipes' | 'add_recipe' | 'leads' | 'newsletter' | 'classes';
+type AdminView = 'users' | 'recipes' | 'add_recipe' | 'leads' | 'newsletter' | 'classes' | 'about_us';
 
 const statusMap: { [key in Recipe['status']]: string } = {
     active: 'All Recipes',
@@ -82,6 +83,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     // Add Class State
     const [showAddClassForm, setShowAddClassForm] = useState(false);
     const [newClass, setNewClass] = useState({ title: '', chef: '', description: '' });
+
+    // About Us State
+    const [aboutUsInfo, setAboutUsInfo] = useState<AboutUsInfo>(() => aboutUsService.getAboutUsInfo());
+    const [aboutUsSaveStatus, setAboutUsSaveStatus] = useState<'idle' | 'saved'>('idle');
 
 
     useEffect(() => {
@@ -646,6 +651,51 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
     );
 
+    const renderAboutUsEditor = () => {
+        const handleAboutUsChange = (field: keyof AboutUsInfo, value: string) => {
+            setAboutUsInfo(prev => ({ ...prev, [field]: value }));
+        };
+    
+        const handleSaveAboutUs = () => {
+            aboutUsService.saveAboutUsInfo(aboutUsInfo);
+            setAboutUsSaveStatus('saved');
+            setTimeout(() => setAboutUsSaveStatus('idle'), 2000);
+        };
+    
+        return (
+            <div className="bg-white p-6 rounded-lg shadow-md border border-border-color mt-6">
+                <h2 className="text-xl font-bold text-text-primary mb-4">About Us Page Content</h2>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium">Company Name</label>
+                        <input type="text" value={aboutUsInfo.companyName} onChange={e => handleAboutUsChange('companyName', e.target.value)} className="w-full p-2 border rounded"/>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Mission Statement</label>
+                        <textarea value={aboutUsInfo.missionStatement} onChange={e => handleAboutUsChange('missionStatement', e.target.value)} className="w-full p-2 border rounded" rows={3}></textarea>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Company History</label>
+                        <textarea value={aboutUsInfo.history} onChange={e => handleAboutUsChange('history', e.target.value)} className="w-full p-2 border rounded" rows={5}></textarea>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Contact Email</label>
+                        <input type="email" value={aboutUsInfo.contactEmail} onChange={e => handleAboutUsChange('contactEmail', e.target.value)} className="w-full p-2 border rounded"/>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Address</label>
+                        <input type="text" value={aboutUsInfo.address} onChange={e => handleAboutUsChange('address', e.target.value)} className="w-full p-2 border rounded"/>
+                    </div>
+                    <div className="flex justify-end">
+                        <button onClick={handleSaveAboutUs} className="px-6 py-2 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus">
+                            {aboutUsSaveStatus === 'saved' ? 'Saved!' : 'Save Information'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="animate-fade-in py-8">
             <div className="flex justify-between items-center mb-8">
@@ -658,13 +708,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
             </div>
 
-            <div className="flex border-b border-gray-200">
-                <button onClick={() => setCurrentView('users')} className={`px-4 py-2 font-semibold ${currentView === 'users' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>User Management</button>
-                <button onClick={() => setCurrentView('leads')} className={`px-4 py-2 font-semibold ${currentView === 'leads' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Leads</button>
-                <button onClick={() => setCurrentView('newsletter')} className={`px-4 py-2 font-semibold ${currentView === 'newsletter' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Newsletter</button>
-                <button onClick={() => setCurrentView('recipes')} className={`px-4 py-2 font-semibold ${currentView === 'recipes' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Recipe Management</button>
-                <button onClick={() => setCurrentView('add_recipe')} className={`px-4 py-2 font-semibold ${currentView === 'add_recipe' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Add Recipe</button>
-                <button onClick={() => setCurrentView('classes')} className={`px-4 py-2 font-semibold ${currentView === 'classes' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Cooking Classes</button>
+            <div className="flex border-b border-gray-200 overflow-x-auto">
+                <button onClick={() => setCurrentView('users')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'users' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>User Management</button>
+                <button onClick={() => setCurrentView('leads')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'leads' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Leads</button>
+                <button onClick={() => setCurrentView('newsletter')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'newsletter' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Newsletter</button>
+                <button onClick={() => setCurrentView('recipes')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'recipes' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Recipe Management</button>
+                <button onClick={() => setCurrentView('add_recipe')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'add_recipe' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Add Recipe</button>
+                <button onClick={() => setCurrentView('classes')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'classes' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Cooking Classes</button>
+                <button onClick={() => setCurrentView('about_us')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'about_us' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>About Us</button>
             </div>
             
             {currentView === 'users' && renderUserManagement()}
@@ -673,6 +724,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {currentView === 'add_recipe' && renderAddRecipeForm()}
             {currentView === 'newsletter' && renderNewsletterManagement()}
             {currentView === 'classes' && renderClassManagement()}
+            {currentView === 'about_us' && renderAboutUsEditor()}
 
             {isEditUserModalOpen && editingUser && (
                 <EditUserModal
