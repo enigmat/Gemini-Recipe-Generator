@@ -13,9 +13,8 @@ import * as favoritesService from './services/favoritesService';
 import * as userService from './services/userService';
 import * as leadService from './services/leadService';
 import IngredientInput from './components/IngredientInput';
-import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage, generateRecipeFromPrompt } from './services/geminiService';
+import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage, generateRecipeFromPrompt, categorizeShoppingListItem } from './services/geminiService';
 import Spinner from './components/Spinner';
-import ShoppingListModal from './components/ShoppingListModal';
 import MealPlanCard from './components/MealPlanCard';
 import MealPlanDetail from './components/MealPlanDetail';
 import CookMode from './components/CookMode';
@@ -45,13 +44,17 @@ import UsersIcon from './components/icons/UsersIcon';
 import FireIcon from './components/icons/FireIcon';
 import HeartIcon from './components/icons/HeartIcon';
 import { parseServings } from './utils/recipeUtils';
+import ManualAddItem from './components/ManualAddItem';
+import ShoppingCartIcon from './components/icons/ShoppingCartIcon';
+import DownloadIcon from './components/icons/DownloadIcon';
+import TrashIcon from './components/icons/TrashIcon';
 
 const ITEMS_PER_PAGE = 12;
 const RECIPES_STORAGE_KEY = 'marshmellowRecipes_allRecipes';
 const CLASSES_STORAGE_KEY = 'marshmellowRecipes_cookingClasses';
 
 
-type View = 'all' | 'saved' | 'plans' | 'videos' | 'bartender';
+type View = 'all' | 'saved' | 'plans' | 'videos' | 'bartender' | 'shopping';
 
 const App: React.FC = () => {
     // Single source of truth for all recipes, with localStorage persistence
@@ -122,9 +125,10 @@ const App: React.FC = () => {
     const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
 
     // States for shopping list
-    const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
-    const [isGeneratingList, setIsGeneratingList] = useState(false);
-    const [listGenerationError, setListGenerationError] = useState<string | null>(null);
+    const [activeShoppingList, setActiveShoppingList] = useState<ShoppingList | null>(null);
+    const [isShoppingListLoading, setIsShoppingListLoading] = useState(false);
+    const [shoppingListError, setShoppingListError] = useState<string | null>(null);
+    const [isAddingItem, setIsAddingItem] = useState(false);
 
     // States for Meal Plans
     const [selectedPlan, setSelectedPlan] = useState<MealPlan | null>(null);
@@ -359,20 +363,23 @@ const App: React.FC = () => {
     const handleGenerateRecipeShoppingList = async () => {
         if (!selectedRecipe) return;
 
-        setIsGeneratingList(true);
-        setListGenerationError(null);
+        setIsShoppingListLoading(true);
+        setShoppingListError(null);
         try {
             const list = await generateShoppingList(selectedRecipe.ingredients);
-            setShoppingList(list);
+            setActiveShoppingList(list);
+            setCurrentView('shopping');
         } catch (error) {
             console.error("Error generating shopping list:", error);
             if (error instanceof Error) {
-                setListGenerationError(error.message);
+                setShoppingListError(error.message);
             } else {
-                setListGenerationError("An unknown error occurred while generating the list.");
+                setShoppingListError("An unknown error occurred while generating the list.");
             }
+            setCurrentView('shopping');
         } finally {
-            setIsGeneratingList(false);
+            setIsShoppingListLoading(false);
+            setSelectedRecipe(null); // Close modal
         }
     };
 
@@ -383,23 +390,78 @@ const App: React.FC = () => {
         const recipesInPlan = allRecipes.filter(recipe => recipeTitlesInPlan.includes(recipe.title));
         const allIngredients = recipesInPlan.flatMap(recipe => recipe.ingredients);
 
-        setIsGeneratingList(true);
-        setListGenerationError(null);
+        setIsShoppingListLoading(true);
+        setShoppingListError(null);
         try {
             const list = await generateShoppingList(allIngredients);
-            setShoppingList(list);
+            setActiveShoppingList(list);
+            setCurrentView('shopping');
         } catch (error) {
             console.error("Error generating shopping list for plan:", error);
             if (error instanceof Error) {
-                setListGenerationError(error.message);
+                setShoppingListError(error.message);
             } else {
-                setListGenerationError("An unknown error occurred while generating the list.");
+                setShoppingListError("An unknown error occurred while generating the list.");
             }
+            setCurrentView('shopping');
         } finally {
-            setIsGeneratingList(false);
+            setIsShoppingListLoading(false);
+            setSelectedPlan(null); // Return to meal plan list
         }
     };
     
+    const handleGenerateFromSaved = async () => {
+        const savedRecipes = allRecipes.filter(recipe => savedRecipeTitles.includes(recipe.title));
+        if (savedRecipes.length === 0) {
+            setShoppingListError("You have no saved recipes to generate a list from.");
+            setActiveShoppingList(null);
+            return;
+        }
+
+        const allIngredients = savedRecipes.flatMap(recipe => recipe.ingredients);
+        
+        setIsShoppingListLoading(true);
+        setShoppingListError(null);
+        try {
+            const list = await generateShoppingList(allIngredients);
+            setActiveShoppingList(list);
+        } catch (error) {
+            if (error instanceof Error) {
+                setShoppingListError(error.message);
+            } else {
+                setShoppingListError("An error occurred generating the list from your saved recipes.");
+            }
+        } finally {
+            setIsShoppingListLoading(false);
+        }
+    };
+    
+    const handleAddItemFromScratch = async (item: string) => {
+        setIsAddingItem(true);
+        try {
+            const category = await categorizeShoppingListItem(item);
+            setActiveShoppingList(prevList => {
+                const newList: ShoppingList = prevList ? JSON.parse(JSON.stringify(prevList)) : [];
+                const categoryIndex = newList.findIndex(cat => cat.category.toLowerCase() === category.toLowerCase());
+                if (categoryIndex > -1) {
+                    newList[categoryIndex].items.push(item);
+                } else {
+                    newList.push({ category, items: [item] });
+                }
+                return newList;
+            });
+        } catch (error) {
+             console.error("Error adding item from scratch:", error);
+        } finally {
+            setIsAddingItem(false);
+        }
+    };
+    
+    const handleClearShoppingList = () => {
+        setActiveShoppingList(null);
+        setShoppingListError(null);
+    };
+
     const handleStartCookMode = () => {
         if (selectedRecipe) {
             setCookingRecipe(selectedRecipe);
@@ -439,6 +501,9 @@ const App: React.FC = () => {
     };
     
     const handleViewChange = (view: View) => {
+        if (view !== 'shopping') {
+            handleClearShoppingList();
+        }
         setCurrentView(view);
         setSelectedPlan(null); // Reset selected plan when changing main view
         setSearchQuery(''); // Reset search
@@ -703,7 +768,7 @@ const App: React.FC = () => {
                     onSelectRecipe={setSelectedRecipe}
                     onBack={() => setSelectedPlan(null)}
                     onGenerateList={handleGeneratePlanShoppingList}
-                    isGeneratingList={isGeneratingList}
+                    isGeneratingList={isShoppingListLoading}
                 />;
             }
             return (
@@ -711,6 +776,73 @@ const App: React.FC = () => {
                     {mealPlans.map(plan => (
                         <MealPlanCard key={plan.title} plan={plan} onClick={() => setSelectedPlan(plan)} />
                     ))}
+                </div>
+            );
+        }
+
+        if (currentView === 'shopping') {
+            return (
+                <div className="bg-white p-8 rounded-2xl shadow-lg max-w-4xl mx-auto border border-border-color">
+                    <h2 className="text-3xl font-bold text-text-primary text-center mb-6">Your Shopping List</h2>
+                    {isShoppingListLoading ? (
+                        <Spinner />
+                    ) : shoppingListError ? (
+                        <div className="text-center text-red-500 py-8 bg-red-50 rounded-lg">
+                            <p className="text-xl font-semibold">Oops! Something went wrong.</p>
+                            <p className="mt-2">{shoppingListError}</p>
+                            <button onClick={handleClearShoppingList} className="mt-4 px-6 py-2 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus">
+                                Start Over
+                            </button>
+                        </div>
+                    ) : activeShoppingList ? (
+                        <div className="animate-fade-in">
+                             <div className="flex justify-between items-center mb-6">
+                                <button onClick={handleClearShoppingList} className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-text-secondary font-semibold rounded-lg hover:bg-gray-300 transition-colors">
+                                    <TrashIcon className="w-5 h-5"/>
+                                    <span>Clear List</span>
+                                </button>
+                                <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-focus transition-colors">
+                                    <DownloadIcon className="w-5 h-5"/>
+                                    <span>Print List</span>
+                                </button>
+                            </div>
+                            <div className="space-y-6">
+                                {activeShoppingList.map(({ category, items }) => (
+                                    <div key={category}>
+                                        <h3 className="text-lg font-semibold text-primary mb-2 border-b-2 border-primary/20 pb-1">{category}</h3>
+                                        <ul className="space-y-2">
+                                            {items.map((item, index) => (
+                                                <li key={index} className="flex items-center">
+                                                    <input id={`item-${category}-${index}`} type="checkbox" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mr-3" />
+                                                    <label htmlFor={`item-${category}-${index}`} className="text-text-secondary">{item}</label>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </div>
+                             <div className="mt-8 pt-6 border-t border-dashed">
+                                <ManualAddItem onAddItem={handleAddItemFromScratch} isLoading={isAddingItem} />
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center animate-fade-in">
+                            <div className="bg-gray-50 p-6 rounded-lg border border-border-color flex flex-col items-center">
+                                <h3 className="text-lg font-semibold text-text-primary mb-2">From My Saved Recipes</h3>
+                                <p className="text-sm text-text-secondary mb-4 flex-grow">Generate a combined list for all {savedRecipeTitles.length} of your saved recipes.</p>
+                                <button onClick={handleGenerateFromSaved} disabled={savedRecipeTitles.length === 0} className="w-full mt-auto px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus disabled:bg-gray-400">
+                                    Generate List
+                                </button>
+                            </div>
+                             <div className="bg-gray-50 p-6 rounded-lg border border-border-color flex flex-col">
+                                <h3 className="text-lg font-semibold text-text-primary mb-2">Build From Scratch</h3>
+                                <p className="text-sm text-text-secondary mb-4 flex-grow">Add items one by one and we'll categorize them for you automatically.</p>
+                                <div className="mt-auto">
+                                    <ManualAddItem onAddItem={handleAddItemFromScratch} isLoading={isAddingItem} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
@@ -860,7 +992,7 @@ const App: React.FC = () => {
                 </div>
 
 
-                {currentView !== 'bartender' && (
+                {currentView !== 'bartender' && currentView !== 'shopping' && (
                     <>
                         <Header />
 
@@ -1034,7 +1166,7 @@ const App: React.FC = () => {
                 )}
 
 
-                <div className="flex justify-center mb-8 gap-1.5 p-1 bg-gray-200 rounded-lg max-w-xl mx-auto">
+                <div className="flex justify-center mb-8 gap-1.5 p-1 bg-gray-200 rounded-lg max-w-2xl mx-auto">
                     <button
                         onClick={() => handleViewChange('all')}
                         className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors ${currentView === 'all' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
@@ -1052,6 +1184,13 @@ const App: React.FC = () => {
                         className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors ${currentView === 'plans' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
                     >
                         Meal Plans
+                    </button>
+                     <button
+                        onClick={() => handleViewChange('shopping')}
+                        className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5 ${currentView === 'shopping' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
+                    >
+                        <ShoppingCartIcon className="h-4 w-4" />
+                        <span>Shopping List</span>
                     </button>
                     <button
                         onClick={() => handleViewChange('videos')}
@@ -1087,7 +1226,7 @@ const App: React.FC = () => {
                     isSaved={savedRecipeTitles.includes(selectedRecipe.title)}
                     onToggleSave={() => handleToggleSave(selectedRecipe.title)}
                     onGenerateShoppingList={handleGenerateRecipeShoppingList}
-                    isGeneratingList={isGeneratingList}
+                    isGeneratingList={isShoppingListLoading}
                     onStartCookMode={handleStartCookMode}
                 />
             )}
@@ -1105,18 +1244,6 @@ const App: React.FC = () => {
                     onClose={() => setIsCameraModalOpen(false)} 
                     onIngredientsScanned={handleIngredientsScanned}
                 />
-            )}
-
-            {(shoppingList || listGenerationError) && (
-                 <ShoppingListModal
-                    shoppingList={shoppingList}
-                    error={listGenerationError}
-                    recipeTitle={selectedPlan?.title || selectedRecipe?.title || 'your selection'}
-                    onClose={() => {
-                        setShoppingList(null);
-                        setListGenerationError(null);
-                    }}
-                 />
             )}
 
             {isUpgradeModalOpen && (

@@ -648,3 +648,48 @@ export const generateDrinkRecipe = async (drinkPrompt: string): Promise<DrinkRec
         throw new Error("Failed to generate a drink recipe. The model might have been unable to fulfill the request, or there was a network issue.");
     }
 };
+
+export const categorizeShoppingListItem = async (itemName: string): Promise<string> => {
+    const prompt = `
+        You are a shopping list assistant. Your task is to categorize a single grocery item into a standard grocery store category.
+        The categories should be general, like "Produce", "Meat & Poultry", "Dairy & Eggs", "Pantry", "Bakery", "Spices & Seasonings", "Beverages", "Frozen Foods", "Household Goods", "Uncategorized".
+
+        Item to categorize: "${itemName}"
+
+        Please return the category as a single JSON object with one key, "category".
+    `;
+
+    const categorySchema = {
+        type: Type.OBJECT,
+        properties: {
+            category: {
+                type: Type.STRING,
+                description: "The grocery store category for the item."
+            }
+        },
+        required: ["category"]
+    };
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: categorySchema,
+            },
+        });
+
+        const jsonText = response.text.trim();
+        const parsedJson = JSON.parse(jsonText);
+
+        if (parsedJson.category && typeof parsedJson.category === 'string') {
+            return parsedJson.category;
+        } else {
+            throw new Error("Invalid response format from API. Expected a 'category' string.");
+        }
+    } catch (error) {
+        console.error("Error categorizing shopping list item:", error);
+        return "Uncategorized"; // Fallback category
+    }
+};
