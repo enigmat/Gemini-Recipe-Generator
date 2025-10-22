@@ -9,8 +9,8 @@ const MortarPestleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     stroke="currentColor" 
     {...props}
   >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.82m5.84-2.56a12.025 12.025 0 0 1-5.84 7.38m-6.36-4.52a4.5 4.5 0 0 1 6.36-6.36m6.36 6.36a6.75 6.75 0 0 1-6.36-6.36m6.36 6.36a12.025 12.025 0 0 1-5.84 7.38m5.84-7.38a4.5 4.5 0 0 0-6.36-6.36m0 0a6.75 6.75 0 0 1 6.36 6.36m-6.36-6.36a12.025 12.025 0 0 0-5.84 7.38m-6.36-4.52L12 12" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 7.75l-4.5 4.5" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18.75h12c1.036 0 1.875-.84 1.875-1.875V11.25c0-4.142-3.358-7.5-7.5-7.5S4.5 7.108 4.5 11.25v5.625c0 1.035.84 1.875 1.875 1.875Z" />
   </svg>
 );
 

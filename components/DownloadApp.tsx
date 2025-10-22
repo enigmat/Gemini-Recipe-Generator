@@ -14,17 +14,17 @@ const DownloadApp: React.FC = () => {
                         Save your favorite recipes, create shopping lists, and more!
                     </p>
                     <div className="mt-6 flex flex-wrap justify-center md:justify-start gap-4">
-                        <a href="#" className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+                        <a href="#" className="flex items-center gap-2 bg-white text-text-primary px-5 py-3 rounded-lg border border-border-color hover:bg-gray-50 transition-colors shadow-sm">
                             <AppleIcon className="w-6 h-6" />
                             <div>
-                                <p className="text-xs">Download on the</p>
+                                <p className="text-xs text-text-secondary">Download on the</p>
                                 <p className="text-lg font-semibold -mt-1">App Store</p>
                             </div>
                         </a>
-                        <a href="#" className="flex items-center gap-3 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+                        <a href="#" className="flex items-center gap-3 bg-white text-text-primary px-5 py-3 rounded-lg border border-border-color hover:bg-gray-50 transition-colors shadow-sm">
                             <GooglePlayIcon className="w-5 h-5" />
                             <div>
-                                <p className="text-xs">GET IT ON</p>
+                                <p className="text-xs text-text-secondary">GET IT ON</p>
                                 <p className="text-lg font-semibold -mt-1">Google Play</p>
                             </div>
                         </a>

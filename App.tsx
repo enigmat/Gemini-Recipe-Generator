@@ -457,6 +457,26 @@ const App: React.FC = () => {
         }
     };
     
+    const handleRemoveShoppingListItem = (categoryToRemove: string, itemToRemove: string) => {
+        setActiveShoppingList(prevList => {
+            if (!prevList) return null;
+
+            const newList = prevList
+                .map(category => {
+                    if (category.category === categoryToRemove) {
+                        return {
+                            ...category,
+                            items: category.items.filter(item => item !== itemToRemove)
+                        };
+                    }
+                    return category;
+                })
+                .filter(category => category.items.length > 0);
+
+            return newList.length > 0 ? newList : null;
+        });
+    };
+
     const handleClearShoppingList = () => {
         setActiveShoppingList(null);
         setShoppingListError(null);
@@ -812,9 +832,18 @@ const App: React.FC = () => {
                                         <h3 className="text-lg font-semibold text-primary mb-2 border-b-2 border-primary/20 pb-1">{category}</h3>
                                         <ul className="space-y-2">
                                             {items.map((item, index) => (
-                                                <li key={index} className="flex items-center">
-                                                    <input id={`item-${category}-${index}`} type="checkbox" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mr-3" />
-                                                    <label htmlFor={`item-${category}-${index}`} className="text-text-secondary">{item}</label>
+                                                <li key={`${category}-${index}`} className="flex items-center justify-between group py-1">
+                                                    <div className="flex items-center">
+                                                        <input id={`item-${category}-${index}`} type="checkbox" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mr-3 peer" />
+                                                        <label htmlFor={`item-${category}-${index}`} className="text-text-secondary peer-checked:line-through peer-checked:text-gray-400 transition-colors">{item}</label>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleRemoveShoppingListItem(category, item)}
+                                                        className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                                                        aria-label={`Remove ${item}`}
+                                                    >
+                                                        <TrashIcon className="w-4 h-4" />
+                                                    </button>
                                                 </li>
                                             ))}
                                         </ul>
