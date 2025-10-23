@@ -15,6 +15,7 @@ export interface Recipe {
     carbs: string;
     fat: string;
   };
+  videoUrl?: string;
 }
 
 export interface DrinkRecipe {

@@ -780,3 +780,46 @@ export const categorizeShoppingListItem = async (itemName: string): Promise<stri
         return "Uncategorized"; // Fallback category
     }
 };
+
+export const findRecipeVideo = async (recipeTitle: string): Promise<string | null> => {
+    const prompt = `
+        Find a short, high-quality recipe video on a major, embeddable video platform (like YouTube) for "${recipeTitle}".
+        Return ONLY the direct, embeddable URL of the video. The URL should be clean and suitable for embedding in an iframe.
+        If no suitable video is found, return the text "null".
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                tools: [{ googleSearch: {} }],
+            },
+        });
+
+        const text = response.text.trim();
+        
+        if (text.toLowerCase() === 'null') {
+            return null;
+        }
+
+        // Regex to find the first URL in the response text
+        const urlRegex = /(https?:\/\/[^\s]+)/;
+        const match = text.match(urlRegex);
+
+        if (match && match[0]) {
+            let url = match[0];
+            // Convert YouTube watch URL to embed URL
+            if (url.includes("youtube.com/watch?v=")) {
+                const videoId = url.split('v=')[1].split('&')[0];
+                return `https://www.youtube.com/embed/${videoId}`;
+            }
+            return url;
+        }
+
+        return null;
+    } catch (error) {
+        console.error("Error finding recipe video:", error);
+        return null;
+    }
+};
