@@ -823,3 +823,55 @@ export const findRecipeVideo = async (recipeTitle: string): Promise<string | nul
         return null;
     }
 };
+
+const videoDetailsSchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: {
+            type: Type.STRING,
+            description: "A concise, engaging title for the video tutorial."
+        },
+        description: {
+            type: Type.STRING,
+            description: "A short, informative description of what the video teaches."
+        },
+        thumbnailImagePrompt: {
+            type: Type.STRING,
+            description: "A detailed, descriptive prompt for a text-to-image model to generate a high-quality, relevant thumbnail image for the video."
+        }
+    },
+    required: ["title", "description", "thumbnailImagePrompt"]
+};
+
+export const generateVideoDetails = async (promptText: string): Promise<{ title: string; description: string; thumbnailImagePrompt: string; }> => {
+    const prompt = `
+        You are a content creator for a cooking website. A user wants to create a short video tutorial.
+        Based on the user's request, generate the necessary details for the video.
+        You must generate:
+        1. A concise, engaging title.
+        2. A short, informative description.
+        3. A detailed, descriptive prompt for a text-to-image model to generate a high-quality, relevant thumbnail. The prompt should describe an appealing visual related to the video's content.
+
+        User's Video Request: "${promptText}"
+
+        Please return the result as a single, valid JSON object that conforms to the provided schema.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: videoDetailsSchema,
+            },
+        });
+
+        const jsonText = response.text.trim();
+        const generatedData = JSON.parse(jsonText);
+        return generatedData;
+    } catch (error) {
+        console.error("Error generating video details from prompt:", error);
+        throw new Error("Failed to generate video details from the prompt.");
+    }
+};

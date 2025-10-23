@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Recipe, User, Lead, Newsletter, CookingClass, Lesson, AboutUsInfo, VideoCategory, Video } from '../types';
-import { generateImage, generateRecipeContentFromPrompt } from '../services/geminiService';
+import { generateImage, generateRecipeContentFromPrompt, generateVideoDetails } from '../services/geminiService';
 import * as newsletterService from '../services/newsletterService';
 import * as aboutUsService from '../services/aboutUsService';
 import TrashIcon from './icons/TrashIcon';
@@ -36,7 +37,7 @@ interface AdminDashboardProps {
     onAddVideoCategory: () => void;
     onUpdateVideoCategory: (categoryId: string, newTitle: string) => void;
     onDeleteVideoCategory: (categoryId: string) => void;
-    onAddVideo: (categoryId: string) => void;
+    onAddVideo: (categoryId: string, video?: Omit<Video, 'id'>) => void;
     onUpdateVideo: (categoryId: string, videoId: string, updatedData: Partial<Omit<Video, 'id'>>) => void;
     onDeleteVideo: (categoryId: string, videoId: string) => void;
 }
@@ -62,6 +63,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [generatingClassImageId, setGeneratingClassImageId] = useState<string | null>(null);
     const [classImagePrompts, setClassImagePrompts] = useState<{ [key: string]: string }>({});
+    const [videoPrompts, setVideoPrompts] = useState<{ [key: string]: string }>({});
+    const [generatingVideoCatId, setGeneratingVideoCatId] = useState<string | null>(null);
 
     // Add Recipe State
     const [newRecipe, setNewRecipe] = useState<Partial<Recipe>>({
@@ -238,6 +241,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         });
         setNewClass({ title: '', chef: '', description: '' });
         setShowAddClassForm(false);
+    };
+
+    const handleGenerateAndAddVideo = async (categoryId: string) => {
+        const prompt = videoPrompts[categoryId];
+        if (!prompt || !prompt.trim()) {
+            alert('Please enter a video idea prompt.');
+            return;
+        }
+        setGeneratingVideoCatId(categoryId);
+        try {
+            const details = await generateVideoDetails(prompt);
+            const thumbnailUrl = await generateImage(details.thumbnailImagePrompt);
+            
+            const newVideo: Omit<Video, 'id'> = {
+                title: details.title,
+                description: details.description,
+                thumbnailUrl,
+                videoUrl: '' // Admin needs to add this
+            };
+
+            onAddVideo(categoryId, newVideo);
+            // Clear the prompt after successful generation
+            setVideoPrompts(prev => ({ ...prev, [categoryId]: '' }));
+
+        } catch (error) {
+            console.error("Failed to generate and add video:", error);
+            alert("Sorry, there was an error generating the video details. Please try again.");
+        } finally {
+            setGeneratingVideoCatId(null);
+        }
     };
 
     const renderUserManagement = () => (
@@ -752,11 +785,44 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             ))}
                         </div>
 
-                         <div className="mt-4 pt-4 border-t flex justify-end">
-                            <button onClick={() => onAddVideo(category.id)} className="px-3 py-1 bg-green-500 text-white text-sm font-semibold rounded-lg hover:bg-green-600 flex items-center gap-1">
-                                <PlusIcon className="w-4 h-4" />
-                                Add Video
-                            </button>
+                         <div className="mt-4 pt-4 border-t">
+                            <div className="p-3 bg-blue-50 rounded-lg border border-dashed border-blue-200">
+                                <h4 className="text-sm font-semibold mb-2 flex items-center gap-1 text-blue-800">
+                                    <SparklesIcon className="w-4 h-4 text-blue-500" />
+                                    Generate with AI
+                                </h4>
+                                <textarea
+                                    value={videoPrompts[category.id] || ''}
+                                    onChange={(e) => setVideoPrompts(prev => ({ ...prev, [category.id]: e.target.value }))}
+                                    placeholder="e.g., A quick tutorial on making a simple vinaigrette"
+                                    className="w-full p-2 border rounded text-sm"
+                                    rows={2}
+                                    disabled={generatingVideoCatId === category.id}
+                                />
+                                <div className="flex items-center justify-end gap-2 mt-2">
+                                    <button
+                                        onClick={() => onAddVideo(category.id)}
+                                        className="px-3 py-1 bg-gray-500 text-white text-xs font-semibold rounded-lg hover:bg-gray-600 flex items-center gap-1"
+                                    >
+                                        <PlusIcon className="w-4 h-4" />
+                                        Add Blank
+                                    </button>
+                                    <button
+                                        onClick={() => handleGenerateAndAddVideo(category.id)}
+                                        disabled={generatingVideoCatId === category.id || !(videoPrompts[category.id] || '').trim()}
+                                        className="px-3 py-1 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-focus flex items-center gap-1 disabled:bg-gray-400"
+                                    >
+                                        {generatingVideoCatId === category.id ? (
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        ) : (
+                                            <SparklesIcon className="w-4 h-4" />
+                                        )}
+                                        <span>
+                                            {generatingVideoCatId === category.id ? 'Generating...' : 'Generate & Add'}
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 ))}

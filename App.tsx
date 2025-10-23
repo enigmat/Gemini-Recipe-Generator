@@ -425,8 +425,14 @@ const App: React.FC = () => {
             saveVideosToStorage(videos.filter(cat => cat.id !== categoryId));
         }
     };
-    const handleAddVideo = (categoryId: string) => {
-        const newVideo: Video = { id: `video-${Date.now()}`, title: 'New Video', description: 'Description', thumbnailUrl: 'https://placehold.co/800x450/cccccc/ffffff/png?text=New', videoUrl: '' };
+    const handleAddVideo = (categoryId: string, video?: Omit<Video, 'id'>) => {
+        const newVideo: Video = {
+            id: `video-${Date.now()}`,
+            title: video?.title || 'New Video',
+            description: video?.description || 'Description',
+            thumbnailUrl: video?.thumbnailUrl || 'https://placehold.co/800x450/cccccc/ffffff/png?text=New',
+            videoUrl: video?.videoUrl || '',
+        };
         saveVideosToStorage(videos.map(cat => cat.id === categoryId ? { ...cat, videos: [...cat.videos, newVideo] } : cat));
     };
     const handleUpdateVideo = (categoryId: string, videoId: string, updatedData: Partial<Omit<Video, 'id'>>) => {
