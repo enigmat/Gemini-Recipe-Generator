@@ -12,6 +12,7 @@ import { cookingClasses as cookingClassesData } from './data/cookingClasses';
 import * as favoritesService from './services/favoritesService';
 import * as userService from './services/userService';
 import * as leadService from './services/leadService';
+import * as imageStore from './services/imageStore';
 import IngredientInput from './components/IngredientInput';
 import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage, generateRecipeFromPrompt, categorizeShoppingListItem } from './services/geminiService';
 import Spinner from './components/Spinner';
@@ -61,17 +62,8 @@ type View = 'all' | 'saved' | 'plans' | 'videos' | 'bartender' | 'shopping';
 
 const App: React.FC = () => {
     // Single source of truth for all recipes, with localStorage persistence
-    const [allRecipes, setAllRecipes] = useState<Recipe[]>(() => {
-        try {
-            const storedRecipes = localStorage.getItem(RECIPES_STORAGE_KEY);
-            if (storedRecipes) {
-                return JSON.parse(storedRecipes);
-            }
-        } catch (error) {
-            console.error("Error parsing recipes from localStorage", error);
-        }
-        return allRecipesData;
-    });
+    const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
+    const [areRecipesLoading, setAreRecipesLoading] = useState(true);
 
     const [cookingClasses, setCookingClasses] = useState<CookingClass[]>(() => {
         try {
@@ -157,41 +149,98 @@ const App: React.FC = () => {
     // Derived recipe lists from the single source of truth
     const activeRecipes = useMemo(() => allRecipes.filter(r => r.status === 'active'), [allRecipes]);
     const newThisMonthRecipes = useMemo(() => allRecipes.filter(r => r.status === 'new_this_month'), [allRecipes]);
-
+    
     useEffect(() => {
-        const user = userService.getCurrentUser();
-        setCurrentUser(user);
+        const loadInitialData = async () => {
+            // User & premium stuff
+            const user = userService.getCurrentUser();
+            setCurrentUser(user);
+            const hasPaid = userService.getPremiumStatus();
+            setIsPremium(hasPaid || (user?.isAdmin ?? false));
+            setAllUsers(userService.getAllUsers());
+            setLeads(leadService.getAllLeads());
+            setSavedRecipeTitles(favoritesService.getSavedRecipeTitles());
 
-        const hasPaid = userService.getPremiumStatus();
-        setIsPremium(hasPaid || (user?.isAdmin ?? false));
-        
-        setAllUsers(userService.getAllUsers());
-        setLeads(leadService.getAllLeads());
-        setSavedRecipeTitles(favoritesService.getSavedRecipeTitles());
+            // Recipe loading from localStorage and image hydration from IndexedDB
+            let recipesFromStorage: Recipe[] = [];
+            try {
+                const storedRecipesJson = localStorage.getItem(RECIPES_STORAGE_KEY);
+                if (storedRecipesJson) {
+                    recipesFromStorage = JSON.parse(storedRecipesJson);
+                } else {
+                    recipesFromStorage = allRecipesData; // First time load, use default data
+                }
+            } catch (error) {
+                console.error("Error parsing recipes from localStorage", error);
+                recipesFromStorage = allRecipesData; // Fallback
+            }
 
-        // Check for Stripe checkout redirect
-        const query = new URLSearchParams(window.location.search);
-        if (query.get('checkout') === 'success') {
-            userService.setPremiumStatus(true);
-            const updatedUser = userService.getCurrentUser(); // Re-fetch user to get subscription
-            setCurrentUser(updatedUser);
-            setIsPremium(true);
-            setShowUpgradeConfirmation(true);
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-        if (query.get('checkout') === 'cancel') {
-             window.history.replaceState({}, document.title, window.location.pathname);
-        }
+            const hydratedRecipes = await Promise.all(
+                recipesFromStorage.map(async (recipe) => {
+                    if (recipe.imageUrl && recipe.imageUrl.startsWith('indexeddb:')) {
+                        const key = recipe.imageUrl.substring(10); // remove 'indexeddb:'
+                        const storedImage = await imageStore.getImage(key);
+                        if (storedImage) {
+                            return { ...recipe, imageUrl: storedImage };
+                        }
+                    }
+                    return recipe;
+                })
+            );
+            
+            setAllRecipes(hydratedRecipes);
+            setAreRecipesLoading(false);
+
+            // Check for Stripe checkout redirect
+            const query = new URLSearchParams(window.location.search);
+            if (query.get('checkout') === 'success') {
+                userService.setPremiumStatus(true);
+                const updatedUser = userService.getCurrentUser();
+                setCurrentUser(updatedUser);
+                setIsPremium(true);
+                setShowUpgradeConfirmation(true);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            if (query.get('checkout') === 'cancel') {
+                 window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        };
+
+        loadInitialData();
     }, []);
     
-    // Persist recipes to localStorage whenever they change
+    // Persist recipes to localStorage and images to IndexedDB whenever they change
     useEffect(() => {
-        try {
-            localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(allRecipes));
-        } catch (error) {
-            console.error("Error saving recipes to localStorage", error);
+        if (areRecipesLoading) {
+            return; // Don't save during initial load/hydration
         }
-    }, [allRecipes]);
+
+        const persistRecipes = async () => {
+            const storableRecipes = await Promise.all(
+                allRecipes.map(async (recipe) => {
+                    if (recipe.imageUrl.startsWith('data:image')) {
+                        const key = recipe.title;
+                        try {
+                            await imageStore.saveImage(key, recipe.imageUrl);
+                            return { ...recipe, imageUrl: `indexeddb:${key}` };
+                        } catch (error) {
+                             console.error(`Failed to save image for ${key} to IndexedDB`, error);
+                             return recipe; // Fallback to saving base64 if IndexedDB fails
+                        }
+                    }
+                    return recipe;
+                })
+            );
+
+            try {
+                localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(storableRecipes));
+            } catch (error) {
+                console.error("Error saving recipes to localStorage. Storage might be full.", error);
+            }
+        };
+
+        persistRecipes();
+    }, [allRecipes, areRecipesLoading]);
 
     // Persist cooking classes to localStorage whenever they change
     useEffect(() => {
@@ -683,6 +732,14 @@ const App: React.FC = () => {
             alert("Could not generate a new image. Please try again.");
         }
     };
+    
+    if (areRecipesLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Spinner />
+            </div>
+        );
+    }
 
     const renderContent = () => {
         if (currentView === 'bartender') {
