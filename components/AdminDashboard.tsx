@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Recipe, User, Lead, Newsletter, CookingClass, Lesson, AboutUsInfo } from '../types';
+import { Recipe, User, Lead, Newsletter, CookingClass, Lesson, AboutUsInfo, VideoCategory, Video } from '../types';
 import { generateImage, generateRecipeContentFromPrompt } from '../services/geminiService';
 import * as newsletterService from '../services/newsletterService';
 import * as aboutUsService from '../services/aboutUsService';
@@ -18,6 +19,7 @@ interface AdminDashboardProps {
     allRecipes: Recipe[];
     allLeads: Lead[];
     cookingClasses: CookingClass[];
+    videos: VideoCategory[];
     onDeleteUser: (email: string) => void;
     onGiveFreeTime: (email: string, months: number) => void;
     onUpdateUser: (email: string, updatedData: Partial<User>) => void;
@@ -31,9 +33,15 @@ interface AdminDashboardProps {
     onUpdateLesson: (classId: string, lessonId: string, updatedData: Partial<Omit<Lesson, 'id'>>) => void;
     onDeleteLesson: (classId: string, lessonId: string) => void;
     onUpdateClassImage: (classId: string, prompt: string) => Promise<void>;
+    onAddVideoCategory: () => void;
+    onUpdateVideoCategory: (categoryId: string, newTitle: string) => void;
+    onDeleteVideoCategory: (categoryId: string) => void;
+    onAddVideo: (categoryId: string) => void;
+    onUpdateVideo: (categoryId: string, videoId: string, updatedData: Partial<Omit<Video, 'id'>>) => void;
+    onDeleteVideo: (categoryId: string, videoId: string) => void;
 }
 
-type AdminView = 'users' | 'recipes' | 'add_recipe' | 'leads' | 'newsletter' | 'classes' | 'about_us';
+type AdminView = 'users' | 'recipes' | 'add_recipe' | 'leads' | 'newsletter' | 'classes' | 'about_us' | 'videos';
 
 const statusMap: { [key in Recipe['status']]: string } = {
     active: 'All Recipes',
@@ -42,10 +50,11 @@ const statusMap: { [key in Recipe['status']]: string } = {
 };
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
-    onBackToApp, onAddRecipe, allUsers, allRecipes, allLeads, cookingClasses, onDeleteUser,
+    onBackToApp, onAddRecipe, allUsers, allRecipes, allLeads, cookingClasses, videos, onDeleteUser,
     onGiveFreeTime, onUpdateUser, onDeleteRecipe, onUpdateRecipeStatus, onFixImage,
     onAddCookingClass, onUpdateCookingClass, onDeleteCookingClass, onAddLesson, onUpdateLesson,
-    onDeleteLesson, onUpdateClassImage
+    onDeleteLesson, onUpdateClassImage, onAddVideoCategory, onUpdateVideoCategory,
+    onDeleteVideoCategory, onAddVideo, onUpdateVideo, onDeleteVideo
 }) => {
     const [currentView, setCurrentView] = useState<AdminView>('users');
     const [fixingImageTitle, setFixingImageTitle] = useState<string | null>(null);
@@ -696,6 +705,65 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         );
     };
 
+    const renderVideoManagement = () => (
+        <div className="mt-6">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-text-primary">Video Management</h2>
+                <button
+                    onClick={onAddVideoCategory}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-focus"
+                >
+                    <PlusIcon className="w-5 h-5" />
+                    Add New Category
+                </button>
+            </div>
+
+            <div className="space-y-6">
+                {videos.map(category => (
+                    <div key={category.id} className="bg-white p-4 rounded-lg shadow-md border">
+                        <div className="flex justify-between items-center mb-4 pb-2 border-b">
+                            <input 
+                                value={category.title}
+                                onChange={(e) => onUpdateVideoCategory(category.id, e.target.value)}
+                                className="text-lg font-bold text-text-primary border-none focus:ring-2 focus:ring-primary p-1 -m-1 rounded"
+                            />
+                            <button onClick={() => onDeleteVideoCategory(category.id)} className="p-1 text-red-500 hover:text-red-700">
+                                <TrashIcon className="w-5 h-5"/>
+                            </button>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            {category.videos.map(video => (
+                                <div key={video.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-3 rounded-md border">
+                                    <div className="space-y-2">
+                                        <input value={video.title} onChange={(e) => onUpdateVideo(category.id, video.id, { title: e.target.value })} placeholder="Video Title" className="w-full p-2 border rounded text-sm"/>
+                                        <textarea value={video.description} onChange={(e) => onUpdateVideo(category.id, video.id, { description: e.target.value })} placeholder="Description" className="w-full p-2 border rounded text-sm" rows={2}/>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <input value={video.thumbnailUrl} onChange={(e) => onUpdateVideo(category.id, video.id, { thumbnailUrl: e.target.value })} placeholder="Thumbnail URL" className="w-full p-2 border rounded text-sm"/>
+                                        <div className="flex items-center gap-2">
+                                            <input value={video.videoUrl} onChange={(e) => onUpdateVideo(category.id, video.id, { videoUrl: e.target.value })} placeholder="Video URL" className="w-full p-2 border rounded text-sm"/>
+                                            <button onClick={() => onDeleteVideo(category.id, video.id)} className="p-1 text-red-500 hover:text-red-700">
+                                                <TrashIcon className="w-4 h-4"/>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                         <div className="mt-4 pt-4 border-t flex justify-end">
+                            <button onClick={() => onAddVideo(category.id)} className="px-3 py-1 bg-green-500 text-white text-sm font-semibold rounded-lg hover:bg-green-600 flex items-center gap-1">
+                                <PlusIcon className="w-4 h-4" />
+                                Add Video
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+
     return (
         <div className="animate-fade-in py-8">
             <div className="flex justify-between items-center mb-8">
@@ -715,6 +783,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <button onClick={() => setCurrentView('recipes')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'recipes' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Recipe Management</button>
                 <button onClick={() => setCurrentView('add_recipe')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'add_recipe' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Add Recipe</button>
                 <button onClick={() => setCurrentView('classes')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'classes' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Cooking Classes</button>
+                <button onClick={() => setCurrentView('videos')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'videos' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Video Management</button>
                 <button onClick={() => setCurrentView('about_us')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'about_us' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>About Us</button>
             </div>
             
@@ -724,6 +793,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {currentView === 'add_recipe' && renderAddRecipeForm()}
             {currentView === 'newsletter' && renderNewsletterManagement()}
             {currentView === 'classes' && renderClassManagement()}
+            {currentView === 'videos' && renderVideoManagement()}
             {currentView === 'about_us' && renderAboutUsEditor()}
 
             {isEditUserModalOpen && editingUser && (

@@ -1,3 +1,4 @@
+
 export interface Recipe {
   title: string;
   description: string;
@@ -48,6 +49,7 @@ export interface MealPlan {
 }
 
 export interface Video {
+  id: string;
   title: string;
   description: string;
   thumbnailUrl: string;
@@ -55,6 +57,7 @@ export interface Video {
 }
 
 export interface VideoCategory {
+  id: string;
   title: string;
   videos: Video[];
 }

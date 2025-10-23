@@ -1,3 +1,5 @@
+
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass, User, Lead } from './types';
 import Header from './components/Header';
@@ -7,12 +9,13 @@ import RecipeModal from './components/RecipeModal';
 import TagFilter from './components/TagFilter';
 import { recipes as allRecipesData } from './data/recipes';
 import { mealPlans } from './data/mealPlans';
-import { videoData } from './data/videos';
+import { videoData as initialVideoData } from './data/videos';
 import { cookingClasses as cookingClassesData } from './data/cookingClasses';
 import * as favoritesService from './services/favoritesService';
 import * as userService from './services/userService';
 import * as leadService from './services/leadService';
 import * as imageStore from './services/imageStore';
+import * as ratingService from './services/ratingService';
 import IngredientInput from './components/IngredientInput';
 import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage, generateRecipeFromPrompt, categorizeShoppingListItem } from './services/geminiService';
 import Spinner from './components/Spinner';
@@ -52,30 +55,27 @@ import TrashIcon from './components/icons/TrashIcon';
 import Footer from './components/Footer';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import AboutUsModal from './components/AboutUsModal';
+import ShoppingListModal from './components/ShoppingListModal';
+import VariationModal from './components/VariationModal';
+import FavoriteRecipes from './components/FavoriteRecipes';
+import DownloadApp from './components/DownloadApp';
+
 
 const ITEMS_PER_PAGE = 12;
 const RECIPES_STORAGE_KEY = 'marshmellowRecipes_allRecipes';
 const CLASSES_STORAGE_KEY = 'marshmellowRecipes_cookingClasses';
+const VIDEOS_STORAGE_KEY = 'marshmellowRecipes_videos';
+const SHOPPING_LIST_KEY = 'marshmellowRecipes_shoppingList';
 
-
-type View = 'all' | 'saved' | 'plans' | 'videos' | 'bartender' | 'shopping';
+type View = 'all' | 'saved' | 'plans' | 'videos' | 'bartender' | 'shopping' | 'classes' | 'expert';
 
 const App: React.FC = () => {
     // Single source of truth for all recipes, with localStorage persistence
     const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
     const [areRecipesLoading, setAreRecipesLoading] = useState(true);
 
-    const [cookingClasses, setCookingClasses] = useState<CookingClass[]>(() => {
-        try {
-            const storedClasses = localStorage.getItem(CLASSES_STORAGE_KEY);
-            if (storedClasses) {
-                return JSON.parse(storedClasses);
-            }
-        } catch (error) {
-            console.error("Error parsing cooking classes from localStorage", error);
-        }
-        return cookingClassesData;
-    });
+    const [cookingClasses, setCookingClasses] = useState<CookingClass[]>([]);
+    const [videos, setVideos] = useState<VideoCategory[]>([]);
 
     // States for browsing and filtering
     const [searchQuery, setSearchQuery] = useState('');
@@ -109,7 +109,6 @@ const App: React.FC = () => {
     const [isGeneratingFromIdea, setIsGeneratingFromIdea] = useState(false);
     const [ideaGeneratedRecipe, setIdeaGeneratedRecipe] = useState<Recipe | null>(null);
 
-
     // States for URL import
     const [recipeUrl, setRecipeUrl] = useState('');
     const [isImporting, setIsImporting] = useState(false);
@@ -120,9 +119,10 @@ const App: React.FC = () => {
     const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
 
     // States for shopping list
-    const [activeShoppingList, setActiveShoppingList] = useState<ShoppingList | null>(null);
+    const [shoppingList, setShoppingList] = useState<ShoppingList>([]);
     const [isShoppingListLoading, setIsShoppingListLoading] = useState(false);
     const [shoppingListError, setShoppingListError] = useState<string | null>(null);
+    const [shoppingListModalRecipe, setShoppingListModalRecipe] = useState<Recipe | MealPlan | null>(null);
     const [isAddingItem, setIsAddingItem] = useState(false);
 
     // States for Meal Plans
@@ -130,9 +130,13 @@ const App: React.FC = () => {
 
     // State for Cook Mode
     const [cookingRecipe, setCookingRecipe] = useState<Recipe | null>(null);
+    
+    // State for Recipe Variation
+    const [variationRecipe, setVariationRecipe] = useState<Recipe | null>(null);
+    const [isGeneratingVariation, setIsGeneratingVariation] = useState(false);
 
     // State for Videos
-    const [playingVideo, setPlayingVideo] = useState<Video | null>(null);
+    const [playingVideo, setPlayingVideo] = useState<Video | Lesson | null>(null);
 
     // State for Advanced Classes
     const [selectedClass, setSelectedClass] = useState<CookingClass | null>(null);
@@ -146,241 +150,149 @@ const App: React.FC = () => {
     const [isAboutUsVisible, setIsAboutUsVisible] = useState(false);
 
 
-    // Derived recipe lists from the single source of truth
-    const activeRecipes = useMemo(() => allRecipes.filter(r => r.status === 'active'), [allRecipes]);
-    const newThisMonthRecipes = useMemo(() => allRecipes.filter(r => r.status === 'new_this_month'), [allRecipes]);
-    
+    // --- Data Loading and Persistence ---
     useEffect(() => {
         const loadInitialData = async () => {
-            // User & premium stuff
             const user = userService.getCurrentUser();
             setCurrentUser(user);
-            const hasPaid = userService.getPremiumStatus();
-            setIsPremium(hasPaid || (user?.isAdmin ?? false));
+            setIsPremium(userService.getPremiumStatus());
             setAllUsers(userService.getAllUsers());
             setLeads(leadService.getAllLeads());
             setSavedRecipeTitles(favoritesService.getSavedRecipeTitles());
 
-            // Recipe loading from localStorage and image hydration from IndexedDB
+            // Load recipes
             let recipesFromStorage: Recipe[] = [];
             try {
                 const storedRecipesJson = localStorage.getItem(RECIPES_STORAGE_KEY);
-                if (storedRecipesJson) {
-                    recipesFromStorage = JSON.parse(storedRecipesJson);
-                } else {
-                    recipesFromStorage = allRecipesData; // First time load, use default data
-                }
+                recipesFromStorage = storedRecipesJson ? JSON.parse(storedRecipesJson) : allRecipesData;
             } catch (error) {
                 console.error("Error parsing recipes from localStorage", error);
-                recipesFromStorage = allRecipesData; // Fallback
+                recipesFromStorage = allRecipesData;
             }
 
             const hydratedRecipes = await Promise.all(
                 recipesFromStorage.map(async (recipe) => {
                     if (recipe.imageUrl && recipe.imageUrl.startsWith('indexeddb:')) {
-                        const key = recipe.imageUrl.substring(10); // remove 'indexeddb:'
+                        const key = recipe.imageUrl.substring(10);
                         const storedImage = await imageStore.getImage(key);
-                        if (storedImage) {
-                            return { ...recipe, imageUrl: storedImage };
-                        }
+                        return storedImage ? { ...recipe, imageUrl: storedImage } : recipe;
                     }
                     return recipe;
                 })
             );
-            
             setAllRecipes(hydratedRecipes);
             setAreRecipesLoading(false);
-
-            // Check for Stripe checkout redirect
+            
+            // Load classes, videos, shopping list
+            setCookingClasses(JSON.parse(localStorage.getItem(CLASSES_STORAGE_KEY) || JSON.stringify(cookingClassesData)));
+            setVideos(JSON.parse(localStorage.getItem(VIDEOS_STORAGE_KEY) || JSON.stringify(initialVideoData)));
+            setShoppingList(JSON.parse(localStorage.getItem(SHOPPING_LIST_KEY) || '[]'));
+            
+            // Stripe checkout redirect handling
             const query = new URLSearchParams(window.location.search);
             if (query.get('checkout') === 'success') {
                 userService.setPremiumStatus(true);
-                const updatedUser = userService.getCurrentUser();
-                setCurrentUser(updatedUser);
+                setCurrentUser(userService.getCurrentUser());
                 setIsPremium(true);
                 setShowUpgradeConfirmation(true);
                 window.history.replaceState({}, document.title, window.location.pathname);
-            }
-            if (query.get('checkout') === 'cancel') {
-                 window.history.replaceState({}, document.title, window.location.pathname);
             }
         };
 
         loadInitialData();
     }, []);
-    
-    // Persist recipes to localStorage and images to IndexedDB whenever they change
-    useEffect(() => {
-        if (areRecipesLoading) {
-            return; // Don't save during initial load/hydration
-        }
 
-        const persistRecipes = async () => {
-            const storableRecipes = await Promise.all(
-                allRecipes.map(async (recipe) => {
-                    if (recipe.imageUrl.startsWith('data:image')) {
-                        const key = recipe.title;
-                        try {
-                            await imageStore.saveImage(key, recipe.imageUrl);
-                            return { ...recipe, imageUrl: `indexeddb:${key}` };
-                        } catch (error) {
-                             console.error(`Failed to save image for ${key} to IndexedDB`, error);
-                             return recipe; // Fallback to saving base64 if IndexedDB fails
-                        }
-                    }
-                    return recipe;
-                })
-            );
-
-            try {
-                localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(storableRecipes));
-            } catch (error) {
-                console.error("Error saving recipes to localStorage. Storage might be full.", error);
-            }
-        };
-
-        persistRecipes();
-    }, [allRecipes, areRecipesLoading]);
-
-    // Persist cooking classes to localStorage whenever they change
-    useEffect(() => {
+    const saveAllRecipesToStorage = (updatedRecipes: Recipe[]) => {
         try {
-            localStorage.setItem(CLASSES_STORAGE_KEY, JSON.stringify(cookingClasses));
+            const recipesToStore = updatedRecipes.map(r => ({...r, imageUrl: r.imageUrl.startsWith('data:') ? `indexeddb:${r.title}` : r.imageUrl}));
+            localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(recipesToStore));
+            setAllRecipes(updatedRecipes);
         } catch (error) {
-            console.error("Error saving cooking classes to localStorage", error);
+            console.error("Failed to save recipes to localStorage", error);
         }
-    }, [cookingClasses]);
-
+    };
+    
+    // --- Derived Data ---
+    const activeRecipes = useMemo(() => allRecipes.filter(r => r.status === 'active'), [allRecipes]);
+    const newThisMonthRecipes = useMemo(() => allRecipes.filter(r => r.status === 'new_this_month'), [allRecipes]);
+    const savedRecipes = useMemo(() => allRecipes.filter(r => savedRecipeTitles.includes(r.title)), [allRecipes, savedRecipeTitles]);
+    
     const allTags = useMemo(() => {
         const tags = new Set<string>();
-        allRecipes.forEach(recipe => {
-            if (recipe.status !== 'archived') {
-                recipe.tags.forEach(tag => tags.add(tag));
-            }
-        });
+        activeRecipes.forEach(recipe => recipe.tags.forEach(tag => tags.add(tag)));
         return Array.from(tags).sort();
-    }, [allRecipes]);
+    }, [activeRecipes]);
+    
+    const filteredRecipes = useMemo(() => {
+        let recipes = currentView === 'saved' ? savedRecipes : activeRecipes;
+        return recipes.filter(recipe => {
+            const query = searchQuery.toLowerCase();
+            const matchesQuery = recipe.title.toLowerCase().includes(query) ||
+                                 recipe.ingredients.some(ing => ing.toLowerCase().includes(query)) ||
+                                 recipe.tags.some(tag => tag.toLowerCase().includes(query));
+            const matchesTags = selectedTags.length === 0 || selectedTags.every(tag => recipe.tags.includes(tag));
+            return matchesQuery && matchesTags;
+        });
+    }, [searchQuery, selectedTags, activeRecipes, savedRecipes, currentView]);
 
+    const topRatedRecipes = useMemo(() => {
+        return allRecipes
+            .map(recipe => {
+                const ratings = ratingService.getRatingsForRecipe(recipe.title);
+                const ratingCount = ratings.length;
+                const averageRating = ratingCount > 0 ? ratings.reduce((a, b) => a + b, 0) / ratingCount : 0;
+                return { ...recipe, averageRating, ratingCount };
+            })
+            .filter(recipe => recipe.averageRating >= 4 && recipe.ratingCount >= 3)
+            .sort((a, b) => b.averageRating - a.averageRating);
+    }, [allRecipes]);
+    
+
+    // --- Handlers ---
+    const handleSelectRecipe = (recipe: Recipe) => setSelectedRecipe(recipe);
+    const handleCloseModal = () => setSelectedRecipe(null);
     const handleToggleSave = (recipeTitle: string) => {
-        const isSaved = savedRecipeTitles.includes(recipeTitle);
-        if (isSaved) {
+        if (savedRecipeTitles.includes(recipeTitle)) {
             favoritesService.unsaveRecipe(recipeTitle);
-            setSavedRecipeTitles(savedRecipeTitles.filter(t => t !== recipeTitle));
         } else {
             favoritesService.saveRecipe(recipeTitle);
-            setSavedRecipeTitles([...savedRecipeTitles, recipeTitle]);
         }
+        setSavedRecipeTitles(favoritesService.getSavedRecipeTitles());
     };
-
-    const filteredRecipes = useMemo(() => {
-        let recipes = currentView === 'saved'
-            ? allRecipes.filter(recipe => savedRecipeTitles.includes(recipe.title))
-            : activeRecipes;
-
-        return recipes.filter(recipe => {
-            const searchLower = searchQuery.toLowerCase();
-            const matchesSearch =
-                !searchQuery ||
-                recipe.title.toLowerCase().includes(searchLower) ||
-                recipe.description.toLowerCase().includes(searchLower) ||
-                recipe.ingredients.some(ing => ing.toLowerCase().includes(searchLower)) ||
-                recipe.tags.some(tag => tag.toLowerCase().includes(searchLower));
-
-            const matchesTags =
-                selectedTags.length === 0 ||
-                selectedTags.every(tag => recipe.tags.includes(tag));
-
-            return matchesSearch && matchesTags;
-        });
-    }, [searchQuery, selectedTags, currentView, savedRecipeTitles, allRecipes, activeRecipes]);
-
     const handleTagClick = (tag: string) => {
-        setSelectedTags(prevTags =>
-            prevTags.includes(tag)
-                ? prevTags.filter(t => t !== tag)
-                : [...prevTags, tag]
-        );
-        setItemsToShow(ITEMS_PER_PAGE); // Reset pagination on filter change
+        setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
     };
-
-    const showMoreItems = () => {
-        setItemsToShow(prev => prev + ITEMS_PER_PAGE);
+    const handleLogin = (email: string) => {
+        userService.loginUser(email);
+        setCurrentUser(userService.getCurrentUser());
+        setIsPremium(userService.getPremiumStatus());
+        setIsLoginModalOpen(false);
     };
-
-    const currentRecipes = filteredRecipes.slice(0, itemsToShow);
-
-    const handleGenerateRecipes = async () => {
+    const handleLogout = () => {
+        userService.logoutUser();
+        setCurrentUser(null);
+        setIsPremium(false);
+        setIsDashboardVisible(false);
+    };
+    const handleGenerateFromIngredients = async () => {
         if (ingredients.length === 0) {
-            setGenerationError("Please add some ingredients first.");
+            setGenerationError("Please add at least one ingredient.");
             return;
         }
         setIsGenerating(true);
         setGenerationError(null);
         setGeneratedRecipes(null);
-        setIdeaGeneratedRecipe(null);
         try {
             const recipes = await generateRecipes(ingredients);
-            setGeneratedRecipes(recipes.map(r => ({ ...r, status: 'active' })));
+            setGeneratedRecipes(recipes);
         } catch (error) {
-            console.error("Error generating recipes:", error);
-            if (error instanceof Error) {
-                setGenerationError(error.message);
-            } else {
-                setGenerationError("An unknown error occurred while generating recipes.");
-            }
+            setGenerationError(error instanceof Error ? error.message : "An unknown error occurred.");
         } finally {
             setIsGenerating(false);
         }
     };
-
-    const handleGenerateRecipeFromPrompt = async () => {
-        if (!isPremium) {
-            setIsUpgradeModalOpen(true);
-            return;
-        }
-        if (!recipePrompt.trim()) {
-            setPromptError("Please describe the recipe you want to create.");
-            return;
-        }
-        setIsGeneratingFromIdea(true);
-        setPromptError(null);
-        setIdeaGeneratedRecipe(null);
-
-        try {
-            const recipe = await generateRecipeFromPrompt(recipePrompt);
-            
-            // Add to global state so it persists
-            setAllRecipes(prev => [recipe, ...prev]);
-            
-            // Save it to user's favorites
-            if (!savedRecipeTitles.includes(recipe.title)) {
-                handleToggleSave(recipe.title);
-            }
-            
-            // Show the recipe on the page
-            setIdeaGeneratedRecipe(recipe);
-            
-            // Clear the input
-            setRecipePrompt('');
-            
-        } catch (error) {
-            console.error("Error generating recipe from prompt:", error);
-            if (error instanceof Error) {
-                setPromptError(error.message);
-            } else {
-                setPromptError("An unknown error occurred while generating the recipe.");
-            }
-        } finally {
-            setIsGeneratingFromIdea(false);
-        }
-    };
-
-    const handleImportRecipe = async () => {
-        if (!isPremium) {
-            setIsUpgradeModalOpen(true);
-            return;
-        }
-        if (!recipeUrl) {
+    const handleImportFromUrl = async () => {
+        if (!recipeUrl.trim()) {
             setImportError("Please enter a URL.");
             return;
         }
@@ -389,1013 +301,373 @@ const App: React.FC = () => {
         setImportSuccessMessage(null);
         try {
             const newRecipe = await importRecipeFromUrl(recipeUrl);
-            const recipeWithStatus: Recipe = { ...newRecipe, status: 'active' };
-            setAllRecipes(prev => [recipeWithStatus, ...prev]);
-            
-            // Ensure it's saved if not already
-            if (!savedRecipeTitles.includes(newRecipe.title)) {
-                 handleToggleSave(newRecipe.title);
-            }
-    
-            setImportSuccessMessage(`Successfully imported "${newRecipe.title}"! Find it in "My Recipes".`);
+            await handleSaveAndAddToRecipes(newRecipe);
+            setImportSuccessMessage(`Successfully imported "${newRecipe.title}"!`);
             setRecipeUrl('');
-            setTimeout(() => setImportSuccessMessage(null), 5000);
         } catch (error) {
-            console.error("Error importing recipe:", error);
-            if (error instanceof Error) {
-                setImportError(error.message);
-            } else {
-                setImportError("An unknown error occurred while importing the recipe.");
-            }
+            setImportError(error instanceof Error ? error.message : "Failed to import.");
         } finally {
             setIsImporting(false);
         }
     };
-    
     const handleIngredientsScanned = (scannedIngredients: string[]) => {
-        const newIngredients = scannedIngredients.filter(ing => !ingredients.includes(ing.toLowerCase()));
-        setIngredients(prev => [...prev, ...newIngredients]);
+        setIngredients(prev => [...new Set([...prev, ...scannedIngredients])]);
         setIsCameraModalOpen(false);
     };
-
-    const handleGenerateRecipeShoppingList = async () => {
-        if (!selectedRecipe) return;
-
-        setIsShoppingListLoading(true);
-        setShoppingListError(null);
-        try {
-            const list = await generateShoppingList(selectedRecipe.ingredients);
-            setActiveShoppingList(list);
-            setCurrentView('shopping');
-        } catch (error) {
-            console.error("Error generating shopping list:", error);
-            if (error instanceof Error) {
-                setShoppingListError(error.message);
-            } else {
-                setShoppingListError("An unknown error occurred while generating the list.");
-            }
-            setCurrentView('shopping');
-        } finally {
-            setIsShoppingListLoading(false);
-            setSelectedRecipe(null); // Close modal
+    const handleSaveAndAddToRecipes = async (recipe: Recipe) => {
+        if (recipe.imageUrl.startsWith('data:')) {
+            await imageStore.saveImage(recipe.title, recipe.imageUrl);
         }
+        saveAllRecipesToStorage([recipe, ...allRecipes]);
     };
-
-    const handleGeneratePlanShoppingList = async () => {
-        if (!selectedPlan) return;
-
-        const recipeTitlesInPlan = selectedPlan.plan.map(day => day.recipeTitle);
-        const recipesInPlan = allRecipes.filter(recipe => recipeTitlesInPlan.includes(recipe.title));
-        const allIngredients = recipesInPlan.flatMap(recipe => recipe.ingredients);
-
+    const handleGenerateShoppingList = async (source: Recipe | MealPlan) => {
+        setShoppingListModalRecipe(source);
         setIsShoppingListLoading(true);
         setShoppingListError(null);
         try {
-            const list = await generateShoppingList(allIngredients);
-            setActiveShoppingList(list);
-            setCurrentView('shopping');
-        } catch (error) {
-            console.error("Error generating shopping list for plan:", error);
-            if (error instanceof Error) {
-                setShoppingListError(error.message);
+            let ingredientsToList: string[] = [];
+            if ('ingredients' in source) {
+                ingredientsToList = source.ingredients;
             } else {
-                setShoppingListError("An unknown error occurred while generating the list.");
+                source.plan.forEach(day => {
+                    const recipe = allRecipes.find(r => r.title === day.recipeTitle);
+                    if (recipe) ingredientsToList.push(...recipe.ingredients);
+                });
             }
-            setCurrentView('shopping');
-        } finally {
-            setIsShoppingListLoading(false);
-            setSelectedPlan(null); // Return to meal plan list
-        }
-    };
-    
-    const handleGenerateFromSaved = async () => {
-        const savedRecipes = allRecipes.filter(recipe => savedRecipeTitles.includes(recipe.title));
-        if (savedRecipes.length === 0) {
-            setShoppingListError("You have no saved recipes to generate a list from.");
-            setActiveShoppingList(null);
-            return;
-        }
-
-        const allIngredients = savedRecipes.flatMap(recipe => recipe.ingredients);
-        
-        setIsShoppingListLoading(true);
-        setShoppingListError(null);
-        try {
-            const list = await generateShoppingList(allIngredients);
-            setActiveShoppingList(list);
+            const list = await generateShoppingList(ingredientsToList);
+            setShoppingList(list);
+            localStorage.setItem(SHOPPING_LIST_KEY, JSON.stringify(list));
         } catch (error) {
-            if (error instanceof Error) {
-                setShoppingListError(error.message);
-            } else {
-                setShoppingListError("An error occurred generating the list from your saved recipes.");
-            }
+            setShoppingListError(error instanceof Error ? error.message : "Failed to generate list.");
         } finally {
             setIsShoppingListLoading(false);
         }
     };
-    
-    const handleAddItemFromScratch = async (item: string) => {
+    const handleAddItemToList = async (item: string) => {
         setIsAddingItem(true);
-        try {
-            const category = await categorizeShoppingListItem(item);
-            setActiveShoppingList(prevList => {
-                const newList: ShoppingList = prevList ? JSON.parse(JSON.stringify(prevList)) : [];
-                const categoryIndex = newList.findIndex(cat => cat.category.toLowerCase() === category.toLowerCase());
-                if (categoryIndex > -1) {
-                    newList[categoryIndex].items.push(item);
-                } else {
-                    newList.push({ category, items: [item] });
+        const category = await categorizeShoppingListItem(item);
+        setShoppingList(prevList => {
+            const newList = JSON.parse(JSON.stringify(prevList));
+            const categoryIndex = newList.findIndex((c: { category: string; }) => c.category === category);
+            if (categoryIndex > -1) {
+                newList[categoryIndex].items.push(item);
+            } else {
+                newList.push({ category, items: [item] });
+            }
+            localStorage.setItem(SHOPPING_LIST_KEY, JSON.stringify(newList));
+            return newList;
+        });
+        setIsAddingItem(false);
+    };
+    const handleDeleteItem = (category: string, item: string) => {
+        setShoppingList(prevList => {
+            const newList = prevList.map(cat => {
+                if (cat.category === category) {
+                    return { ...cat, items: cat.items.filter(i => i !== item) };
                 }
-                return newList;
-            });
-        } catch (error) {
-             console.error("Error adding item from scratch:", error);
-        } finally {
-            setIsAddingItem(false);
-        }
-    };
-    
-    const handleRemoveShoppingListItem = (categoryToRemove: string, itemToRemove: string) => {
-        setActiveShoppingList(prevList => {
-            if (!prevList) return null;
-
-            const newList = prevList
-                .map(category => {
-                    if (category.category === categoryToRemove) {
-                        return {
-                            ...category,
-                            items: category.items.filter(item => item !== itemToRemove)
-                        };
-                    }
-                    return category;
-                })
-                .filter(category => category.items.length > 0);
-
-            return newList.length > 0 ? newList : null;
+                return cat;
+            }).filter(cat => cat.items.length > 0);
+            localStorage.setItem(SHOPPING_LIST_KEY, JSON.stringify(newList));
+            return newList;
         });
     };
-
     const handleClearShoppingList = () => {
-        setActiveShoppingList(null);
-        setShoppingListError(null);
-    };
-
-    const handleStartCookMode = () => {
-        if (selectedRecipe) {
-            setCookingRecipe(selectedRecipe);
-            setSelectedRecipe(null); // Close the modal
+        if (window.confirm("Are you sure you want to clear the entire shopping list?")) {
+            setShoppingList([]);
+            localStorage.removeItem(SHOPPING_LIST_KEY);
         }
     };
 
-    const handleExitCookMode = () => {
-        // Re-open the recipe modal for a seamless experience
-        setSelectedRecipe(cookingRecipe);
-        setCookingRecipe(null);
+    // Admin Handlers
+    const handleAddRecipe = (recipe: Recipe) => {
+        saveAllRecipesToStorage([recipe, ...allRecipes]);
     };
-
-    const handlePlayLesson = (lesson: Lesson) => {
-        if (!selectedClass) return;
-        setPlayingVideo({
-            title: lesson.title,
-            description: `A lesson from "${selectedClass.title}". Duration: ${lesson.duration}`,
-            thumbnailUrl: lesson.thumbnailUrl,
-            videoUrl: lesson.videoUrl,
-        });
-    };
-
-    const handlePlayRecipeVideo = (videoUrl: string) => {
-        if (selectedRecipe) {
-            setPlayingVideo({
-                title: selectedRecipe.title,
-                description: selectedRecipe.description,
-                thumbnailUrl: selectedRecipe.imageUrl,
-                videoUrl: videoUrl,
-            });
-            // Optionally close the recipe modal when video starts
-            // setSelectedRecipe(null);
+    const handleDeleteRecipe = (title: string) => {
+        if (window.confirm(`Are you sure you want to delete "${title}"?`)) {
+            saveAllRecipesToStorage(allRecipes.filter(r => r.title !== title));
         }
     };
-
-    const handleQuestionSubmit = (question: string) => {
-        // In a real app, this would send the question to a backend service
-        console.log("Submitted question to expert:", question);
-        setIsQuestionSubmitted(true);
+    const handleUpdateRecipeStatus = (title: string, status: Recipe['status']) => {
+        const updatedRecipes = allRecipes.map(r => r.title === title ? { ...r, status } : r);
+        saveAllRecipesToStorage(updatedRecipes);
     };
-
-    const handleAskAnotherQuestion = () => {
-        setIsQuestionSubmitted(false);
-    };
-
-    const handleBackToBrowse = () => {
-        setGeneratedRecipes(null);
-        setGenerationError(null);
-    };
-    
-    const handleViewChange = (view: View) => {
-        if (view !== 'shopping') {
-            handleClearShoppingList();
-        }
-        setCurrentView(view);
-        setSelectedPlan(null); // Reset selected plan when changing main view
-        setSearchQuery(''); // Reset search
-        setSelectedTags([]); // Reset tags
-        setGeneratedRecipes(null);
-        setGenerationError(null);
-        setIdeaGeneratedRecipe(null);
-    }
-
-    const handleLogin = (email: string) => {
-        userService.loginUser(email);
-        const user = userService.getCurrentUser();
-        setCurrentUser(user);
-        const hasPaid = userService.getPremiumStatus();
-        setIsPremium(hasPaid || (user?.isAdmin ?? false));
-        setIsLoginModalOpen(false);
-        setAllUsers(userService.getAllUsers()); // Refresh user list in case a new user was created
-    };
-
-    const handleLogout = () => {
-        userService.logoutUser();
-        setCurrentUser(null);
-        setIsPremium(false); // Reset premium status on logout
-        setIsDashboardVisible(false);
-    };
-
-    const handleAddRecipe = (newRecipe: Recipe) => {
-        setAllRecipes(prevRecipes => [newRecipe, ...prevRecipes]);
-    };
-    
-    const handleDeleteRecipe = (recipeTitle: string) => {
-        if (window.confirm(`Are you sure you want to delete "${recipeTitle}"?`)) {
-            setAllRecipes(prev => prev.filter(r => r.title !== recipeTitle));
-        }
-    };
-    
-    const handleUpdateRecipeStatus = (recipeTitle: string, newStatus: Recipe['status']) => {
-        setAllRecipes(prev => 
-            prev.map(r => r.title === recipeTitle ? { ...r, status: newStatus } : r)
-        );
-    };
-
-    const handleFixRecipeImage = async (recipeTitle: string): Promise<void> => {
-        const recipeToFix = allRecipes.find(r => r.title === recipeTitle);
-        if (!recipeToFix) return;
-
+    const handleFixRecipeImage = async (title: string) => {
+        const recipe = allRecipes.find(r => r.title === title);
+        if (!recipe) return;
         try {
-            const newImageUrl = await fixRecipeImage(recipeToFix);
-            setAllRecipes(prev => prev.map(r => r.title === recipeTitle ? { ...r, imageUrl: newImageUrl } : r));
+            const newImageUrl = await fixRecipeImage(recipe);
+            if (newImageUrl.startsWith('data:')) {
+                await imageStore.saveImage(recipe.title, newImageUrl);
+            }
+            const updatedRecipes = allRecipes.map(r => r.title === title ? { ...r, imageUrl: newImageUrl } : r);
+            saveAllRecipesToStorage(updatedRecipes);
         } catch (error) {
-            console.error("Failed to fix image in App.tsx", error);
-            alert("Could not fix the image. Please try again.");
+            alert(`Failed to fix image for ${title}.`);
         }
     };
-    
-    const handleDeleteUser = (email: string) => {
-        if (window.confirm(`Are you sure you want to delete user "${email}"?`)) {
-            userService.deleteUser(email);
-            setAllUsers(userService.getAllUsers());
-        }
-    };
-
-    const handleGiveFreeTime = (email: string, months: number) => {
-        userService.giveFreeTime(email, months);
-        setAllUsers(userService.getAllUsers()); // Refresh to show updated subscription
-        const updatedCurrentUser = userService.getCurrentUser();
-        if (updatedCurrentUser?.email === email) {
-            setCurrentUser(updatedCurrentUser);
-            setIsPremium(userService.getPremiumStatus());
-        }
-    };
-
     const handleUpdateUser = (email: string, updatedData: Partial<User>) => {
         userService.updateUser(email, updatedData);
         setAllUsers(userService.getAllUsers());
-        const updatedCurrentUser = userService.getCurrentUser();
-        if (updatedCurrentUser?.email === email) {
-            setCurrentUser(updatedCurrentUser);
+        if (currentUser?.email === email) {
+            setCurrentUser(userService.getCurrentUser());
         }
     };
 
-    // --- Cooking Class Handlers ---
-    const handleAddCookingClass = (newClass: Omit<CookingClass, 'id'>) => {
-        const classWithId: CookingClass = { ...newClass, id: `class-${new Date().getTime()}` };
-        setCookingClasses(prev => [classWithId, ...prev]);
+    // Video Management Handlers
+    const saveVideosToStorage = (updatedVideos: VideoCategory[]) => {
+        localStorage.setItem(VIDEOS_STORAGE_KEY, JSON.stringify(updatedVideos));
+        setVideos(updatedVideos);
     };
-
-    const handleUpdateCookingClass = (classId: string, updatedData: Partial<Omit<CookingClass, 'id' | 'lessons'>>) => {
-        setCookingClasses(prev => prev.map(c => c.id === classId ? { ...c, ...updatedData } : c));
+    const handleAddVideoCategory = () => saveVideosToStorage([...videos, { id: `cat-${Date.now()}`, title: 'New Category', videos: [] }]);
+    const handleUpdateVideoCategory = (categoryId: string, newTitle: string) => saveVideosToStorage(videos.map(cat => cat.id === categoryId ? { ...cat, title: newTitle } : cat));
+    const handleDeleteVideoCategory = (categoryId: string) => {
+        if (window.confirm("Delete this category and all its videos?")) {
+            saveVideosToStorage(videos.filter(cat => cat.id !== categoryId));
+        }
     };
-
-    const handleDeleteCookingClass = (classId: string) => {
-        if (window.confirm("Are you sure you want to delete this entire class and all its lessons?")) {
-            setCookingClasses(prev => prev.filter(c => c.id !== classId));
+    const handleAddVideo = (categoryId: string) => {
+        const newVideo: Video = { id: `video-${Date.now()}`, title: 'New Video', description: 'Description', thumbnailUrl: 'https://placehold.co/800x450/cccccc/ffffff/png?text=New', videoUrl: '' };
+        saveVideosToStorage(videos.map(cat => cat.id === categoryId ? { ...cat, videos: [...cat.videos, newVideo] } : cat));
+    };
+    const handleUpdateVideo = (categoryId: string, videoId: string, updatedData: Partial<Omit<Video, 'id'>>) => {
+        saveVideosToStorage(videos.map(cat => cat.id === categoryId ? { ...cat, videos: cat.videos.map(vid => vid.id === videoId ? { ...vid, ...updatedData } : vid) } : cat));
+    };
+    const handleDeleteVideo = (categoryId: string, videoId: string) => {
+        if (window.confirm("Delete this video?")) {
+            saveVideosToStorage(videos.map(cat => cat.id === categoryId ? { ...cat, videos: cat.videos.filter(vid => vid.id !== videoId) } : cat));
         }
     };
 
-    const handleAddLesson = (classId: string) => {
-        const newLesson: Lesson = {
-            id: `lesson-${new Date().getTime()}`,
-            title: 'New Lesson',
-            duration: '0:00',
-            thumbnailUrl: 'https://via.placeholder.com/400x225.png?text=New+Lesson',
-            videoUrl: '',
-        };
-        setCookingClasses(prev => prev.map(c => c.id === classId ? { ...c, lessons: [...c.lessons, newLesson] } : c));
-    };
-
-    const handleUpdateLesson = (classId: string, lessonId: string, updatedData: Partial<Omit<Lesson, 'id'>>) => {
-        setCookingClasses(prev => prev.map(c => {
-            if (c.id === classId) {
-                const updatedLessons = c.lessons.map(l => l.id === lessonId ? { ...l, ...updatedData } : l);
-                return { ...c, lessons: updatedLessons };
-            }
-            return c;
-        }));
-    };
-
-    const handleDeleteLesson = (classId: string, lessonId: string) => {
-        setCookingClasses(prev => prev.map(c => {
-            if (c.id === classId) {
-                const updatedLessons = c.lessons.filter(l => l.id !== lessonId);
-                return { ...c, lessons: updatedLessons };
-            }
-            return c;
-        }));
-    };
-
-    const handleUpdateClassImage = async (classId: string, prompt: string): Promise<void> => {
-        try {
-            const newImageUrl = await generateImage(prompt);
-            setCookingClasses(prev => prev.map(c => c.id === classId ? { ...c, imageUrl: newImageUrl } : c));
-        } catch (error) {
-            console.error(`Failed to generate new image for class ${classId}:`, error);
-            alert("Could not generate a new image. Please try again.");
-        }
-    };
-    
-    if (areRecipesLoading) {
+    if (isDashboardVisible && currentUser?.isAdmin) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Spinner />
+            <div className="container mx-auto px-4">
+                <AdminDashboard
+                    onBackToApp={() => setIsDashboardVisible(false)}
+                    allUsers={allUsers}
+                    allRecipes={allRecipes}
+                    allLeads={leads}
+                    cookingClasses={cookingClasses}
+                    onAddRecipe={handleAddRecipe}
+                    onDeleteUser={(email) => { userService.deleteUser(email); setAllUsers(userService.getAllUsers()); }}
+                    onGiveFreeTime={(email, months) => { userService.giveFreeTime(email, months); setAllUsers(userService.getAllUsers()); }}
+                    onUpdateUser={handleUpdateUser}
+                    onDeleteRecipe={handleDeleteRecipe}
+                    onUpdateRecipeStatus={handleUpdateRecipeStatus}
+                    onFixImage={handleFixRecipeImage}
+                    onAddCookingClass={()=>{}}
+                    onUpdateCookingClass={()=>{}}
+                    onDeleteCookingClass={()=>{}}
+                    onAddLesson={()=>{}}
+                    onUpdateLesson={()=>{}}
+                    onDeleteLesson={()=>{}}
+                    onUpdateClassImage={async ()=>{}}
+                    videos={videos}
+                    onAddVideoCategory={handleAddVideoCategory}
+                    onUpdateVideoCategory={handleUpdateVideoCategory}
+                    onDeleteVideoCategory={handleDeleteVideoCategory}
+                    onAddVideo={handleAddVideo}
+                    onUpdateVideo={handleUpdateVideo}
+                    onDeleteVideo={handleDeleteVideo}
+                />
             </div>
         );
     }
-
-    const renderContent = () => {
-        if (currentView === 'bartender') {
-            if (!isPremium) {
-                return (
-                    <div className="bg-yellow-50 text-yellow-900 p-8 rounded-lg shadow-md text-center my-12 border border-yellow-200">
-                        <div className="flex justify-center items-center gap-3">
-                            <LockClosedIcon className="w-8 h-8 text-yellow-500" />
-                            <h2 className="text-2xl font-bold text-yellow-800">Bartender Helper</h2>
-                        </div>
-                        <p className="mt-2 text-yellow-700 max-w-md mx-auto">
-                            Describe a drink and get a custom cocktail recipe from our AI mixologist. Upgrade to Premium to unlock this feature.
-                        </p>
-                        <button
-                            onClick={() => setIsUpgradeModalOpen(true)}
-                            className="mt-6 px-8 py-3 bg-yellow-400 text-gray-900 font-bold rounded-lg shadow-md hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-yellow-50 focus:ring-yellow-400 transition-colors duration-200 flex items-center gap-2 mx-auto"
-                        >
-                            <SparklesIcon className="w-5 h-5" />
-                            <span>Upgrade to Premium</span>
-                        </button>
-                    </div>
-                );
-            }
-            return <BartenderHelper />;
-        }
-        
-        if (isGenerating) {
-            return (
-                <div className="text-center py-16">
-                    <Spinner />
-                    <p className="mt-4 text-text-secondary">Generating delicious recipes for you...</p>
-                </div>
-            );
-        }
-
-        if (generationError) {
-            return (
-                <div className="text-center text-red-500 py-16 bg-red-50 rounded-lg">
-                    <p className="text-xl font-semibold">Oops! Something went wrong.</p>
-                    <p className="mt-2">{generationError}</p>
-                    <button
-                        onClick={handleBackToBrowse}
-                        className="mt-4 px-6 py-2 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus"
-                    >
-                        Try Again
-                    </button>
-                </div>
-            );
-        }
-
-        if (generatedRecipes) {
-            return (
-                <div>
-                    <div className="flex justify-between items-center mb-8">
-                        <h2 className="text-2xl font-bold">Recipes for You</h2>
-                        <div className="flex items-center gap-4">
-                            {isPremium ? (
-                                <CookbookButton
-                                    elementIdToPrint="generated-recipes-grid"
-                                    ingredients={ingredients}
-                                />
-                            ) : (
-                                <button
-                                    onClick={() => setIsUpgradeModalOpen(true)}
-                                    className="px-4 py-2 bg-white border border-gray-300 text-gray-500 font-semibold rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 ease-in-out flex items-center gap-2"
-                                    title="Upgrade to Premium to create a cookbook"
-                                >
-                                    <LockClosedIcon className="h-5 w-5 text-gray-400" />
-                                    <span>Create Cookbook</span>
-                                </button>
-                            )}
-                            <button
-                                onClick={handleBackToBrowse}
-                                className="px-4 py-2 bg-gray-200 text-text-secondary font-semibold rounded-lg hover:bg-gray-300 transition-colors"
-                            >
-                                &larr; Browse All Recipes
-                            </button>
-                        </div>
-                    </div>
-                    {generatedRecipes.length > 0 ? (
-                        <div id="generated-recipes-grid" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-                            {generatedRecipes.map((recipe) => (
-                                <RecipeCard
-                                    key={recipe.title}
-                                    recipe={recipe}
-                                    onClick={() => setSelectedRecipe(recipe)}
-                                    isSaved={savedRecipeTitles.includes(recipe.title)}
-                                    onToggleSave={() => handleToggleSave(recipe.title)}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center text-text-secondary py-16">
-                            <p className="text-xl font-semibold">No Recipes Found</p>
-                            <p>We couldn't generate any recipes with your ingredients. Please try a different combination.</p>
-                        </div>
-                    )}
-                </div>
-            );
-        }
-        
-        if (currentView === 'videos') {
-            return (
-                 <div className="space-y-12 animate-fade-in">
-                    {videoData.map(category => (
-                        <section key={category.title}>
-                            <h2 className="text-2xl font-bold text-text-primary mb-6 border-b-2 border-primary/20 pb-2">{category.title}</h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                                {category.videos.map(video => (
-                                    <VideoCard key={video.title} video={video} onClick={() => setPlayingVideo(video)} />
-                                ))}
-                            </div>
-                        </section>
-                    ))}
-                </div>
-            )
-        }
-
-
-        if (currentView === 'plans') {
-            if (selectedPlan) {
-                return <MealPlanDetail 
-                    plan={selectedPlan}
-                    recipes={allRecipes}
-                    onSelectRecipe={setSelectedRecipe}
-                    onBack={() => setSelectedPlan(null)}
-                    onGenerateList={handleGeneratePlanShoppingList}
-                    isGeneratingList={isShoppingListLoading}
-                />;
-            }
-            return (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 animate-fade-in">
-                    {mealPlans.map(plan => (
-                        <MealPlanCard key={plan.title} plan={plan} onClick={() => setSelectedPlan(plan)} />
-                    ))}
-                </div>
-            );
-        }
-
-        if (currentView === 'shopping') {
-            return (
-                <div className="bg-white p-8 rounded-2xl shadow-lg max-w-4xl mx-auto border border-border-color">
-                    <h2 className="text-3xl font-bold text-text-primary text-center mb-6">Your Shopping List</h2>
-                    {isShoppingListLoading ? (
-                        <Spinner />
-                    ) : shoppingListError ? (
-                        <div className="text-center text-red-500 py-8 bg-red-50 rounded-lg">
-                            <p className="text-xl font-semibold">Oops! Something went wrong.</p>
-                            <p className="mt-2">{shoppingListError}</p>
-                            <button onClick={handleClearShoppingList} className="mt-4 px-6 py-2 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus">
-                                Start Over
-                            </button>
-                        </div>
-                    ) : activeShoppingList ? (
-                        <div className="animate-fade-in">
-                             <div className="flex justify-between items-center mb-6">
-                                <button onClick={handleClearShoppingList} className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-text-secondary font-semibold rounded-lg hover:bg-gray-300 transition-colors">
-                                    <TrashIcon className="w-5 h-5"/>
-                                    <span>Clear List</span>
-                                </button>
-                                <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-focus transition-colors">
-                                    <DownloadIcon className="w-5 h-5"/>
-                                    <span>Print List</span>
-                                </button>
-                            </div>
-                            <div className="space-y-6">
-                                {activeShoppingList.map(({ category, items }) => (
-                                    <div key={category}>
-                                        <h3 className="text-lg font-semibold text-primary mb-2 border-b-2 border-primary/20 pb-1">{category}</h3>
-                                        <ul className="space-y-2">
-                                            {items.map((item, index) => (
-                                                <li key={`${category}-${index}`} className="flex items-center justify-between group py-1">
-                                                    <div className="flex items-center">
-                                                        <input id={`item-${category}-${index}`} type="checkbox" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mr-3 peer" />
-                                                        <label htmlFor={`item-${category}-${index}`} className="text-text-secondary peer-checked:line-through peer-checked:text-gray-400 transition-colors">{item}</label>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => handleRemoveShoppingListItem(category, item)}
-                                                        className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-                                                        aria-label={`Remove ${item}`}
-                                                    >
-                                                        <TrashIcon className="w-4 h-4" />
-                                                    </button>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                ))}
-                            </div>
-                             <div className="mt-8 pt-6 border-t border-dashed">
-                                <ManualAddItem onAddItem={handleAddItemFromScratch} isLoading={isAddingItem} />
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center animate-fade-in">
-                            <div className="bg-gray-50 p-6 rounded-lg border border-border-color flex flex-col items-center">
-                                <h3 className="text-lg font-semibold text-text-primary mb-2">From My Saved Recipes</h3>
-                                <p className="text-sm text-text-secondary mb-4 flex-grow">Generate a combined list for all {savedRecipeTitles.length} of your saved recipes.</p>
-                                <button onClick={handleGenerateFromSaved} disabled={savedRecipeTitles.length === 0} className="w-full mt-auto px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus disabled:bg-gray-400">
-                                    Generate List
-                                </button>
-                            </div>
-                             <div className="bg-gray-50 p-6 rounded-lg border border-border-color flex flex-col">
-                                <h3 className="text-lg font-semibold text-text-primary mb-2">Build From Scratch</h3>
-                                <p className="text-sm text-text-secondary mb-4 flex-grow">Add items one by one and we'll categorize them for you automatically.</p>
-                                <div className="mt-auto">
-                                    <ManualAddItem onAddItem={handleAddItemFromScratch} isLoading={isAddingItem} />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        }
-
-        // Default browse view for 'all' or 'saved'
-        return (
-            <>
-                <div className="max-w-4xl mx-auto mb-8 space-y-4">
-                    <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-                    <TagFilter
-                        allTags={allTags}
-                        selectedTags={selectedTags}
-                        onTagClick={handleTagClick}
-                    />
-                </div>
-                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-text-primary">
-                        {currentView === 'saved' ? 'My Saved Recipes' : 'All Recipes'}
-                    </h2>
-                    {currentView === 'saved' && currentRecipes.length > 0 && (
-                        isPremium ? (
-                            <CookbookButton
-                                elementIdToPrint="recipes-grid"
-                            />
-                        ) : (
-                            <button
-                                onClick={() => setIsUpgradeModalOpen(true)}
-                                className="px-4 py-2 bg-white border border-gray-300 text-gray-500 font-semibold rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 ease-in-out flex items-center gap-2"
-                                title="Upgrade to Premium to create a cookbook"
-                            >
-                                <LockClosedIcon className="h-5 w-5 text-gray-400" />
-                                <span>Create Cookbook</span>
-                            </button>
-                        )
-                    )}
-                </div>
-                {currentRecipes.length > 0 ? (
-                    <>
-                        <div id="recipes-grid" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-                            {currentRecipes.map((recipe) => (
-                                <RecipeCard
-                                    key={recipe.title}
-                                    recipe={recipe}
-                                    onClick={() => setSelectedRecipe(recipe)}
-                                    isSaved={savedRecipeTitles.includes(recipe.title)}
-                                    onToggleSave={() => handleToggleSave(recipe.title)}
-                                />
-                            ))}
-                        </div>
-                        {itemsToShow < filteredRecipes.length && (
-                            <div className="mt-12 text-center">
-                                <button
-                                    onClick={showMoreItems}
-                                    className="px-6 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus transition-colors duration-200"
-                                >
-                                    Load More Recipes
-                                </button>
-                            </div>
-                        )}
-                    </>
-                ) : (
-                    <div className="text-center text-text-secondary py-16">
-                         {currentView === 'saved' ? (
-                            <>
-                                <p className="text-xl font-semibold">No Saved Recipes Yet</p>
-                                <p>Click the heart icon on any recipe to save it here.</p>
-                            </>
-                        ) : (
-                             <>
-                                <p className="text-xl font-semibold">No Recipes Found</p>
-                                <p>Try adjusting your search or filters.</p>
-                            </>
-                        )}
-                    </div>
-                )}
-            </>
-        );
-    };
     
-    const renderMainContent = () => {
-        if (isDashboardVisible && currentUser?.isAdmin) {
-            return <AdminDashboard 
-                onBackToApp={() => setIsDashboardVisible(false)} 
-                onAddRecipe={handleAddRecipe}
-                allUsers={allUsers}
-                allRecipes={allRecipes}
-                allLeads={leads}
-                cookingClasses={cookingClasses}
-                onDeleteUser={handleDeleteUser}
-                onGiveFreeTime={handleGiveFreeTime}
-                onUpdateUser={handleUpdateUser}
-                onDeleteRecipe={handleDeleteRecipe}
-                onUpdateRecipeStatus={handleUpdateRecipeStatus}
-                onFixImage={handleFixRecipeImage}
-                onAddCookingClass={handleAddCookingClass}
-                onUpdateCookingClass={handleUpdateCookingClass}
-                onDeleteCookingClass={handleDeleteCookingClass}
-                onAddLesson={handleAddLesson}
-                onUpdateLesson={handleUpdateLesson}
-                onDeleteLesson={handleDeleteLesson}
-                onUpdateClassImage={handleUpdateClassImage}
-            />;
-        }
-
-        if (selectedClass) {
-            return (
-                <CookingClassDetail
-                    cookingClass={selectedClass}
-                    onBack={() => setSelectedClass(null)}
-                    onPlayLesson={handlePlayLesson}
-                />
-            );
-        }
-
-        return (
-            <>
-                <div className="flex justify-end items-center mb-4 gap-4">
-                    {currentUser?.isAdmin && (
-                        <div className="flex items-center gap-2 px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-semibold">
-                            <ShieldIcon className="w-4 h-4 text-indigo-500" />
-                            <span>Admin</span>
-                        </div>
-                    )}
-                    {currentUser && isPremium && !currentUser.isAdmin && (
-                        <div className="flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">
-                            <CrownIcon className="w-4 h-4 text-yellow-500" />
-                            <span>Premium</span>
-                        </div>
-                    )}
-                    {currentUser ? (
-                        <UserMenu
-                            user={currentUser}
-                            onLogout={handleLogout}
-                            onShowDashboard={() => {
-                                setSelectedClass(null); // Ensure other views are closed
-                                setIsDashboardVisible(true);
-                            }}
-                        />
-                    ) : (
-                        <button
-                            onClick={() => setIsLoginModalOpen(true)}
-                            className="px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-focus transition-colors duration-200"
-                        >
-                            Sign In
-                        </button>
-                    )}
-                </div>
-
-
-                {currentView !== 'bartender' && currentView !== 'shopping' && (
-                    <>
-                        <Header />
-
-                        <div className="bg-white p-8 rounded-2xl shadow-lg max-w-5xl mx-auto mb-12 border border-border-color">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-                                {/* Left Side: Generate */}
-                                <div className="flex flex-col">
-                                    <h2 className="text-2xl font-bold text-text-primary mb-4 text-center md:text-left">Find Recipes You Can Make</h2>
-                                    <p className="text-text-secondary mb-4 text-center md:text-left">Enter ingredients you have, or scan them with your camera.</p>
-                                    <IngredientInput ingredients={ingredients} setIngredients={setIngredients} />
-                                    <div className="relative flex py-5 items-center">
-                                        <div className="flex-grow border-t border-gray-200"></div>
-                                        <span className="flex-shrink mx-4 text-gray-400 text-xs font-semibold uppercase">Or</span>
-                                        <div className="flex-grow border-t border-gray-200"></div>
-                                    </div>
-                                    <CameraInput onClick={() => setIsCameraModalOpen(true)} disabled={isGenerating} />
-                                    <div className="mt-6">
-                                        <button
-                                            onClick={handleGenerateRecipes}
-                                            disabled={isGenerating || ingredients.length === 0}
-                                            className="w-full px-8 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                        >
-                                            <SparklesIcon className="w-5 h-5"/>
-                                            <span>{isGenerating ? 'Finding Recipes...' : 'Find Recipes'}</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Right Side: Import */}
-                                <div className="flex flex-col">
-                                    <h2 className="text-2xl font-bold text-text-primary mb-4 flex items-center gap-2 justify-center md:justify-start">
-                                        Import from the Web
-                                        {!isPremium && <span className="text-xs font-bold bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Premium</span>}
-                                    </h2>
-                                    <p className="text-text-secondary mb-4 text-center md:text-left">Found a recipe online? Paste the URL here to add it to your cookbook.</p>
-                                    {isPremium ? (
-                                        <div className="flex-grow flex flex-col">
-                                            <UrlInput 
-                                                recipeUrl={recipeUrl} 
-                                                setRecipeUrl={setRecipeUrl} 
-                                                onFetch={handleImportRecipe}
-                                                isLoading={isImporting}
-                                            />
-                                            {importError && (
-                                                <div className="mt-4 text-red-600 bg-red-50 p-3 rounded-md text-sm">{importError}</div>
-                                            )}
-                                            {importSuccessMessage && (
-                                                <div className="mt-4 text-green-700 bg-green-50 p-3 rounded-md text-sm">{importSuccessMessage}</div>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="relative p-6 border-2 border-dashed border-gray-300 rounded-lg text-center flex-grow flex flex-col justify-center items-center bg-gray-50">
-                                            <LockClosedIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                                            <p className="text-text-secondary font-semibold">This is a Premium feature</p>
-                                            <p className="text-sm text-gray-500 mb-4">Upgrade to import recipes from any website.</p>
-                                            <button onClick={() => setIsUpgradeModalOpen(true)} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-focus">
-                                                Upgrade Now
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="mt-8 pt-8 border-t border-gray-200">
-                                <div className="flex flex-col">
-                                    <h2 className="text-2xl font-bold text-text-primary mb-4 flex items-center gap-2 justify-center md:justify-start mx-auto">
-                                        Create a Recipe from an Idea
-                                        {!isPremium && <span className="text-xs font-bold bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Premium</span>}
-                                    </h2>
-                                    <p className="text-text-secondary mb-4 text-center">Describe a dish, and our AI chef will write the recipe for you.</p>
-
-                                    {isPremium ? (
-                                        <div className="max-w-2xl mx-auto">
-                                            <textarea
-                                                value={recipePrompt}
-                                                onChange={(e) => {
-                                                    setRecipePrompt(e.target.value);
-                                                    if (promptError) setPromptError(null);
-                                                }}
-                                                placeholder="e.g., A spicy vegan curry with coconut milk and chickpeas..."
-                                                className="w-full p-3 border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
-                                                rows={3}
-                                                disabled={isGeneratingFromIdea}
-                                            />
-                                            {promptError && !isGeneratingFromIdea && (
-                                                <div className="mt-4 text-red-600 bg-red-50 p-3 rounded-md text-sm">{promptError}</div>
-                                            )}
-                                            <div className="mt-4">
-                                                <button
-                                                    onClick={handleGenerateRecipeFromPrompt}
-                                                    disabled={isGeneratingFromIdea || !recipePrompt.trim()}
-                                                    className="w-full px-8 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                                >
-                                                    <SparklesIcon className="w-5 h-5"/>
-                                                    <span>{isGeneratingFromIdea ? 'Creating Recipe...' : 'Generate Recipe'}</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="relative p-6 border-2 border-dashed border-gray-300 rounded-lg text-center flex-grow flex flex-col justify-center items-center bg-gray-50 max-w-2xl mx-auto">
-                                            <LockClosedIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                                            <p className="text-text-secondary font-semibold">This is a Premium feature</p>
-                                            <p className="text-sm text-gray-500 mb-4">Upgrade to generate recipes from your ideas.</p>
-                                            <button onClick={() => setIsUpgradeModalOpen(true)} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-focus">
-                                                Upgrade Now
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                             {isGeneratingFromIdea && (
-                                <div className="text-center py-8">
-                                    <Spinner />
-                                    <p className="mt-4 text-text-secondary">Your personal AI chef is creating a masterpiece...</p>
-                                </div>
-                            )}
-                            {ideaGeneratedRecipe && !isGeneratingFromIdea && (
-                                <div className="mt-8 pt-8 border-t-4 border-dashed border-primary/20 animate-fade-in">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h2 className="text-2xl font-bold text-text-primary">Here's Your Custom Recipe!</h2>
-                                        <button onClick={() => setIdeaGeneratedRecipe(null)} className="px-4 py-2 bg-gray-200 text-text-secondary font-semibold rounded-lg hover:bg-gray-300 transition-colors">&larr; Create Another</button>
-                                    </div>
-                                    <div className="bg-white rounded-lg overflow-hidden flex flex-col md:flex-row gap-8">
-                                        <div className="w-full md:w-1/3 relative aspect-w-4 aspect-h-5">
-                                            <img src={ideaGeneratedRecipe.imageUrl} alt={ideaGeneratedRecipe.title} className="absolute inset-0 w-full h-full object-cover rounded-lg" />
-                                        </div>
-                                        <div className="w-full md:w-2/3">
-                                            <h3 className="text-3xl font-bold text-text-primary">{ideaGeneratedRecipe.title}</h3>
-                                            <div className="my-2 flex flex-wrap gap-2">
-                                                {ideaGeneratedRecipe.tags.map(tag => <span key={tag} className="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full">{tag}</span>)}
-                                            </div>
-                                            <p className="text-text-secondary my-4">{ideaGeneratedRecipe.description}</p>
-                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center my-4 border-y border-border-color py-4">
-                                                <div><ClockIcon className="w-6 h-6 mx-auto text-primary mb-1" /><p className="text-xs font-bold uppercase">Prep</p><p>{ideaGeneratedRecipe.prepTime}</p></div>
-                                                <div><ClockIcon className="w-6 h-6 mx-auto text-primary mb-1" /><p className="text-xs font-bold uppercase">Cook</p><p>{ideaGeneratedRecipe.cookTime}</p></div>
-                                                <div><UsersIcon className="w-6 h-6 mx-auto text-primary mb-1" /><p className="text-xs font-bold uppercase">Serves</p><p>{parseServings(ideaGeneratedRecipe.servings)}</p></div>
-                                                <div><FireIcon className="w-6 h-6 mx-auto text-primary mb-1" /><p className="text-xs font-bold uppercase">Kcal</p><p>{ideaGeneratedRecipe.nutrition.calories}</p></div>
-                                            </div>
-                                            <button onClick={() => setSelectedRecipe(ideaGeneratedRecipe)} className="w-full px-6 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus">View Full Details & Options</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <PremiumContent
-                            isPremium={isPremium}
-                            onUpgrade={() => setIsUpgradeModalOpen(true)}
-                            recipes={newThisMonthRecipes}
-                            onSelectRecipe={setSelectedRecipe}
-                            savedRecipeTitles={savedRecipeTitles}
-                            onToggleSave={handleToggleSave}
-                        />
-                        
-                        <AdvancedClasses
-                            isPremium={isPremium}
-                            onUpgrade={() => setIsUpgradeModalOpen(true)}
-                            classes={cookingClasses}
-                            onSelectClass={setSelectedClass}
-                        />
-
-                        <AskAnExpert
-                            isPremium={isPremium}
-                            onUpgrade={() => setIsUpgradeModalOpen(true)}
-                            isSubmitted={isQuestionSubmitted}
-                            onSubmitQuestion={handleQuestionSubmit}
-                            onAskAnother={handleAskAnotherQuestion}
-                        />
-
-                        <NewsletterSignup />
-                    </>
-                )}
-
-
-                <div className="flex justify-center mb-8 gap-1.5 p-1 bg-gray-200 rounded-lg max-w-2xl mx-auto">
-                    <button
-                        onClick={() => handleViewChange('all')}
-                        className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors ${currentView === 'all' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
-                    >
-                        All Recipes
-                    </button>
-                    <button
-                        onClick={() => handleViewChange('saved')}
-                        className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors ${currentView === 'saved' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
-                    >
-                        My Recipes
-                    </button>
-                     <button
-                        onClick={() => handleViewChange('plans')}
-                        className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors ${currentView === 'plans' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
-                    >
-                        Meal Plans
-                    </button>
-                     <button
-                        onClick={() => handleViewChange('shopping')}
-                        className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5 ${currentView === 'shopping' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
-                    >
-                        <ShoppingCartIcon className="h-4 w-4" />
-                        <span>Shopping List</span>
-                    </button>
-                    <button
-                        onClick={() => handleViewChange('videos')}
-                        className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors ${currentView === 'videos' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
-                    >
-                        Videos
-                    </button>
-                    <button
-                        onClick={() => handleViewChange('bartender')}
-                        className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5 ${currentView === 'bartender' ? 'bg-white text-primary shadow' : 'text-text-secondary hover:bg-gray-100'}`}
-                    >
-                        <CocktailIcon className="h-4 w-4" />
-                        <span>Bartender</span>
-                         {!isPremium && <span className="text-xs font-bold bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full ml-1">Premium</span>}
-                    </button>
-                </div>
-
-                {renderContent()}
-            </>
-        );
-    }
+    const renderNavButton = (view: View, label: string, icon?: React.ReactNode) => (
+        <button
+            onClick={() => setCurrentView(view)}
+            className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors duration-200 flex items-center gap-2 ${currentView === view ? 'bg-primary text-white' : 'bg-white text-text-secondary hover:bg-gray-100'}`}
+        >
+            {icon} {label}
+        </button>
+    );
 
     return (
-        <div className="min-h-screen bg-secondary text-text-primary flex flex-col">
-            <main className="container mx-auto px-4 py-8 flex-grow">
-                {renderMainContent()}
-            </main>
-
-            <Footer
-                onShowPrivacyPolicy={() => setIsPrivacyPolicyVisible(true)}
-                onShowAboutUs={() => setIsAboutUsVisible(true)}
-            />
-
+        <div className="bg-secondary min-h-screen text-text-primary">
             {selectedRecipe && (
                 <RecipeModal
                     recipe={selectedRecipe}
-                    onClose={() => setSelectedRecipe(null)}
+                    onClose={handleCloseModal}
                     isSaved={savedRecipeTitles.includes(selectedRecipe.title)}
                     onToggleSave={() => handleToggleSave(selectedRecipe.title)}
-                    onGenerateShoppingList={handleGenerateRecipeShoppingList}
-                    isGeneratingList={isShoppingListLoading}
-                    onStartCookMode={handleStartCookMode}
-                    onPlayVideo={handlePlayRecipeVideo}
+                    onGenerateShoppingList={() => handleGenerateShoppingList(selectedRecipe)}
+                    isGeneratingList={isShoppingListLoading && shoppingListModalRecipe?.title === selectedRecipe.title}
+                    onStartCookMode={() => { setCookingRecipe(selectedRecipe); setSelectedRecipe(null); }}
+                    onPlayVideo={(url) => setPlayingVideo({ ...selectedRecipe, videoUrl: url, id: 'recipe-video', thumbnailUrl: '', description: '' })}
                 />
             )}
-            
-            {cookingRecipe && (
-                <CookMode recipe={cookingRecipe} onExit={handleExitCookMode} />
-            )}
-
-            {playingVideo && (
-                <VideoPlayerModal video={playingVideo} onClose={() => setPlayingVideo(null)} />
-            )}
-            
-            {isCameraModalOpen && (
-                <CameraModal 
-                    onClose={() => setIsCameraModalOpen(false)} 
-                    onIngredientsScanned={handleIngredientsScanned}
+            {shoppingListModalRecipe && !isShoppingListLoading && (
+                 <ShoppingListModal
+                    shoppingList={shoppingList}
+                    error={shoppingListError}
+                    recipeTitle={shoppingListModalRecipe.title}
+                    onClose={() => setShoppingListModalRecipe(null)}
                 />
             )}
+            {cookingRecipe && <CookMode recipe={cookingRecipe} onExit={() => setCookingRecipe(null)} />}
+            {variationRecipe && <VariationModal recipe={variationRecipe} onClose={() => setVariationRecipe(null)} onGenerate={()=>{}} isLoading={isGeneratingVariation} />}
+            {playingVideo && <VideoPlayerModal video={playingVideo as Video} onClose={() => setPlayingVideo(null)} />}
+            {selectedClass && <CookingClassDetail cookingClass={selectedClass} onBack={() => setSelectedClass(null)} onPlayLesson={(lesson) => setPlayingVideo(lesson)} />}
+            {isUpgradeModalOpen && <UpgradeModal onClose={() => setIsUpgradeModalOpen(false)} />}
+            {isLoginModalOpen && <LoginModal onClose={() => setIsLoginModalOpen(false)} onLogin={handleLogin} />}
+            {isCameraModalOpen && <CameraModal onClose={() => setIsCameraModalOpen(false)} onIngredientsScanned={handleIngredientsScanned} />}
+            {isPrivacyPolicyVisible && <PrivacyPolicy onClose={() => setIsPrivacyPolicyVisible(false)} />}
+            {isAboutUsVisible && <AboutUsModal onClose={() => setIsAboutUsVisible(false)} />}
 
-            {isUpgradeModalOpen && (
-                <UpgradeModal onClose={() => setIsUpgradeModalOpen(false)} />
-            )}
-
-            {isLoginModalOpen && (
-                <LoginModal
-                    onClose={() => setIsLoginModalOpen(false)}
-                    onLogin={handleLogin}
-                />
-            )}
-
-            {showUpgradeConfirmation && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => setShowUpgradeConfirmation(false)}>
-                    <div className="bg-white rounded-lg shadow-xl text-center p-8 max-w-sm" onClick={(e) => e.stopPropagation()}>
-                        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-                           <SparklesIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-text-primary mt-4">Welcome to Premium!</h2>
-                        <p className="text-text-secondary mt-2">You've successfully upgraded. You now have access to all exclusive recipes, classes, and expert help.</p>
-                        <button 
-                            onClick={() => setShowUpgradeConfirmation(false)}
-                            className="mt-6 w-full px-6 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus"
-                        >
-                            Start Exploring
+            <div className="container mx-auto px-4 py-6">
+                <div className="flex justify-between items-center mb-4">
+                    <div />
+                    {currentUser ? (
+                        <UserMenu user={currentUser} onLogout={handleLogout} onShowDashboard={() => setIsDashboardVisible(true)} />
+                    ) : (
+                        <button onClick={() => setIsLoginModalOpen(true)} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-focus transition-colors">
+                            Login
                         </button>
-                    </div>
+                    )}
                 </div>
-            )}
-            
-            {isPrivacyPolicyVisible && (
-                <PrivacyPolicy onClose={() => setIsPrivacyPolicyVisible(false)} />
-            )}
 
-            {isAboutUsVisible && (
-                <AboutUsModal onClose={() => setIsAboutUsVisible(false)} />
-            )}
+                {currentView !== 'bartender' && <Header />}
+
+                <nav className="my-6 flex flex-wrap justify-center gap-2 md:gap-4 border-b border-t border-border-color py-4 bg-white/50 rounded-lg">
+                    {renderNavButton('all', 'All Recipes')}
+                    {renderNavButton('saved', 'My Cookbook', <HeartIcon isFilled={currentView==='saved'} className="w-4 h-4" />)}
+                    {renderNavButton('plans', 'Meal Plans')}
+                    {renderNavButton('videos', 'Videos')}
+                    {renderNavButton('classes', 'Classes')}
+                    {renderNavButton('bartender', 'Bartender', <CocktailIcon className="w-4 h-4"/>)}
+                    {renderNavButton('shopping', 'Shopping List', <ShoppingCartIcon className="w-4 h-4" />)}
+                    {renderNavButton('expert', 'Ask Expert')}
+                </nav>
+
+                <main>
+                    {currentView === 'all' && (
+                        <>
+                            <div className="bg-white p-6 rounded-lg shadow-md border border-border-color mb-8">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                    <div className="md:col-span-2">
+                                        <IngredientInput ingredients={ingredients} setIngredients={setIngredients} />
+                                    </div>
+                                    <button onClick={handleGenerateFromIngredients} disabled={isGenerating || ingredients.length === 0} className="w-full h-14 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-wait flex items-center justify-center gap-2">
+                                        {isGenerating ? <Spinner /> : <><SparklesIcon className="w-5 h-5"/> Find Recipes</>}
+                                    </button>
+                                </div>
+                                 <div className="relative flex py-4 items-center">
+                                    <div className="flex-grow border-t"></div><span className="flex-shrink mx-4 text-xs font-semibold uppercase text-gray-400">Or</span><div className="flex-grow border-t"></div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                                    <UrlInput recipeUrl={recipeUrl} setRecipeUrl={setRecipeUrl} onFetch={handleImportFromUrl} isLoading={isImporting} />
+                                    <CameraInput onClick={() => setIsCameraModalOpen(true)} disabled={isImporting} />
+                                </div>
+                                {importError && <p className="mt-4 text-center text-red-500">{importError}</p>}
+                                {importSuccessMessage && <p className="mt-4 text-center text-green-600">{importSuccessMessage}</p>}
+                            </div>
+
+                            {isGenerating && <Spinner />}
+                            {generationError && <p className="text-center text-red-500 my-4">{generationError}</p>}
+                            {generatedRecipes && (
+                                <div className="my-12">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h2 className="text-2xl font-bold">Generated Recipes</h2>
+                                        <CookbookButton elementIdToPrint="generated-recipes-grid" ingredients={ingredients} />
+                                    </div>
+                                    <div id="generated-recipes-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                        {generatedRecipes.map(recipe => <RecipeCard key={recipe.title} recipe={recipe} onClick={() => handleSelectRecipe(recipe)} isSaved={savedRecipeTitles.includes(recipe.title)} onToggleSave={() => handleToggleSave(recipe.title)} />)}
+                                    </div>
+                                </div>
+                            )}
+
+                            <FavoriteRecipes recipes={topRatedRecipes} onSelectRecipe={handleSelectRecipe} savedRecipeTitles={savedRecipeTitles} onToggleSave={handleToggleSave} />
+
+                            <PremiumContent isPremium={isPremium} onUpgrade={() => setIsUpgradeModalOpen(true)} recipes={newThisMonthRecipes} onSelectRecipe={handleSelectRecipe} savedRecipeTitles={savedRecipeTitles} onToggleSave={handleToggleSave} />
+                            
+                            <div className="flex flex-col md:flex-row gap-6 my-8">
+                                <div className="w-full md:w-1/4"><TagFilter allTags={allTags} selectedTags={selectedTags} onTagClick={handleTagClick} /></div>
+                                <div className="w-full md:w-3/4"><SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} /></div>
+                            </div>
+
+                            {areRecipesLoading ? <Spinner /> : (
+                                <>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                        {filteredRecipes.slice(0, itemsToShow).map(recipe => <RecipeCard key={recipe.title} recipe={recipe} onClick={() => handleSelectRecipe(recipe)} isSaved={savedRecipeTitles.includes(recipe.title)} onToggleSave={() => handleToggleSave(recipe.title)} />)}
+                                    </div>
+                                    {itemsToShow < filteredRecipes.length && (
+                                        <div className="text-center mt-8">
+                                            <button onClick={() => setItemsToShow(itemsToShow + ITEMS_PER_PAGE)} className="px-6 py-3 bg-white border border-border-color text-text-primary font-semibold rounded-lg shadow-sm hover:bg-gray-100">Load More</button>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </>
+                    )}
+                    {currentView === 'saved' && (
+                        <>
+                           <div className="flex justify-between items-center mb-6">
+                               <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+                               <CookbookButton elementIdToPrint="saved-recipes-grid" />
+                           </div>
+                           <div id="saved-recipes-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {filteredRecipes.length > 0 ? filteredRecipes.map(recipe => <RecipeCard key={recipe.title} recipe={recipe} onClick={() => handleSelectRecipe(recipe)} isSaved={true} onToggleSave={() => handleToggleSave(recipe.title)} />) : <p className="col-span-full text-center text-text-secondary">You haven't saved any recipes yet.</p>}
+                           </div>
+                        </>
+                    )}
+                    {currentView === 'plans' && (
+                        !selectedPlan ? (
+                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {mealPlans.map(plan => <MealPlanCard key={plan.title} plan={plan} onClick={() => setSelectedPlan(plan)} />)}
+                            </div>
+                        ) : (
+                            <MealPlanDetail plan={selectedPlan} recipes={allRecipes} onSelectRecipe={handleSelectRecipe} onBack={() => setSelectedPlan(null)} onGenerateList={() => handleGenerateShoppingList(selectedPlan)} isGeneratingList={isShoppingListLoading && shoppingListModalRecipe?.title === selectedPlan.title}/>
+                        )
+                    )}
+                    {currentView === 'videos' && (
+                        <div className="space-y-8">
+                            {videos.map(category => (
+                                <div key={category.id}>
+                                    <h2 className="text-2xl font-bold mb-4">{category.title}</h2>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {category.videos.map(video => <VideoCard key={video.id} video={video} onClick={() => setPlayingVideo(video)} />)}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                     {currentView === 'classes' && <AdvancedClasses isPremium={isPremium} onUpgrade={() => setIsUpgradeModalOpen(true)} classes={cookingClasses} onSelectClass={setSelectedClass} />}
+                     {currentView === 'bartender' && <BartenderHelper />}
+                     {currentView === 'shopping' && (
+                        <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-md border">
+                           <div className="flex justify-between items-center mb-4">
+                               <h2 className="text-2xl font-bold">Shopping List</h2>
+                               <button onClick={handleClearShoppingList} className="text-sm text-red-500 hover:underline flex items-center gap-1"><TrashIcon className="w-4 h-4" /> Clear All</button>
+                           </div>
+                           <ManualAddItem onAddItem={handleAddItemToList} isLoading={isAddingItem} />
+                           <div className="mt-6 space-y-4">
+                               {shoppingList.length > 0 ? shoppingList.map(cat => (
+                                   <div key={cat.category}>
+                                       <h3 className="font-semibold text-primary">{cat.category}</h3>
+                                       <ul className="mt-2 space-y-1">
+                                           {cat.items.map(item => (
+                                               <li key={item} className="flex items-center justify-between group p-1 hover:bg-gray-50 rounded">
+                                                   <label className="flex items-center">
+                                                       <input type="checkbox" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"/>
+                                                       <span className="text-text-secondary">{item}</span>
+                                                   </label>
+                                                   <button onClick={() => handleDeleteItem(cat.category, item)} className="opacity-0 group-hover:opacity-100 transition-opacity"><TrashIcon className="w-4 h-4 text-gray-400 hover:text-red-500" /></button>
+                                               </li>
+                                           ))}
+                                       </ul>
+                                   </div>
+                               )) : <p className="text-center text-text-secondary py-8">Your shopping list is empty.</p>}
+                           </div>
+                        </div>
+                     )}
+                     {currentView === 'expert' && <AskAnExpert isPremium={isPremium} onUpgrade={() => setIsUpgradeModalOpen(true)} isSubmitted={isQuestionSubmitted} onSubmitQuestion={() => setIsQuestionSubmitted(true)} onAskAnother={() => setIsQuestionSubmitted(false)} />}
+                </main>
+
+                <NewsletterSignup />
+                <DownloadApp />
+
+            </div>
+            <Footer onShowPrivacyPolicy={() => setIsPrivacyPolicyVisible(true)} onShowAboutUs={() => setIsAboutUsVisible(true)} />
         </div>
     );
 };
