@@ -3,8 +3,14 @@ import { generateDrinkRecipe } from '../services/geminiService';
 import { DrinkRecipe } from '../types';
 import Spinner from './Spinner';
 import SparklesIcon from './icons/SparklesIcon';
+import HeartIcon from './icons/HeartIcon';
 
-const BartenderHelper: React.FC = () => {
+interface BartenderHelperProps {
+    savedDrinks: DrinkRecipe[];
+    onToggleSaveDrink: (drink: DrinkRecipe) => void;
+}
+
+const BartenderHelper: React.FC<BartenderHelperProps> = ({ savedDrinks, onToggleSaveDrink }) => {
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -70,6 +76,8 @@ const BartenderHelper: React.FC = () => {
     const renderRecipe = () => {
         if (!drinkRecipe) return null;
 
+        const isSaved = savedDrinks.some(d => d.name === drinkRecipe.name);
+
         return (
             <div className="bg-white rounded-2xl shadow-lg max-w-4xl mx-auto border border-border-color overflow-hidden animate-fade-in">
                 <div className="grid grid-cols-1 md:grid-cols-2">
@@ -77,7 +85,16 @@ const BartenderHelper: React.FC = () => {
                         <img src={drinkRecipe.imageUrl} alt={drinkRecipe.name} className="absolute inset-0 w-full h-full object-cover" />
                     </div>
                     <div className="p-6 md:p-8 flex flex-col">
-                        <h2 className="text-3xl font-bold text-text-primary">{drinkRecipe.name}</h2>
+                        <div className="flex justify-between items-start gap-4">
+                            <h2 className="text-3xl font-bold text-text-primary flex-1">{drinkRecipe.name}</h2>
+                            <button
+                                onClick={() => onToggleSaveDrink(drinkRecipe)}
+                                className={`flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg font-semibold transition-colors duration-200 ${isSaved ? 'border-red-500 bg-red-50 text-red-600' : 'border-border-color bg-white text-text-secondary hover:bg-gray-100'}`}
+                            >
+                                <HeartIcon isFilled={isSaved} className="w-5 h-5" />
+                                <span>{isSaved ? 'Saved' : 'Save'}</span>
+                            </button>
+                        </div>
                         <p className="mt-2 text-text-secondary">{drinkRecipe.description}</p>
                         
                         <div className="mt-4 text-sm font-medium grid grid-cols-2 gap-x-4 gap-y-1">

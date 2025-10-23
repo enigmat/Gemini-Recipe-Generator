@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass, User, Lead } from './types';
+import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass, User, Lead, DrinkRecipe } from './types';
 import Header from './components/Header';
 import RecipeCard from './components/RecipeCard';
 import SearchBar from './components/SearchBar';
@@ -10,6 +10,7 @@ import { mealPlans } from './data/mealPlans';
 import { videoData } from './data/videos';
 import { cookingClasses as cookingClassesData } from './data/cookingClasses';
 import * as favoritesService from './services/favoritesService';
+import * as savedDrinksService from './services/savedDrinksService';
 import * as userService from './services/userService';
 import * as leadService from './services/leadService';
 import IngredientInput from './components/IngredientInput';
@@ -51,6 +52,8 @@ import TrashIcon from './components/icons/TrashIcon';
 import Footer from './components/Footer';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import AboutUsModal from './components/AboutUsModal';
+import DrinkRecipeCard from './components/DrinkRecipeCard';
+import DrinkRecipeModal from './components/DrinkRecipeModal';
 
 const ITEMS_PER_PAGE = 12;
 const RECIPES_STORAGE_KEY = 'marshmellowRecipes_allRecipes';
@@ -91,6 +94,8 @@ const App: React.FC = () => {
     const [itemsToShow, setItemsToShow] = useState(ITEMS_PER_PAGE);
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [savedRecipeTitles, setSavedRecipeTitles] = useState<string[]>([]);
+    const [savedDrinks, setSavedDrinks] = useState<DrinkRecipe[]>([]);
+    const [selectedDrink, setSelectedDrink] = useState<DrinkRecipe | null>(null);
     const [currentView, setCurrentView] = useState<View>('all');
     
     // States for user authentication and premium status
@@ -168,6 +173,7 @@ const App: React.FC = () => {
         setAllUsers(userService.getAllUsers());
         setLeads(leadService.getAllLeads());
         setSavedRecipeTitles(favoritesService.getSavedRecipeTitles());
+        setSavedDrinks(savedDrinksService.getSavedDrinks());
 
         // Check for Stripe checkout redirect
         const query = new URLSearchParams(window.location.search);
@@ -223,12 +229,19 @@ const App: React.FC = () => {
         }
     };
 
-    const filteredRecipes = useMemo(() => {
-        let recipes = currentView === 'saved'
-            ? allRecipes.filter(recipe => savedRecipeTitles.includes(recipe.title))
-            : activeRecipes;
+    const handleToggleSaveDrink = (drink: DrinkRecipe) => {
+        const isSaved = savedDrinks.some(d => d.name === drink.name);
+        if (isSaved) {
+            savedDrinksService.unsaveDrink(drink.name);
+            setSavedDrinks(savedDrinks.filter(d => d.name !== drink.name));
+        } else {
+            savedDrinksService.saveDrink(drink);
+            setSavedDrinks([...savedDrinks, drink]);
+        }
+    };
 
-        return recipes.filter(recipe => {
+    const filteredRecipes = useMemo(() => {
+        return activeRecipes.filter(recipe => {
             const searchLower = searchQuery.toLowerCase();
             const matchesSearch =
                 !searchQuery ||
@@ -243,7 +256,7 @@ const App: React.FC = () => {
 
             return matchesSearch && matchesTags;
         });
-    }, [searchQuery, selectedTags, currentView, savedRecipeTitles, allRecipes, activeRecipes]);
+    }, [searchQuery, selectedTags, activeRecipes]);
 
     const handleTagClick = (tag: string) => {
         setSelectedTags(prevTags =>
@@ -693,7 +706,7 @@ const App: React.FC = () => {
                     </div>
                 );
             }
-            return <BartenderHelper />;
+            return <BartenderHelper savedDrinks={savedDrinks} onToggleSaveDrink={handleToggleSaveDrink} />;
         }
         
         if (isGenerating) {
@@ -885,7 +898,76 @@ const App: React.FC = () => {
             );
         }
 
-        // Default browse view for 'all' or 'saved'
+        if (currentView === 'saved') {
+            const savedFoodRecipes = allRecipes.filter(recipe => savedRecipeTitles.includes(recipe.title));
+            return (
+                <>
+                    {/* Saved Food Recipes Section */}
+                    <div className="mb-12">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-text-primary">My Saved Recipes</h2>
+                            {savedFoodRecipes.length > 0 && (
+                                isPremium ? (
+                                    <CookbookButton elementIdToPrint="recipes-grid" />
+                                ) : (
+                                    <button
+                                        onClick={() => setIsUpgradeModalOpen(true)}
+                                        className="px-4 py-2 bg-white border border-gray-300 text-gray-500 font-semibold rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 ease-in-out flex items-center gap-2"
+                                        title="Upgrade to Premium to create a cookbook"
+                                    >
+                                        <LockClosedIcon className="h-5 w-5 text-gray-400" />
+                                        <span>Create Cookbook</span>
+                                    </button>
+                                )
+                            )}
+                        </div>
+                        {savedFoodRecipes.length > 0 ? (
+                            <div id="recipes-grid" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+                                {savedFoodRecipes.map((recipe) => (
+                                    <RecipeCard
+                                        key={recipe.title}
+                                        recipe={recipe}
+                                        onClick={() => setSelectedRecipe(recipe)}
+                                        isSaved={true}
+                                        onToggleSave={() => handleToggleSave(recipe.title)}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center text-text-secondary py-16">
+                                <p className="text-xl font-semibold">No Saved Recipes Yet</p>
+                                <p>Click the heart icon on any recipe to save it here.</p>
+                            </div>
+                        )}
+                    </div>
+    
+                    {/* Saved Drink Recipes Section */}
+                    <div>
+                        <h2 className="text-2xl font-bold text-text-primary mb-6">My Saved Drinks</h2>
+                        {savedDrinks.length > 0 ? (
+                            <div id="drinks-grid" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+                                {savedDrinks.map((drink) => (
+                                    <DrinkRecipeCard
+                                        key={drink.name}
+                                        drink={drink}
+                                        onClick={() => setSelectedDrink(drink)}
+                                        isSaved={true}
+                                        onToggleSave={() => handleToggleSaveDrink(drink)}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center text-text-secondary py-16">
+                                <p className="text-xl font-semibold">No Saved Drinks Yet</p>
+                                <p>Use the Bartender Helper to create and save your favorite drinks.</p>
+                            </div>
+                        )}
+                    </div>
+                </>
+            );
+        }
+
+        // Default browse view for 'all'
         return (
             <>
                 <div className="max-w-4xl mx-auto mb-8 space-y-4">
@@ -898,24 +980,8 @@ const App: React.FC = () => {
                 </div>
                  <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-text-primary">
-                        {currentView === 'saved' ? 'My Saved Recipes' : 'All Recipes'}
+                        All Recipes
                     </h2>
-                    {currentView === 'saved' && currentRecipes.length > 0 && (
-                        isPremium ? (
-                            <CookbookButton
-                                elementIdToPrint="recipes-grid"
-                            />
-                        ) : (
-                            <button
-                                onClick={() => setIsUpgradeModalOpen(true)}
-                                className="px-4 py-2 bg-white border border-gray-300 text-gray-500 font-semibold rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 ease-in-out flex items-center gap-2"
-                                title="Upgrade to Premium to create a cookbook"
-                            >
-                                <LockClosedIcon className="h-5 w-5 text-gray-400" />
-                                <span>Create Cookbook</span>
-                            </button>
-                        )
-                    )}
                 </div>
                 {currentRecipes.length > 0 ? (
                     <>
@@ -943,17 +1009,8 @@ const App: React.FC = () => {
                     </>
                 ) : (
                     <div className="text-center text-text-secondary py-16">
-                         {currentView === 'saved' ? (
-                            <>
-                                <p className="text-xl font-semibold">No Saved Recipes Yet</p>
-                                <p>Click the heart icon on any recipe to save it here.</p>
-                            </>
-                        ) : (
-                             <>
-                                <p className="text-xl font-semibold">No Recipes Found</p>
-                                <p>Try adjusting your search or filters.</p>
-                            </>
-                        )}
+                        <p className="text-xl font-semibold">No Recipes Found</p>
+                        <p>Try adjusting your search or filters.</p>
                     </div>
                 )}
             </>
@@ -1274,6 +1331,15 @@ const App: React.FC = () => {
                 />
             )}
             
+            {selectedDrink && (
+                <DrinkRecipeModal
+                    drink={selectedDrink}
+                    onClose={() => setSelectedDrink(null)}
+                    isSaved={savedDrinks.some(d => d.name === selectedDrink.name)}
+                    onToggleSave={() => handleToggleSaveDrink(selectedDrink)}
+                />
+            )}
+
             {cookingRecipe && (
                 <CookMode recipe={cookingRecipe} onExit={handleExitCookMode} />
             )}
