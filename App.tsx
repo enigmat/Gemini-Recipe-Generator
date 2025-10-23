@@ -17,7 +17,7 @@ import * as leadService from './services/leadService';
 import * as imageStore from './services/imageStore';
 import * as ratingService from './services/ratingService';
 import IngredientInput from './components/IngredientInput';
-import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage, generateRecipeFromPrompt, categorizeShoppingListItem } from './services/geminiService';
+import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage, generateRecipeFromPrompt, categorizeShoppingListItem, generateRecipeVariation } from './services/geminiService';
 import Spinner from './components/Spinner';
 import MealPlanCard from './components/MealPlanCard';
 import MealPlanDetail from './components/MealPlanDetail';
@@ -58,7 +58,10 @@ import AboutUsModal from './components/AboutUsModal';
 import ShoppingListModal from './components/ShoppingListModal';
 import VariationModal from './components/VariationModal';
 import FavoriteRecipes from './components/FavoriteRecipes';
-import DownloadApp from './components/DownloadApp';
+import CalendarDaysIcon from './components/icons/CalendarDaysIcon';
+import FilmIcon from './components/icons/FilmIcon';
+import MortarPestleIcon from './components/icons/MortarPestleIcon';
+import QuestionMarkCircleIcon from './components/icons/QuestionMarkCircleIcon';
 
 
 const ITEMS_PER_PAGE = 12;
@@ -134,6 +137,7 @@ const App: React.FC = () => {
     // State for Recipe Variation
     const [variationRecipe, setVariationRecipe] = useState<Recipe | null>(null);
     const [isGeneratingVariation, setIsGeneratingVariation] = useState(false);
+    const [variationError, setVariationError] = useState<string | null>(null);
 
     // State for Videos
     const [playingVideo, setPlayingVideo] = useState<Video | Lesson | null>(null);
@@ -377,6 +381,21 @@ const App: React.FC = () => {
             localStorage.removeItem(SHOPPING_LIST_KEY);
         }
     };
+    
+    const handleGenerateVariation = async (originalRecipe: Recipe, variationRequest: string) => {
+        setIsGeneratingVariation(true);
+        setVariationError(null);
+        try {
+            const newRecipe = await generateRecipeVariation(originalRecipe, variationRequest, ingredients);
+            setVariationRecipe(null); 
+            setSelectedRecipe(newRecipe); 
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+            setVariationError(errorMessage);
+        } finally {
+            setIsGeneratingVariation(false);
+        }
+    };
 
     // Admin Handlers
     const handleAddRecipe = (recipe: Recipe) => {
@@ -500,6 +519,7 @@ const App: React.FC = () => {
                     isGeneratingList={isShoppingListLoading && shoppingListModalRecipe?.title === selectedRecipe.title}
                     onStartCookMode={() => { setCookingRecipe(selectedRecipe); setSelectedRecipe(null); }}
                     onPlayVideo={(url) => setPlayingVideo({ ...selectedRecipe, videoUrl: url, id: 'recipe-video', thumbnailUrl: '', description: '' })}
+                    onStartVariation={() => setVariationRecipe(selectedRecipe)}
                 />
             )}
             {shoppingListModalRecipe && !isShoppingListLoading && (
@@ -511,7 +531,15 @@ const App: React.FC = () => {
                 />
             )}
             {cookingRecipe && <CookMode recipe={cookingRecipe} onExit={() => setCookingRecipe(null)} />}
-            {variationRecipe && <VariationModal recipe={variationRecipe} onClose={() => setVariationRecipe(null)} onGenerate={()=>{}} isLoading={isGeneratingVariation} />}
+            {variationRecipe && (
+                <VariationModal
+                    recipe={variationRecipe}
+                    onClose={() => { setVariationRecipe(null); setVariationError(null); }}
+                    onGenerate={handleGenerateVariation}
+                    isLoading={isGeneratingVariation}
+                    error={variationError}
+                />
+            )}
             {playingVideo && <VideoPlayerModal video={playingVideo as Video} onClose={() => setPlayingVideo(null)} />}
             {selectedClass && <CookingClassDetail cookingClass={selectedClass} onBack={() => setSelectedClass(null)} onPlayLesson={(lesson) => setPlayingVideo(lesson)} />}
             {isUpgradeModalOpen && <UpgradeModal onClose={() => setIsUpgradeModalOpen(false)} />}
@@ -521,157 +549,247 @@ const App: React.FC = () => {
             {isAboutUsVisible && <AboutUsModal onClose={() => setIsAboutUsVisible(false)} />}
 
             <div className="container mx-auto px-4 py-6">
-                <div className="flex justify-between items-center mb-4">
-                    <div />
-                    {currentUser ? (
-                        <UserMenu user={currentUser} onLogout={handleLogout} onShowDashboard={() => setIsDashboardVisible(true)} />
-                    ) : (
-                        <button onClick={() => setIsLoginModalOpen(true)} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-focus transition-colors">
-                            Login
-                        </button>
-                    )}
+                <div className="flex justify-between items-center mb-6">
+                    <div className="flex-1">
+                        {/* This space can be used for a logo or can be left empty */}
+                    </div>
+                    <div className="flex-shrink-0">
+                        {currentUser ? (
+                            <UserMenu user={currentUser} onLogout={handleLogout} onShowDashboard={() => setIsDashboardVisible(true)} />
+                        ) : (
+                            <button
+                                onClick={() => setIsLoginModalOpen(true)}
+                                className="px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-focus transition-colors"
+                            >
+                                Login / Sign Up
+                            </button>
+                        )}
+                    </div>
                 </div>
 
-                {currentView !== 'bartender' && <Header />}
+                <Header />
 
-                <nav className="my-6 flex flex-wrap justify-center gap-2 md:gap-4 border-b border-t border-border-color py-4 bg-white/50 rounded-lg">
-                    {renderNavButton('all', 'All Recipes')}
-                    {renderNavButton('saved', 'My Cookbook', <HeartIcon isFilled={currentView==='saved'} className="w-4 h-4" />)}
-                    {renderNavButton('plans', 'Meal Plans')}
-                    {renderNavButton('videos', 'Videos')}
-                    {renderNavButton('classes', 'Classes')}
-                    {renderNavButton('bartender', 'Bartender', <CocktailIcon className="w-4 h-4"/>)}
-                    {renderNavButton('shopping', 'Shopping List', <ShoppingCartIcon className="w-4 h-4" />)}
-                    {renderNavButton('expert', 'Ask Expert')}
-                </nav>
-
-                <main>
-                    {currentView === 'all' && (
+                <main className="mt-8">
+                    <nav className="mb-8 flex flex-wrap justify-center gap-2">
+                        {renderNavButton('all', 'All Recipes')}
+                        {renderNavButton('saved', 'My Cookbook', <HeartIcon isFilled={false} className="w-4 h-4" />)}
+                        {renderNavButton('plans', 'Meal Plans', <CalendarDaysIcon className="w-4 h-4" />)}
+                        {renderNavButton('videos', 'Video Tutorials', <FilmIcon className="w-4 h-4" />)}
+                        {renderNavButton('classes', 'Cooking Classes', <MortarPestleIcon className="w-4 h-4" />)}
+                        {renderNavButton('bartender', 'Bartender Helper', <CocktailIcon className="w-4 h-4" />)}
+                        {renderNavButton('expert', 'Ask an Expert', <QuestionMarkCircleIcon className="w-4 h-4" />)}
+                        {renderNavButton('shopping', 'Shopping List', <ShoppingCartIcon className="w-4 h-4" />)}
+                    </nav>
+                    
+                    {currentView === 'all' || currentView === 'saved' ? (
                         <>
-                            <div className="bg-white p-6 rounded-lg shadow-md border border-border-color mb-8">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                    <div className="md:col-span-2">
-                                        <IngredientInput ingredients={ingredients} setIngredients={setIngredients} />
-                                    </div>
-                                    <button onClick={handleGenerateFromIngredients} disabled={isGenerating || ingredients.length === 0} className="w-full h-14 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-wait flex items-center justify-center gap-2">
-                                        {isGenerating ? <Spinner /> : <><SparklesIcon className="w-5 h-5"/> Find Recipes</>}
-                                    </button>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 p-6 bg-white rounded-lg shadow-sm border">
+                                <div className="md:col-span-2">
+                                    <IngredientInput ingredients={ingredients} setIngredients={setIngredients} />
                                 </div>
-                                 <div className="relative flex py-4 items-center">
-                                    <div className="flex-grow border-t"></div><span className="flex-shrink mx-4 text-xs font-semibold uppercase text-gray-400">Or</span><div className="flex-grow border-t"></div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <UrlInput
+                                        recipeUrl={recipeUrl}
+                                        setRecipeUrl={setRecipeUrl}
+                                        onFetch={handleImportFromUrl}
+                                        isLoading={isImporting}
+                                    />
+                                    <CameraInput onClick={() => setIsCameraModalOpen(true)} disabled={isImporting || isGenerating} />
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                                    <UrlInput recipeUrl={recipeUrl} setRecipeUrl={setRecipeUrl} onFetch={handleImportFromUrl} isLoading={isImporting} />
-                                    <CameraInput onClick={() => setIsCameraModalOpen(true)} disabled={isImporting} />
-                                </div>
-                                {importError && <p className="mt-4 text-center text-red-500">{importError}</p>}
-                                {importSuccessMessage && <p className="mt-4 text-center text-green-600">{importSuccessMessage}</p>}
                             </div>
 
+                            <div className="text-center mb-8">
+                                <button
+                                    onClick={handleGenerateFromIngredients}
+                                    disabled={isGenerating || ingredients.length === 0}
+                                    className="px-8 py-3 bg-primary text-white font-bold text-lg rounded-lg shadow-md hover:bg-primary-focus disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
+                                >
+                                    {isGenerating ? 'Finding Recipes...' : 'Find Recipes from Ingredients'}
+                                </button>
+                                {generationError && <p className="mt-2 text-red-500">{generationError}</p>}
+                                {importError && <p className="mt-2 text-red-500">{importError}</p>}
+                                {importSuccessMessage && <p className="mt-2 text-green-600">{importSuccessMessage}</p>}
+                            </div>
+                            
                             {isGenerating && <Spinner />}
-                            {generationError && <p className="text-center text-red-500 my-4">{generationError}</p>}
+
                             {generatedRecipes && (
-                                <div className="my-12">
+                                <div id="generated-recipes-section" className="mb-12 animate-fade-in">
                                     <div className="flex justify-between items-center mb-4">
                                         <h2 className="text-2xl font-bold">Generated Recipes</h2>
-                                        <CookbookButton elementIdToPrint="generated-recipes-grid" ingredients={ingredients} />
+                                        <CookbookButton elementIdToPrint="generated-recipes-section" ingredients={ingredients} />
                                     </div>
-                                    <div id="generated-recipes-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                        {generatedRecipes.map(recipe => <RecipeCard key={recipe.title} recipe={recipe} onClick={() => handleSelectRecipe(recipe)} isSaved={savedRecipeTitles.includes(recipe.title)} onToggleSave={() => handleToggleSave(recipe.title)} />)}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                        {generatedRecipes.map(recipe => (
+                                            <RecipeCard
+                                                key={recipe.title}
+                                                recipe={recipe}
+                                                onClick={() => handleSelectRecipe(recipe)}
+                                                isSaved={savedRecipeTitles.includes(recipe.title)}
+                                                onToggleSave={() => handleToggleSave(recipe.title)}
+                                            />
+                                        ))}
                                     </div>
                                 </div>
                             )}
 
-                            <FavoriteRecipes recipes={topRatedRecipes} onSelectRecipe={handleSelectRecipe} savedRecipeTitles={savedRecipeTitles} onToggleSave={handleToggleSave} />
-
-                            <PremiumContent isPremium={isPremium} onUpgrade={() => setIsUpgradeModalOpen(true)} recipes={newThisMonthRecipes} onSelectRecipe={handleSelectRecipe} savedRecipeTitles={savedRecipeTitles} onToggleSave={handleToggleSave} />
-                            
-                            <div className="flex flex-col md:flex-row gap-6 my-8">
-                                <div className="w-full md:w-1/4"><TagFilter allTags={allTags} selectedTags={selectedTags} onTagClick={handleTagClick} /></div>
-                                <div className="w-full md:w-3/4"><SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} /></div>
-                            </div>
-
-                            {areRecipesLoading ? <Spinner /> : (
-                                <>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                        {filteredRecipes.slice(0, itemsToShow).map(recipe => <RecipeCard key={recipe.title} recipe={recipe} onClick={() => handleSelectRecipe(recipe)} isSaved={savedRecipeTitles.includes(recipe.title)} onToggleSave={() => handleToggleSave(recipe.title)} />)}
+                            {!generatedRecipes && (
+                                <div id="all-recipes-section">
+                                    {currentView === 'all' && <FavoriteRecipes recipes={topRatedRecipes} onSelectRecipe={handleSelectRecipe} savedRecipeTitles={savedRecipeTitles} onToggleSave={handleToggleSave}/>}
+                                    {currentView === 'all' && <PremiumContent isPremium={isPremium} onUpgrade={() => setIsUpgradeModalOpen(true)} recipes={newThisMonthRecipes} onSelectRecipe={handleSelectRecipe} savedRecipeTitles={savedRecipeTitles} onToggleSave={handleToggleSave} />}
+                                    
+                                    <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
+                                        <h2 className="text-2xl font-bold">{currentView === 'saved' ? 'My Saved Recipes' : 'All Recipes'}</h2>
+                                        {currentView === 'saved' && savedRecipes.length > 0 && (
+                                            <CookbookButton elementIdToPrint="all-recipes-section" />
+                                        )}
                                     </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                        <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+                                        <TagFilter allTags={allTags} selectedTags={selectedTags} onTagClick={handleTagClick} />
+                                    </div>
+
+                                    {areRecipesLoading ? <Spinner /> : (
+                                        filteredRecipes.length > 0 ? (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                                {filteredRecipes.slice(0, itemsToShow).map(recipe => (
+                                                    <RecipeCard
+                                                        key={recipe.title}
+                                                        recipe={recipe}
+                                                        onClick={() => handleSelectRecipe(recipe)}
+                                                        isSaved={savedRecipeTitles.includes(recipe.title)}
+                                                        onToggleSave={() => handleToggleSave(recipe.title)}
+                                                    />
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-16 bg-white rounded-lg shadow-sm border">
+                                                <p className="text-lg text-text-secondary">
+                                                    {currentView === 'saved' ? 'You haven\'t saved any recipes yet.' : 'No recipes match your search.'}
+                                                </p>
+                                            </div>
+                                        )
+                                    )}
+
                                     {itemsToShow < filteredRecipes.length && (
-                                        <div className="text-center mt-8">
-                                            <button onClick={() => setItemsToShow(itemsToShow + ITEMS_PER_PAGE)} className="px-6 py-3 bg-white border border-border-color text-text-primary font-semibold rounded-lg shadow-sm hover:bg-gray-100">Load More</button>
+                                        <div className="mt-12 text-center">
+                                            <button
+                                                onClick={() => setItemsToShow(itemsToShow + ITEMS_PER_PAGE)}
+                                                className="px-8 py-3 bg-white border-2 border-primary text-primary font-bold rounded-lg hover:bg-primary/10 transition-colors"
+                                            >
+                                                Load More
+                                            </button>
                                         </div>
                                     )}
-                                </>
+                                </div>
                             )}
                         </>
-                    )}
-                    {currentView === 'saved' && (
-                        <>
-                           <div className="flex justify-between items-center mb-6">
-                               <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-                               <CookbookButton elementIdToPrint="saved-recipes-grid" />
-                           </div>
-                           <div id="saved-recipes-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {filteredRecipes.length > 0 ? filteredRecipes.map(recipe => <RecipeCard key={recipe.title} recipe={recipe} onClick={() => handleSelectRecipe(recipe)} isSaved={true} onToggleSave={() => handleToggleSave(recipe.title)} />) : <p className="col-span-full text-center text-text-secondary">You haven't saved any recipes yet.</p>}
-                           </div>
-                        </>
-                    )}
-                    {currentView === 'plans' && (
-                        !selectedPlan ? (
-                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {mealPlans.map(plan => <MealPlanCard key={plan.title} plan={plan} onClick={() => setSelectedPlan(plan)} />)}
-                            </div>
-                        ) : (
-                            <MealPlanDetail plan={selectedPlan} recipes={allRecipes} onSelectRecipe={handleSelectRecipe} onBack={() => setSelectedPlan(null)} onGenerateList={() => handleGenerateShoppingList(selectedPlan)} isGeneratingList={isShoppingListLoading && shoppingListModalRecipe?.title === selectedPlan.title}/>
-                        )
-                    )}
-                    {currentView === 'videos' && (
-                        <div className="space-y-8">
+                    ) : selectedPlan ? (
+                        <MealPlanDetail 
+                            plan={selectedPlan} 
+                            recipes={allRecipes} 
+                            onSelectRecipe={handleSelectRecipe}
+                            onBack={() => setSelectedPlan(null)}
+                            onGenerateList={() => handleGenerateShoppingList(selectedPlan)}
+                            isGeneratingList={isShoppingListLoading && shoppingListModalRecipe?.title === selectedPlan.title}
+                        />
+                    ) : selectedClass ? (
+                        <CookingClassDetail
+                            cookingClass={selectedClass}
+                            onBack={() => { setCurrentView('all'); setSelectedClass(null); }}
+                            onPlayLesson={(lesson) => setPlayingVideo(lesson)}
+                        />
+                    ) : currentView === 'plans' ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {mealPlans.map(plan => (
+                                <MealPlanCard key={plan.title} plan={plan} onClick={() => setSelectedPlan(plan)} />
+                            ))}
+                        </div>
+                    ) : currentView === 'videos' ? (
+                        <div className="space-y-12">
                             {videos.map(category => (
                                 <div key={category.id}>
-                                    <h2 className="text-2xl font-bold mb-4">{category.title}</h2>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {category.videos.map(video => <VideoCard key={video.id} video={video} onClick={() => setPlayingVideo(video)} />)}
+                                    <h2 className="text-2xl font-bold mb-6">{category.title}</h2>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                        {category.videos.map(video => (
+                                            <VideoCard key={video.id} video={video} onClick={() => setPlayingVideo(video)} />
+                                        ))}
                                     </div>
                                 </div>
                             ))}
                         </div>
-                    )}
-                     {currentView === 'classes' && <AdvancedClasses isPremium={isPremium} onUpgrade={() => setIsUpgradeModalOpen(true)} classes={cookingClasses} onSelectClass={setSelectedClass} />}
-                     {currentView === 'bartender' && <BartenderHelper />}
-                     {currentView === 'shopping' && (
-                        <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-md border">
-                           <div className="flex justify-between items-center mb-4">
-                               <h2 className="text-2xl font-bold">Shopping List</h2>
-                               <button onClick={handleClearShoppingList} className="text-sm text-red-500 hover:underline flex items-center gap-1"><TrashIcon className="w-4 h-4" /> Clear All</button>
-                           </div>
-                           <ManualAddItem onAddItem={handleAddItemToList} isLoading={isAddingItem} />
-                           <div className="mt-6 space-y-4">
-                               {shoppingList.length > 0 ? shoppingList.map(cat => (
-                                   <div key={cat.category}>
-                                       <h3 className="font-semibold text-primary">{cat.category}</h3>
-                                       <ul className="mt-2 space-y-1">
-                                           {cat.items.map(item => (
-                                               <li key={item} className="flex items-center justify-between group p-1 hover:bg-gray-50 rounded">
-                                                   <label className="flex items-center">
-                                                       <input type="checkbox" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"/>
-                                                       <span className="text-text-secondary">{item}</span>
-                                                   </label>
-                                                   <button onClick={() => handleDeleteItem(cat.category, item)} className="opacity-0 group-hover:opacity-100 transition-opacity"><TrashIcon className="w-4 h-4 text-gray-400 hover:text-red-500" /></button>
-                                               </li>
-                                           ))}
-                                       </ul>
-                                   </div>
-                               )) : <p className="text-center text-text-secondary py-8">Your shopping list is empty.</p>}
-                           </div>
+                    ) : currentView === 'bartender' ? (
+                        <BartenderHelper />
+                    ) : currentView === 'classes' ? (
+                        <AdvancedClasses
+                            isPremium={isPremium}
+                            onUpgrade={() => setIsUpgradeModalOpen(true)}
+                            classes={cookingClasses}
+                            onSelectClass={setSelectedClass}
+                        />
+                    ) : currentView === 'expert' ? (
+                        <AskAnExpert
+                            isPremium={isPremium}
+                            onUpgrade={() => setIsUpgradeModalOpen(true)}
+                            isSubmitted={isQuestionSubmitted}
+                            onSubmitQuestion={() => setIsQuestionSubmitted(true)}
+                            onAskAnother={() => setIsQuestionSubmitted(false)}
+                        />
+                    ) : currentView === 'shopping' ? (
+                        <div className="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-md border">
+                            <h2 className="text-3xl font-bold mb-6 text-center text-text-primary">My Shopping List</h2>
+                            <div className="mb-6">
+                                <ManualAddItem onAddItem={handleAddItemToList} isLoading={isAddingItem} />
+                            </div>
+                            {shoppingList.length > 0 ? (
+                                <div className="space-y-6">
+                                    {shoppingList.map(({ category, items }) => (
+                                        <div key={category}>
+                                            <h3 className="text-lg font-semibold text-primary mb-2 border-b-2 border-primary/20 pb-1">
+                                                {category}
+                                            </h3>
+                                            <ul className="space-y-2">
+                                                {items.map((item, index) => (
+                                                    <li key={index} className="flex items-center justify-between group">
+                                                        <div className="flex items-center">
+                                                            <input
+                                                                id={`shop-item-${category}-${index}`}
+                                                                type="checkbox"
+                                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"
+                                                            />
+                                                            <label htmlFor={`shop-item-${category}-${index}`} className="text-text-secondary group-hover:line-through">{item}</label>
+                                                        </div>
+                                                        <button onClick={() => handleDeleteItem(category, item)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <TrashIcon className="w-4 h-4 text-red-500" />
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ))}
+                                    <div className="pt-6 border-t mt-6 flex justify-end">
+                                        <button
+                                            onClick={handleClearShoppingList}
+                                            className="px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2"
+                                        >
+                                            <TrashIcon className="w-5 h-5"/>
+                                            Clear List
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center py-12 text-text-secondary border-2 border-dashed rounded-lg">
+                                    <ShoppingCartIcon className="w-12 h-12 mx-auto text-gray-300 mb-2"/>
+                                    <p>Your shopping list is empty.</p>
+                                    <p className="text-sm">Add items from recipes or manually above.</p>
+                                </div>
+                            )}
                         </div>
-                     )}
-                     {currentView === 'expert' && <AskAnExpert isPremium={isPremium} onUpgrade={() => setIsUpgradeModalOpen(true)} isSubmitted={isQuestionSubmitted} onSubmitQuestion={() => setIsQuestionSubmitted(true)} onAskAnother={() => setIsQuestionSubmitted(false)} />}
+                    ) : null}
+
+                    <NewsletterSignup />
+
                 </main>
-
-                <NewsletterSignup />
-                <DownloadApp />
-
             </div>
             <Footer onShowPrivacyPolicy={() => setIsPrivacyPolicyVisible(true)} onShowAboutUs={() => setIsAboutUsVisible(true)} />
         </div>

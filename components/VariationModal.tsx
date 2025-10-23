@@ -8,9 +8,10 @@ interface VariationModalProps {
     onClose: () => void;
     onGenerate: (originalRecipe: Recipe, variationRequest: string) => void;
     isLoading: boolean;
+    error?: string | null;
 }
 
-const VariationModal: React.FC<VariationModalProps> = ({ recipe, onClose, onGenerate, isLoading }) => {
+const VariationModal: React.FC<VariationModalProps> = ({ recipe, onClose, onGenerate, isLoading, error }) => {
     const [variationRequest, setVariationRequest] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -58,6 +59,10 @@ const VariationModal: React.FC<VariationModalProps> = ({ recipe, onClose, onGene
                             required
                             disabled={isLoading}
                         />
+
+                        {error && (
+                            <p className="mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</p>
+                        )}
 
                         <div className="mt-6 flex justify-end">
                             <button

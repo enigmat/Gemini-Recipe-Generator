@@ -16,6 +16,7 @@ import * as ratingService from '../services/ratingService';
 import Rating from './Rating';
 import { findRecipeVideo } from '../services/geminiService';
 import FilmIcon from './icons/FilmIcon';
+import SparklesIcon from './icons/SparklesIcon';
 
 interface RecipeModalProps {
     recipe: Recipe;
@@ -26,9 +27,10 @@ interface RecipeModalProps {
     isGeneratingList: boolean;
     onStartCookMode: () => void;
     onPlayVideo: (videoUrl: string) => void;
+    onStartVariation: () => void;
 }
 
-const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onToggleSave, onGenerateShoppingList, isGeneratingList, onStartCookMode, onPlayVideo }) => {
+const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onToggleSave, onGenerateShoppingList, isGeneratingList, onStartCookMode, onPlayVideo, onStartVariation }) => {
     
     const originalServings = useMemo(() => parseServings(recipe.servings), [recipe.servings]);
     const [targetServings, setTargetServings] = useState(originalServings);
@@ -176,7 +178,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onT
                         </div>
                     </div>
 
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                     <div className="grid grid-cols-2 gap-3 mb-6">
                         <button
                             onClick={onToggleSave}
                             className={`flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg font-semibold transition-colors duration-200 ${isSaved ? 'border-red-500 bg-red-50 text-red-600' : 'border-border-color bg-white text-text-secondary hover:bg-gray-100'}`}
@@ -203,20 +205,30 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onT
                             <ChefHatIcon className="w-5 h-5" />
                             <span>Cook Mode</span>
                         </button>
-                        {isFindingVideo ? (
-                             <div className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 bg-gray-50 text-gray-400 rounded-lg font-semibold">
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400"></div>
-                                <span>Finding Video...</span>
-                            </div>
-                        ) : videoUrl ? (
-                             <button
-                                onClick={() => onPlayVideo(videoUrl)}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold shadow-sm hover:bg-blue-600 transition-colors duration-200"
-                            >
-                                <FilmIcon className="w-5 h-5" />
-                                <span>Watch Video</span>
-                            </button>
-                        ) : null}
+                        <button
+                            onClick={onStartVariation}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold shadow-sm hover:bg-indigo-700 transition-colors duration-200"
+                        >
+                            <SparklesIcon className="w-5 h-5" />
+                            <span>Variation AI</span>
+                        </button>
+
+                        <div className="col-span-2">
+                            {isFindingVideo ? (
+                                 <div className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 bg-gray-50 text-gray-400 rounded-lg font-semibold">
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400"></div>
+                                    <span>Finding Video...</span>
+                                </div>
+                            ) : videoUrl ? (
+                                 <button
+                                    onClick={() => onPlayVideo(videoUrl)}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold shadow-sm hover:bg-blue-600 transition-colors duration-200"
+                                >
+                                    <FilmIcon className="w-5 h-5" />
+                                    <span>Watch Video</span>
+                                </button>
+                            ) : null}
+                        </div>
                     </div>
 
 
