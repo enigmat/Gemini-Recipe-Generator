@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import XIcon from './icons/XIcon';
 import UserCircleIcon from './icons/UserCircleIcon';
+import GoogleIcon from './icons/GoogleIcon';
 
 interface LoginModalProps {
     onClose: () => void;
@@ -12,7 +13,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleEmailPasswordSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!email || !password) return;
         setIsLoading(true);
@@ -21,6 +22,18 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
             onLogin(email);
             setIsLoading(false);
         }, 1000);
+    };
+
+    const handleGoogleLogin = () => {
+        setIsLoading(true);
+        // Simulate a Google Sign-In popup flow
+        setTimeout(() => {
+            const googleEmail = window.prompt("Simulating Google Sign-In.\nPlease enter your Google email address to continue:", "premium_user@example.com");
+            if (googleEmail && googleEmail.includes('@')) {
+                onLogin(googleEmail);
+            }
+            setIsLoading(false);
+        }, 500);
     };
 
     return (
@@ -39,6 +52,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
                     onClick={onClose} 
                     className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 z-10" 
                     aria-label="Close login modal"
+                    disabled={isLoading}
                 >
                     <XIcon className="h-6 w-6" />
                 </button>
@@ -48,59 +62,76 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
                             <UserCircleIcon className="h-7 w-7 text-primary" aria-hidden="true" />
                         </div>
                         <h2 id="login-modal-title" className="text-2xl font-bold text-text-primary mt-4">
-                            Welcome Back
+                            Sign In
                         </h2>
                         <p className="text-text-secondary mt-1">
-                            Sign in to continue.
+                            to access your saved recipes and premium features.
                         </p>
                     </div>
                     
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-text-secondary">Email Address</label>
-                            <input
-                                id="email"
-                                name="email"
-                                type="email"
-                                autoComplete="email"
-                                required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="mt-1 block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="password"  className="block text-sm font-medium text-text-secondary">Password</label>
-                             <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                autoComplete="current-password"
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="mt-1 block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                            />
+                    <div className="space-y-4">
+                         <button
+                            type="button"
+                            onClick={handleGoogleLogin}
+                            disabled={isLoading}
+                            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-60"
+                        >
+                            <GoogleIcon className="h-5 w-5" />
+                            <span>Sign in with Google</span>
+                        </button>
+                        
+                        <div className="relative flex py-2 items-center">
+                            <div className="flex-grow border-t border-gray-200"></div>
+                            <span className="flex-shrink mx-4 text-gray-400 text-xs font-semibold uppercase">Or</span>
+                            <div className="flex-grow border-t border-gray-200"></div>
                         </div>
 
-                         <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus disabled:bg-gray-400 disabled:cursor-wait transition-colors duration-200"
-                        >
-                            {isLoading ? (
-                                <>
-                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                                    <span>Signing In...</span>
-                                </>
-                            ) : (
-                                <span>Sign In</span>
-                            )}
-                        </button>
-                    </form>
-                    <p className="text-xs text-gray-400 mt-4 text-center">
-                        Don't have an account? <a href="#" className="font-medium text-primary hover:underline">Sign up</a>.
-                    </p>
+                        <form onSubmit={handleEmailPasswordSubmit} className="space-y-4">
+                            <div>
+                                <label htmlFor="email" className="block text-sm font-medium text-text-secondary">Email Address</label>
+                                <input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    autoComplete="email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="mt-1 block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                                    disabled={isLoading}
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="password"  className="block text-sm font-medium text-text-secondary">Password</label>
+                                 <input
+                                    id="password"
+                                    name="password"
+                                    type="password"
+                                    autoComplete="current-password"
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="mt-1 block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                                    disabled={isLoading}
+                                />
+                            </div>
+
+                             <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus disabled:bg-gray-400 disabled:cursor-wait transition-colors duration-200"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                        <span>Signing In...</span>
+                                    </>
+                                ) : (
+                                    <span>Sign In with Email</span>
+                                )}
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
