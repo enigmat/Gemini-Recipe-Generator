@@ -3,8 +3,14 @@ import { generateDrinkRecipe } from '../services/geminiService';
 import { DrinkRecipe } from '../types';
 import Spinner from './Spinner';
 import SparklesIcon from './icons/SparklesIcon';
+import HeartIcon from './icons/HeartIcon';
 
-const BartenderHelper: React.FC = () => {
+interface BartenderHelperProps {
+    savedItemNames: string[];
+    onToggleSave: (name: string, drink: DrinkRecipe) => void;
+}
+
+const BartenderHelper: React.FC<BartenderHelperProps> = ({ savedItemNames, onToggleSave }) => {
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -70,11 +76,25 @@ const BartenderHelper: React.FC = () => {
     const renderRecipe = () => {
         if (!drinkRecipe) return null;
 
+        const isSaved = savedItemNames.includes(drinkRecipe.name);
+
+        const handleSaveClick = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            onToggleSave(drinkRecipe.name, drinkRecipe);
+        };
+
         return (
             <div className="bg-white rounded-2xl shadow-lg max-w-4xl mx-auto border border-border-color overflow-hidden animate-fade-in">
                 <div className="grid grid-cols-1 md:grid-cols-2">
                     <div className="relative aspect-square bg-gray-100">
                         <img src={drinkRecipe.imageUrl} alt={drinkRecipe.name} className="absolute inset-0 w-full h-full object-cover" />
+                        <button
+                            onClick={handleSaveClick}
+                            className={`absolute top-4 right-4 p-2 rounded-full transition-colors duration-200 ${isSaved ? 'text-red-500 bg-white/80' : 'text-gray-600 bg-white/70 backdrop-blur-sm hover:bg-white'}`}
+                            aria-label={isSaved ? 'Unsave drink' : 'Save drink'}
+                        >
+                            <HeartIcon isFilled={isSaved} className="w-6 h-6" />
+                        </button>
                     </div>
                     <div className="p-6 md:p-8 flex flex-col">
                         <h2 className="text-3xl font-bold text-text-primary">{drinkRecipe.name}</h2>

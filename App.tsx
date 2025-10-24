@@ -1,7 +1,9 @@
 
 
+
+
 import React, { useState, useMemo, useEffect } from 'react';
-import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass, User, Lead } from './types';
+import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass, User, Lead, DrinkRecipe } from './types';
 import Header from './components/Header';
 import RecipeCard from './components/RecipeCard';
 import SearchBar from './components/SearchBar';
@@ -62,6 +64,7 @@ import CalendarDaysIcon from './components/icons/CalendarDaysIcon';
 import FilmIcon from './components/icons/FilmIcon';
 import MortarPestleIcon from './components/icons/MortarPestleIcon';
 import QuestionMarkCircleIcon from './components/icons/QuestionMarkCircleIcon';
+import IdeaInput from './components/IdeaInput';
 
 
 const ITEMS_PER_PAGE = 12;
@@ -255,14 +258,42 @@ const App: React.FC = () => {
     // --- Handlers ---
     const handleSelectRecipe = (recipe: Recipe) => setSelectedRecipe(recipe);
     const handleCloseModal = () => setSelectedRecipe(null);
-    const handleToggleSave = (recipeTitle: string) => {
-        if (savedRecipeTitles.includes(recipeTitle)) {
-            favoritesService.unsaveRecipe(recipeTitle);
+    
+    const handleToggleSave = async (itemTitle: string, itemData?: DrinkRecipe) => {
+        const isSaved = savedRecipeTitles.includes(itemTitle);
+    
+        if (isSaved) {
+            // Un-saving is simple, just remove from the favorites list.
+            favoritesService.unsaveRecipe(itemTitle);
         } else {
-            favoritesService.saveRecipe(recipeTitle);
+            // Saving
+            favoritesService.saveRecipe(itemTitle);
+    
+            // If it's a new drink (itemData is provided), convert and add it to the main recipe list.
+            if (itemData) {
+                const isAlreadyInRecipes = allRecipes.some(r => r.title === itemTitle);
+                if (!isAlreadyInRecipes) {
+                    const recipeFromDrink: Recipe = {
+                        title: itemData.name,
+                        description: itemData.description,
+                        imageUrl: itemData.imageUrl,
+                        ingredients: itemData.ingredients,
+                        instructions: itemData.instructions,
+                        tags: ['Cocktail', 'Drink', itemData.glassware].filter(Boolean),
+                        servings: '1 serving',
+                        prepTime: '5 min',
+                        cookTime: '5 min',
+                        status: 'active',
+                        nutrition: { calories: 'N/A', protein: 'N/A', carbs: 'N/A', fat: 'N/A' },
+                    };
+                    await handleSaveAndAddToRecipes(recipeFromDrink);
+                }
+            }
         }
+        // This setState will trigger a re-render
         setSavedRecipeTitles(favoritesService.getSavedRecipeTitles());
     };
+    
     const handleTagClick = (tag: string) => {
         setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
     };
@@ -286,6 +317,8 @@ const App: React.FC = () => {
         setIsGenerating(true);
         setGenerationError(null);
         setGeneratedRecipes(null);
+        setIdeaGeneratedRecipe(null);
+        setPromptError(null);
         try {
             const recipes = await generateRecipes(ingredients);
             setGeneratedRecipes(recipes);
@@ -303,6 +336,8 @@ const App: React.FC = () => {
         setIsImporting(true);
         setImportError(null);
         setImportSuccessMessage(null);
+        setIdeaGeneratedRecipe(null);
+        setPromptError(null);
         try {
             const newRecipe = await importRecipeFromUrl(recipeUrl);
             await handleSaveAndAddToRecipes(newRecipe);
@@ -312,6 +347,27 @@ const App: React.FC = () => {
             setImportError(error instanceof Error ? error.message : "Failed to import.");
         } finally {
             setIsImporting(false);
+        }
+    };
+    const handleGenerateFromIdea = async () => {
+        if (!recipePrompt.trim()) {
+            setPromptError("Please describe the recipe you'd like to create.");
+            return;
+        }
+        setIsGeneratingFromIdea(true);
+        setPromptError(null);
+        setIdeaGeneratedRecipe(null);
+        setGeneratedRecipes(null);
+        setGenerationError(null);
+        setImportError(null);
+
+        try {
+            const recipe = await generateRecipeFromPrompt(recipePrompt);
+            setIdeaGeneratedRecipe(recipe);
+        } catch (error) {
+            setPromptError(error instanceof Error ? error.message : "An unknown error occurred.");
+        } finally {
+            setIsGeneratingFromIdea(false);
         }
     };
     const handleIngredientsScanned = (scannedIngredients: string[]) => {
@@ -610,8 +666,39 @@ const App: React.FC = () => {
                                 {importError && <p className="mt-2 text-red-500">{importError}</p>}
                                 {importSuccessMessage && <p className="mt-2 text-green-600">{importSuccessMessage}</p>}
                             </div>
+
+                            <div className="relative flex py-4 items-center mb-8">
+                                <div className="flex-grow border-t border-border-color"></div>
+                                <span className="flex-shrink mx-4 text-sm font-semibold uppercase text-gray-400">OR</span>
+                                <div className="flex-grow border-t border-border-color"></div>
+                            </div>
                             
-                            {isGenerating && <Spinner />}
+                            <div className="mb-8 p-6 bg-white rounded-lg shadow-sm border">
+                                <IdeaInput
+                                    prompt={recipePrompt}
+                                    setPrompt={setRecipePrompt}
+                                    onGenerate={handleGenerateFromIdea}
+                                    isLoading={isGeneratingFromIdea}
+                                />
+                                {promptError && <p className="mt-4 text-red-500 text-center">{promptError}</p>}
+                            </div>
+                            
+                            {(isGenerating || isGeneratingFromIdea) && <Spinner />}
+
+                            {ideaGeneratedRecipe && (
+                                <div id="idea-generated-recipe-section" className="mb-12 animate-fade-in">
+                                    <h2 className="text-2xl font-bold mb-4">Your Custom Recipe</h2>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                                        <RecipeCard
+                                            key={ideaGeneratedRecipe.title}
+                                            recipe={ideaGeneratedRecipe}
+                                            onClick={() => handleSelectRecipe(ideaGeneratedRecipe)}
+                                            isSaved={savedRecipeTitles.includes(ideaGeneratedRecipe.title)}
+                                            onToggleSave={() => handleToggleSave(ideaGeneratedRecipe.title)}
+                                        />
+                                    </div>
+                                </div>
+                            )}
 
                             {generatedRecipes && (
                                 <div id="generated-recipes-section" className="mb-12 animate-fade-in">
@@ -633,7 +720,7 @@ const App: React.FC = () => {
                                 </div>
                             )}
 
-                            {!generatedRecipes && (
+                            {!generatedRecipes && !ideaGeneratedRecipe && (
                                 <div id="all-recipes-section">
                                     {currentView === 'all' && <FavoriteRecipes recipes={topRatedRecipes} onSelectRecipe={handleSelectRecipe} savedRecipeTitles={savedRecipeTitles} onToggleSave={handleToggleSave}/>}
                                     {currentView === 'all' && <PremiumContent isPremium={isPremium} onUpgrade={() => setIsUpgradeModalOpen(true)} recipes={newThisMonthRecipes} onSelectRecipe={handleSelectRecipe} savedRecipeTitles={savedRecipeTitles} onToggleSave={handleToggleSave} />}
@@ -719,7 +806,10 @@ const App: React.FC = () => {
                             ))}
                         </div>
                     ) : currentView === 'bartender' ? (
-                        <BartenderHelper />
+                        <BartenderHelper 
+                            savedItemNames={savedRecipeTitles}
+                            onToggleSave={handleToggleSave}
+                        />
                     ) : currentView === 'classes' ? (
                         <AdvancedClasses
                             isPremium={isPremium}
