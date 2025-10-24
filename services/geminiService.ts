@@ -129,7 +129,6 @@ export const generateRecipes = async (ingredients: string[]): Promise<Recipe[]> 
                         servings: recipe.servings,
                         prepTime: recipe.prepTime,
                         cookTime: recipe.cookTime,
-// FIX: Add missing 'status' property to conform to the Recipe type.
                         status: 'active',
                         nutrition: recipe.nutrition,
                     };
@@ -300,7 +299,6 @@ export const importRecipeFromUrl = async (url: string): Promise<Recipe> => {
             servings: importedData.servings,
             prepTime: importedData.prepTime,
             cookTime: importedData.cookTime,
-// FIX: Add missing 'status' property to conform to the Recipe type.
             status: 'active',
             nutrition: importedData.nutrition,
         };
@@ -523,7 +521,6 @@ export const generateRecipeVariation = async (originalRecipe: Recipe, variationR
             servings: newRecipe.servings,
             prepTime: newRecipe.prepTime,
             cookTime: newRecipe.cookTime,
-// FIX: Add missing 'status' property to conform to the Recipe type.
             status: 'active',
             nutrition: newRecipe.nutrition,
         };

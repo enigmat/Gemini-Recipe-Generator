@@ -10,7 +10,7 @@ const DownloadApp: React.FC = () => {
                 <div className="flex-1 text-center md:text-left">
                     <h2 className="text-3xl font-bold text-text-primary">Get Recipes on the Go</h2>
                     <p className="mt-2 text-lg text-text-secondary">
-                        Download the Marshmellow Recipes app for the best mobile experience.
+                        Download the recipe extracted app for the best mobile experience.
                         Save your favorite recipes, create shopping lists, and more!
                     </p>
                     <div className="mt-6 flex flex-wrap justify-center md:justify-start gap-4">

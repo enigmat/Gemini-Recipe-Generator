@@ -1,4 +1,4 @@
-const DB_NAME = 'MarshmellowImageCache';
+const DB_NAME = 'RecipeExtractedImageCache';
 const STORE_NAME = 'recipe_images';
 const DB_VERSION = 1;
 

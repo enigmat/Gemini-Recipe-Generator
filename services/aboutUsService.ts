@@ -1,12 +1,12 @@
 import { AboutUsInfo } from '../types';
 
-const ABOUT_US_KEY = 'marshmellowRecipesAboutUs';
+const ABOUT_US_KEY = 'recipeextractedAboutUs';
 
 const getInitialData = (): AboutUsInfo => ({
-    companyName: 'Marshmellow Recipes Inc.',
+    companyName: 'recipe extracted Inc.',
     missionStatement: 'To inspire home cooks everywhere with delicious, easy-to-follow recipes and powerful tools to make cooking a joy.',
-    history: 'Founded in 2023, Marshmellow Recipes started as a small blog and has grown into a vibrant community of food lovers. We believe that everyone can cook, and we\'re here to help!',
-    contactEmail: 'contact@marshmellowrecipes.com',
+    history: 'Founded in 2023, recipe extracted started as a small blog and has grown into a vibrant community of food lovers. We believe that everyone can cook, and we\'re here to help!',
+    contactEmail: 'contact@recipeextracted.com',
     address: '123 Culinary Lane, Foodie City, 90210',
 });
 

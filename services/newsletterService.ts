@@ -1,7 +1,7 @@
 import { Newsletter } from '../types';
 
-const NEWSLETTER_DRAFT_KEY = 'marshmellowRecipesNewsletterDraft';
-const SENT_NEWSLETTERS_KEY = 'marshmellowRecipesSentNewsletters';
+const NEWSLETTER_DRAFT_KEY = 'recipeextractedNewsletterDraft';
+const SENT_NEWSLETTERS_KEY = 'recipeextractedSentNewsletters';
 
 const formatDate = (date: Date): string => date.toISOString();
 

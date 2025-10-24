@@ -1,6 +1,6 @@
 import { Lead } from '../types';
 
-const LEADS_STORAGE_KEY = 'marshmellowRecipesLeads';
+const LEADS_STORAGE_KEY = 'recipeextractedLeads';
 
 const formatDate = (date: Date): string => date.toISOString().split('T')[0];
 

@@ -65,10 +65,10 @@ import QuestionMarkCircleIcon from './components/icons/QuestionMarkCircleIcon';
 
 
 const ITEMS_PER_PAGE = 12;
-const RECIPES_STORAGE_KEY = 'marshmellowRecipes_allRecipes';
-const CLASSES_STORAGE_KEY = 'marshmellowRecipes_cookingClasses';
-const VIDEOS_STORAGE_KEY = 'marshmellowRecipes_videos';
-const SHOPPING_LIST_KEY = 'marshmellowRecipes_shoppingList';
+const RECIPES_STORAGE_KEY = 'recipeextracted_allRecipes';
+const CLASSES_STORAGE_KEY = 'recipeextracted_cookingClasses';
+const VIDEOS_STORAGE_KEY = 'recipeextracted_videos';
+const SHOPPING_LIST_KEY = 'recipeextracted_shoppingList';
 
 type View = 'all' | 'saved' | 'plans' | 'videos' | 'bartender' | 'shopping' | 'classes' | 'expert';
 

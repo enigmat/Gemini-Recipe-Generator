@@ -40,7 +40,7 @@ const CookbookButton: React.FC<CookbookButtonProps> = ({ elementIdToPrint, ingre
             // --- Add Title Page ---
             pdf.setFontSize(36);
             pdf.setFont('helvetica', 'bold');
-            pdf.text("Marshmellow Recipes Cookbook", pdfWidth / 2, 100, { align: 'center' });
+            pdf.text("recipe extracted Cookbook", pdfWidth / 2, 100, { align: 'center' });
 
             pdf.setFontSize(16);
             pdf.setFont('helvetica', 'normal');
@@ -86,7 +86,7 @@ const CookbookButton: React.FC<CookbookButtonProps> = ({ elementIdToPrint, ingre
             }
 
 
-            pdf.save('Marshmellow_Recipes_Cookbook.pdf');
+            pdf.save('recipe_extracted_Cookbook.pdf');
         } catch (error) {
             console.error("Error generating PDF:", error);
             alert("Sorry, there was an error creating your cookbook. Please try again.");
