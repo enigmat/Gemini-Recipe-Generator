@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from 'react';
 import { Recipe, User, Lead, Newsletter, CookingClass, Lesson, AboutUsInfo, VideoCategory, Video } from '../types';
 import { generateImage, generateRecipeContentFromPrompt, generateVideoDetails, generateNewsletterContent } from '../services/geminiService';

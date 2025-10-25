@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass, User, Lead, DrinkRecipe } from './types';
 import Header from './components/Header';
