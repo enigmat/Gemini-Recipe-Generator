@@ -101,7 +101,6 @@ const App: React.FC = () => {
 
     // States for ingredient-based generation
     const [ingredients, setIngredients] = useState<string[]>([]);
-    const [generatedRecipes, setGeneratedRecipes] = useState<Recipe[] | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [generationError, setGenerationError] = useState<string | null>(null);
     
@@ -109,7 +108,6 @@ const App: React.FC = () => {
     const [recipePrompt, setRecipePrompt] = useState('');
     const [promptError, setPromptError] = useState<string | null>(null);
     const [isGeneratingFromIdea, setIsGeneratingFromIdea] = useState(false);
-    const [ideaGeneratedRecipe, setIdeaGeneratedRecipe] = useState<Recipe | null>(null);
 
     // States for URL import
     const [recipeUrl, setRecipeUrl] = useState('');
@@ -254,6 +252,17 @@ const App: React.FC = () => {
     // --- Handlers ---
     const handleSelectRecipe = (recipe: Recipe) => setSelectedRecipe(recipe);
     const handleCloseModal = () => setSelectedRecipe(null);
+
+    const addRecipeToCookbook = async (recipe: Recipe): Promise<boolean> => {
+        if (allRecipes.some(r => r.title.toLowerCase() === recipe.title.toLowerCase())) {
+            return false; // Indicate it was not added
+        }
+        if (recipe.imageUrl.startsWith('data:')) {
+            await imageStore.saveImage(recipe.title, recipe.imageUrl);
+        }
+        saveAllRecipesToStorage([recipe, ...allRecipes]);
+        return true; // Indicate success
+    }
     
     const handleToggleSave = async (itemTitle: string, itemData?: DrinkRecipe) => {
         const isSaved = savedRecipeTitles.includes(itemTitle);
@@ -267,23 +276,20 @@ const App: React.FC = () => {
     
             // If it's a new drink (itemData is provided), convert and add it to the main recipe list.
             if (itemData) {
-                const isAlreadyInRecipes = allRecipes.some(r => r.title === itemTitle);
-                if (!isAlreadyInRecipes) {
-                    const recipeFromDrink: Recipe = {
-                        title: itemData.name,
-                        description: itemData.description,
-                        imageUrl: itemData.imageUrl,
-                        ingredients: itemData.ingredients,
-                        instructions: itemData.instructions,
-                        tags: ['Cocktail', 'Drink', itemData.glassware].filter(Boolean),
-                        servings: '1 serving',
-                        prepTime: '5 min',
-                        cookTime: '5 min',
-                        status: 'active',
-                        nutrition: { calories: 'N/A', protein: 'N/A', carbs: 'N/A', fat: 'N/A' },
-                    };
-                    await handleSaveAndAddToRecipes(recipeFromDrink);
-                }
+                const recipeFromDrink: Recipe = {
+                    title: itemData.name,
+                    description: itemData.description,
+                    imageUrl: itemData.imageUrl,
+                    ingredients: itemData.ingredients,
+                    instructions: itemData.instructions,
+                    tags: ['Cocktail', 'Drink', itemData.glassware].filter(Boolean),
+                    servings: '1 serving',
+                    prepTime: '5 min',
+                    cookTime: '5 min',
+                    status: 'active',
+                    nutrition: { calories: 'N/A', protein: 'N/A', carbs: 'N/A', fat: 'N/A' },
+                };
+                await addRecipeToCookbook(recipeFromDrink);
             }
         }
         // This setState will trigger a re-render
@@ -312,12 +318,37 @@ const App: React.FC = () => {
         }
         setIsGenerating(true);
         setGenerationError(null);
-        setGeneratedRecipes(null);
-        setIdeaGeneratedRecipe(null);
         setPromptError(null);
+        setImportSuccessMessage(null);
         try {
-            const recipes = await generateRecipes(ingredients);
-            setGeneratedRecipes(recipes);
+            const generatedRecipes = await generateRecipes(ingredients);
+            
+            const recipesToAdd: Recipe[] = [];
+            const existingTitles = new Set(allRecipes.map(r => r.title.toLowerCase()));
+    
+            for (const recipe of generatedRecipes) {
+                if (!existingTitles.has(recipe.title.toLowerCase())) {
+                    recipesToAdd.push(recipe);
+                    existingTitles.add(recipe.title.toLowerCase());
+                }
+            }
+            
+            if (recipesToAdd.length > 0) {
+                // Save images for all new recipes
+                for (const recipe of recipesToAdd) {
+                    if (recipe.imageUrl.startsWith('data:')) {
+                        await imageStore.saveImage(recipe.title, recipe.imageUrl);
+                    }
+                }
+                // Prepend new recipes and save all at once
+                saveAllRecipesToStorage([...recipesToAdd.reverse(), ...allRecipes]);
+                setImportSuccessMessage(`Success! We've added ${recipesToAdd.length} new recipes to your collection.`);
+            } else {
+                setImportSuccessMessage("All generated recipes were already in your collection.");
+            }
+    
+            setIngredients([]);
+            document.getElementById('all-recipes-section')?.scrollIntoView({ behavior: 'smooth' });
         } catch (error) {
             setGenerationError(error instanceof Error ? error.message : "An unknown error occurred.");
         } finally {
@@ -332,12 +363,15 @@ const App: React.FC = () => {
         setIsImporting(true);
         setImportError(null);
         setImportSuccessMessage(null);
-        setIdeaGeneratedRecipe(null);
         setPromptError(null);
         try {
             const newRecipe = await importRecipeFromUrl(recipeUrl);
-            await handleSaveAndAddToRecipes(newRecipe);
-            setImportSuccessMessage(`Successfully imported "${newRecipe.title}"!`);
+            const added = await addRecipeToCookbook(newRecipe);
+            if(added) {
+                setImportSuccessMessage(`Successfully imported "${newRecipe.title}"!`);
+            } else {
+                setImportSuccessMessage(`"${newRecipe.title}" is already in your collection.`);
+            }
             setRecipeUrl('');
         } catch (error) {
             setImportError(error instanceof Error ? error.message : "Failed to import.");
@@ -352,14 +386,20 @@ const App: React.FC = () => {
         }
         setIsGeneratingFromIdea(true);
         setPromptError(null);
-        setIdeaGeneratedRecipe(null);
-        setGeneratedRecipes(null);
         setGenerationError(null);
         setImportError(null);
+        setImportSuccessMessage(null);
 
         try {
             const recipe = await generateRecipeFromPrompt(recipePrompt);
-            setIdeaGeneratedRecipe(recipe);
+            const added = await addRecipeToCookbook(recipe);
+            if (added) {
+                setImportSuccessMessage(`Success! "${recipe.title}" has been added to your collection.`);
+            } else {
+                setImportSuccessMessage(`"${recipe.title}" is already in your cookbook.`);
+            }
+            setRecipePrompt('');
+            document.getElementById('all-recipes-section')?.scrollIntoView({ behavior: 'smooth' });
         } catch (error) {
             setPromptError(error instanceof Error ? error.message : "An unknown error occurred.");
         } finally {
@@ -370,12 +410,7 @@ const App: React.FC = () => {
         setIngredients(prev => [...new Set([...prev, ...scannedIngredients])]);
         setIsCameraModalOpen(false);
     };
-    const handleSaveAndAddToRecipes = async (recipe: Recipe) => {
-        if (recipe.imageUrl.startsWith('data:')) {
-            await imageStore.saveImage(recipe.title, recipe.imageUrl);
-        }
-        saveAllRecipesToStorage([recipe, ...allRecipes]);
-    };
+    
     const handleGenerateShoppingList = async (source: Recipe | MealPlan) => {
         setShoppingListModalRecipe(source);
         setIsShoppingListLoading(true);
@@ -439,6 +474,7 @@ const App: React.FC = () => {
         setVariationError(null);
         try {
             const newRecipe = await generateRecipeVariation(originalRecipe, variationRequest, ingredients);
+            await addRecipeToCookbook(newRecipe);
             setVariationRecipe(null); 
             setSelectedRecipe(newRecipe); 
         } catch (error) {
@@ -451,7 +487,7 @@ const App: React.FC = () => {
 
     // Admin Handlers
     const handleAddRecipe = (recipe: Recipe) => {
-        saveAllRecipesToStorage([recipe, ...allRecipes]);
+        addRecipeToCookbook(recipe);
     };
     const handleDeleteRecipe = (title: string) => {
         if (window.confirm(`Are you sure you want to delete "${title}"?`)) {
@@ -719,7 +755,7 @@ const App: React.FC = () => {
                                 <div className="md:col-span-2">
                                     <IngredientInput ingredients={ingredients} setIngredients={setIngredients} />
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-4">
                                     <UrlInput
                                         recipeUrl={recipeUrl}
                                         setRecipeUrl={setRecipeUrl}
@@ -761,91 +797,54 @@ const App: React.FC = () => {
                             
                             {(isGenerating || isGeneratingFromIdea) && <Spinner />}
 
-                            {ideaGeneratedRecipe && (
-                                <div id="idea-generated-recipe-section" className="mb-12 animate-fade-in">
-                                    <h2 className="text-2xl font-bold mb-4">Your Custom Recipe</h2>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                                        <RecipeCard
-                                            key={ideaGeneratedRecipe.title}
-                                            recipe={ideaGeneratedRecipe}
-                                            onClick={() => handleSelectRecipe(ideaGeneratedRecipe)}
-                                            isSaved={savedRecipeTitles.includes(ideaGeneratedRecipe.title)}
-                                            onToggleSave={() => handleToggleSave(ideaGeneratedRecipe.title)}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            {generatedRecipes && (
-                                <div id="generated-recipes-section" className="mb-12 animate-fade-in">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h2 className="text-2xl font-bold">Generated Recipes</h2>
-                                        <CookbookButton elementIdToPrint="generated-recipes-section" ingredients={ingredients} />
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                        {generatedRecipes.map(recipe => (
-                                            <RecipeCard
-                                                key={recipe.title}
-                                                recipe={recipe}
-                                                onClick={() => handleSelectRecipe(recipe)}
-                                                isSaved={savedRecipeTitles.includes(recipe.title)}
-                                                onToggleSave={() => handleToggleSave(recipe.title)}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {!generatedRecipes && !ideaGeneratedRecipe && (
-                                <div id="all-recipes-section">
-                                    {currentView === 'all' && <FavoriteRecipes recipes={topRatedRecipes} onSelectRecipe={handleSelectRecipe} savedRecipeTitles={savedRecipeTitles} onToggleSave={handleToggleSave}/>}
-                                    {currentView === 'all' && <PremiumContent isPremium={isPremium} onUpgrade={() => setIsUpgradeModalOpen(true)} recipes={newThisMonthRecipes} onSelectRecipe={handleSelectRecipe} savedRecipeTitles={savedRecipeTitles} onToggleSave={handleToggleSave} />}
-                                    
-                                    <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
-                                        <h2 className="text-2xl font-bold">{currentView === 'saved' ? 'My Saved Recipes' : 'All Recipes'}</h2>
-                                        {currentView === 'saved' && savedRecipes.length > 0 && (
-                                            <CookbookButton elementIdToPrint="all-recipes-section" />
-                                        )}
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                        <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-                                        <TagFilter allTags={allTags} selectedTags={selectedTags} onTagClick={handleTagClick} />
-                                    </div>
-
-                                    {areRecipesLoading ? <Spinner /> : (
-                                        filteredRecipes.length > 0 ? (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                                {filteredRecipes.slice(0, itemsToShow).map(recipe => (
-                                                    <RecipeCard
-                                                        key={recipe.title}
-                                                        recipe={recipe}
-                                                        onClick={() => handleSelectRecipe(recipe)}
-                                                        isSaved={savedRecipeTitles.includes(recipe.title)}
-                                                        onToggleSave={() => handleToggleSave(recipe.title)}
-                                                    />
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="text-center py-16 bg-white rounded-lg shadow-sm border">
-                                                <p className="text-lg text-text-secondary">
-                                                    {currentView === 'saved' ? 'You haven\'t saved any recipes yet.' : 'No recipes match your search.'}
-                                                </p>
-                                            </div>
-                                        )
+                            <div id="all-recipes-section">
+                                {currentView === 'all' && <FavoriteRecipes recipes={topRatedRecipes} onSelectRecipe={handleSelectRecipe} savedRecipeTitles={savedRecipeTitles} onToggleSave={handleToggleSave}/>}
+                                {currentView === 'all' && <PremiumContent isPremium={isPremium} onUpgrade={() => setIsUpgradeModalOpen(true)} recipes={newThisMonthRecipes} onSelectRecipe={handleSelectRecipe} savedRecipeTitles={savedRecipeTitles} onToggleSave={handleToggleSave} />}
+                                
+                                <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
+                                    <h2 className="text-2xl font-bold">{currentView === 'saved' ? 'My Saved Recipes' : 'All Recipes'}</h2>
+                                    {currentView === 'saved' && savedRecipes.length > 0 && (
+                                        <CookbookButton elementIdToPrint="all-recipes-section" />
                                     )}
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                    <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+                                    <TagFilter allTags={allTags} selectedTags={selectedTags} onTagClick={handleTagClick} />
+                                </div>
 
-                                    {itemsToShow < filteredRecipes.length && (
-                                        <div className="mt-12 text-center">
-                                            <button
-                                                onClick={() => setItemsToShow(itemsToShow + ITEMS_PER_PAGE)}
-                                                className="px-8 py-3 bg-white border-2 border-primary text-primary font-bold rounded-lg hover:bg-primary/10 transition-colors"
-                                            >
-                                                Load More
-                                            </button>
+                                {areRecipesLoading ? <Spinner /> : (
+                                    filteredRecipes.length > 0 ? (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                            {filteredRecipes.slice(0, itemsToShow).map(recipe => (
+                                                <RecipeCard
+                                                    key={recipe.title}
+                                                    recipe={recipe}
+                                                    onClick={() => handleSelectRecipe(recipe)}
+                                                    isSaved={savedRecipeTitles.includes(recipe.title)}
+                                                    onToggleSave={() => handleToggleSave(recipe.title)}
+                                                />
+                                            ))}
                                         </div>
-                                    )}
-                                </div>
-                            )}
+                                    ) : (
+                                        <div className="text-center py-16 bg-white rounded-lg shadow-sm border">
+                                            <p className="text-lg text-text-secondary">
+                                                {currentView === 'saved' ? 'You haven\'t saved any recipes yet.' : 'No recipes match your search.'}
+                                            </p>
+                                        </div>
+                                    )
+                                )}
+
+                                {itemsToShow < filteredRecipes.length && (
+                                    <div className="mt-12 text-center">
+                                        <button
+                                            onClick={() => setItemsToShow(itemsToShow + ITEMS_PER_PAGE)}
+                                            className="px-8 py-3 bg-white border-2 border-primary text-primary font-bold rounded-lg hover:bg-primary/10 transition-colors"
+                                        >
+                                            Load More
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </>
                     ) : selectedPlan ? (
                         <MealPlanDetail 
