@@ -872,3 +872,105 @@ export const generateVideoDetails = async (promptText: string): Promise<{ title:
         throw new Error("Failed to generate video details from the prompt.");
     }
 };
+
+export const generateWinePairing = async (recipeTitle: string, recipeDescription: string): Promise<{ pairing: string; explanation: string; }> => {
+    const prompt = `
+        You are an expert sommelier. For the following recipe, suggest a specific wine pairing (e.g., "a crisp Sauvignon Blanc from the Loire Valley" or "a bold Cabernet Sauvignon from Napa Valley").
+        Also, provide a brief, one-sentence explanation for why it's a good pairing.
+        Do not suggest anything other than wine.
+
+        Recipe Title: ${recipeTitle}
+        Recipe Description: ${recipeDescription}
+
+        Please return the result as a single JSON object with two keys: "pairing" and "explanation".
+    `;
+
+    const pairingSchema = {
+        type: Type.OBJECT,
+        properties: {
+            pairing: {
+                type: Type.STRING,
+                description: "The name and type of the suggested wine."
+            },
+            explanation: {
+                type: Type.STRING,
+                description: "A brief explanation for the wine pairing choice."
+            }
+        },
+        required: ["pairing", "explanation"]
+    };
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: pairingSchema,
+            },
+        });
+
+        const jsonText = response.text.trim();
+        const parsedJson = JSON.parse(jsonText);
+
+        if (parsedJson.pairing && parsedJson.explanation) {
+            return parsedJson;
+        } else {
+            throw new Error("Invalid response format from API.");
+        }
+    } catch (error) {
+        console.error("Error generating wine pairing:", error);
+        throw new Error("Failed to generate a wine pairing for this recipe.");
+    }
+};
+
+export const generateNewsletterContent = async (topic: string): Promise<{ subject: string; body: string; }> => {
+    const prompt = `
+        You are an expert marketing copywriter for a cooking website called "recipe extracted".
+        Your task is to write an engaging newsletter based on a given topic.
+        The newsletter should have a catchy subject line and a body written in a friendly, enthusiastic tone.
+        The body should be formatted with paragraphs. You can use markdown for simple formatting like bolding.
+
+        Topic for the newsletter: "${topic}"
+
+        Please return the result as a single, valid JSON object that conforms to the provided schema.
+    `;
+
+    const newsletterSchema = {
+        type: Type.OBJECT,
+        properties: {
+            subject: {
+                type: Type.STRING,
+                description: "A catchy and engaging subject line for the newsletter email."
+            },
+            body: {
+                type: Type.STRING,
+                description: "The full body content of the newsletter. Use paragraphs for readability."
+            }
+        },
+        required: ["subject", "body"]
+    };
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: newsletterSchema,
+            },
+        });
+
+        const jsonText = response.text.trim();
+        const parsedJson = JSON.parse(jsonText);
+
+        if (parsedJson.subject && parsedJson.body) {
+            return parsedJson;
+        } else {
+            throw new Error("Invalid response format from API. Expected 'subject' and 'body'.");
+        }
+    } catch (error) {
+        console.error("Error generating newsletter content:", error);
+        throw new Error("Failed to generate newsletter content. The model may have been unable to fulfill the request.");
+    }
+};

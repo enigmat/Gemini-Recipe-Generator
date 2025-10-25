@@ -1,8 +1,9 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { Recipe, User, Lead, Newsletter, CookingClass, Lesson, AboutUsInfo, VideoCategory, Video } from '../types';
-import { generateImage, generateRecipeContentFromPrompt, generateVideoDetails } from '../services/geminiService';
+import { generateImage, generateRecipeContentFromPrompt, generateVideoDetails, generateNewsletterContent } from '../services/geminiService';
 import * as newsletterService from '../services/newsletterService';
 import * as aboutUsService from '../services/aboutUsService';
 import TrashIcon from './icons/TrashIcon';
@@ -91,6 +92,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const [sentNewsletters, setSentNewsletters] = useState<Newsletter[]>([]);
     const [isSending, setIsSending] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+    const [newsletterTopic, setNewsletterTopic] = useState('');
+    const [isGeneratingNewsletter, setIsGeneratingNewsletter] = useState(false);
 
     // Add Class State
     const [showAddClassForm, setShowAddClassForm] = useState(false);
@@ -214,6 +217,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 setIsSending(false);
                 alert('Newsletter sent successfully!');
             }, 1000);
+        }
+    };
+
+    const handleGenerateNewsletter = async () => {
+        if (!newsletterTopic.trim()) {
+            alert("Please enter a topic for the newsletter.");
+            return;
+        }
+        setIsGeneratingNewsletter(true);
+        try {
+            const content = await generateNewsletterContent(newsletterTopic);
+            setNewsletterSubject(content.subject);
+            setNewsletterBody(content.body);
+        } catch (error) {
+            console.error(error);
+            alert("Failed to generate newsletter content.");
+        } finally {
+            setIsGeneratingNewsletter(false);
         }
     };
     
@@ -519,6 +540,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div>
                 <h2 className="text-xl font-bold text-text-primary mb-4">Create Newsletter</h2>
                 <div className="space-y-4">
+                    <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-dashed">
+                        <h3 className="text-lg font-semibold text-text-primary mb-2 flex items-center gap-2">
+                            <SparklesIcon className="w-5 h-5 text-primary" />
+                            Generate with AI
+                        </h3>
+                        <p className="text-sm text-text-secondary mb-3">
+                            Provide a topic and let AI write the newsletter for you.
+                        </p>
+                        <textarea
+                            value={newsletterTopic}
+                            onChange={e => setNewsletterTopic(e.target.value)}
+                            placeholder="e.g., 'A guide to perfect summer grilling' or 'Our top 5 pasta recipes'"
+                            className="w-full p-2 border rounded"
+                            rows={2}
+                            disabled={isGeneratingNewsletter}
+                        />
+                        <button
+                            type="button"
+                            onClick={handleGenerateNewsletter}
+                            disabled={isGeneratingNewsletter || !newsletterTopic.trim()}
+                            className="mt-3 w-full px-6 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-focus disabled:bg-gray-400 flex items-center justify-center gap-2"
+                        >
+                            {isGeneratingNewsletter ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                    <span>Generating Content...</span>
+                                </>
+                            ) : (
+                                'Generate Content'
+                            )}
+                        </button>
+                    </div>
                      <div>
                         <label htmlFor="subject" className="block text-sm font-medium text-gray-700">Subject</label>
                         <input

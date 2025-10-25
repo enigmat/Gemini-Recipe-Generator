@@ -488,7 +488,87 @@ const App: React.FC = () => {
         }
     };
 
-    // Video Management Handlers
+    // --- Cooking Class Management Handlers ---
+    const saveCookingClassesToStorage = (updatedClasses: CookingClass[]) => {
+        localStorage.setItem(CLASSES_STORAGE_KEY, JSON.stringify(updatedClasses));
+        setCookingClasses(updatedClasses);
+    };
+
+    const handleAddCookingClass = (newClassData: Omit<CookingClass, 'id'>) => {
+        const newClass: CookingClass = {
+            id: `class-${Date.now()}`,
+            ...newClassData,
+        };
+        saveCookingClassesToStorage([newClass, ...cookingClasses]);
+    };
+
+    const handleUpdateCookingClass = (classId: string, updatedData: Partial<Omit<CookingClass, 'id' | 'lessons'>>) => {
+        const updatedClasses = cookingClasses.map(cls =>
+            cls.id === classId ? { ...cls, ...updatedData } : cls
+        );
+        saveCookingClassesToStorage(updatedClasses);
+    };
+
+    const handleDeleteCookingClass = (classId: string) => {
+        if (window.confirm("Are you sure you want to delete this class and all its lessons?")) {
+            saveCookingClassesToStorage(cookingClasses.filter(cls => cls.id !== classId));
+        }
+    };
+
+    const handleAddLesson = (classId: string) => {
+        const newLesson: Lesson = {
+            id: `lesson-${Date.now()}`,
+            title: 'New Lesson',
+            duration: '00:00',
+            thumbnailUrl: 'https://placehold.co/800x450/cccccc/ffffff/png?text=New',
+            videoUrl: '',
+        };
+        const updatedClasses = cookingClasses.map(cls =>
+            cls.id === classId ? { ...cls, lessons: [...cls.lessons, newLesson] } : cls
+        );
+        saveCookingClassesToStorage(updatedClasses);
+    };
+
+    const handleUpdateLesson = (classId: string, lessonId: string, updatedData: Partial<Omit<Lesson, 'id'>>) => {
+        const updatedClasses = cookingClasses.map(cls => {
+            if (cls.id === classId) {
+                const updatedLessons = cls.lessons.map(lsn =>
+                    lsn.id === lessonId ? { ...lsn, ...updatedData } : lsn
+                );
+                return { ...cls, lessons: updatedLessons };
+            }
+            return cls;
+        });
+        saveCookingClassesToStorage(updatedClasses);
+    };
+
+    const handleDeleteLesson = (classId: string, lessonId: string) => {
+        if (window.confirm("Are you sure you want to delete this lesson?")) {
+            const updatedClasses = cookingClasses.map(cls => {
+                if (cls.id === classId) {
+                    return { ...cls, lessons: cls.lessons.filter(lsn => lsn.id !== lessonId) };
+                }
+                return cls;
+            });
+            saveCookingClassesToStorage(updatedClasses);
+        }
+    };
+
+    const handleUpdateClassImage = async (classId: string, prompt: string) => {
+        try {
+            const newImageUrl = await generateImage(prompt);
+            const updatedClasses = cookingClasses.map(cls =>
+                cls.id === classId ? { ...cls, imageUrl: newImageUrl } : cls
+            );
+            saveCookingClassesToStorage(updatedClasses);
+        } catch (error) {
+            alert(`Failed to generate image for class ${classId}.`);
+            console.error(error);
+        }
+    };
+
+
+    // --- Video Management Handlers ---
     const saveVideosToStorage = (updatedVideos: VideoCategory[]) => {
         localStorage.setItem(VIDEOS_STORAGE_KEY, JSON.stringify(updatedVideos));
         setVideos(updatedVideos);
@@ -535,13 +615,13 @@ const App: React.FC = () => {
                     onDeleteRecipe={handleDeleteRecipe}
                     onUpdateRecipeStatus={handleUpdateRecipeStatus}
                     onFixImage={handleFixRecipeImage}
-                    onAddCookingClass={()=>{}}
-                    onUpdateCookingClass={()=>{}}
-                    onDeleteCookingClass={()=>{}}
-                    onAddLesson={()=>{}}
-                    onUpdateLesson={()=>{}}
-                    onDeleteLesson={()=>{}}
-                    onUpdateClassImage={async ()=>{}}
+                    onAddCookingClass={handleAddCookingClass}
+                    onUpdateCookingClass={handleUpdateCookingClass}
+                    onDeleteCookingClass={handleDeleteCookingClass}
+                    onAddLesson={handleAddLesson}
+                    onUpdateLesson={handleUpdateLesson}
+                    onDeleteLesson={handleDeleteLesson}
+                    onUpdateClassImage={handleUpdateClassImage}
                     videos={videos}
                     onAddVideoCategory={handleAddVideoCategory}
                     onUpdateVideoCategory={handleUpdateVideoCategory}
@@ -881,7 +961,7 @@ const App: React.FC = () => {
 
                 </main>
             </div>
-            <Footer onShowPrivacyPolicy={() => setIsPrivacyPolicyVisible(true)} onShowAboutUs={() => setIsAboutUsVisible(true)} />
+            <Footer onShowPrivacyPolicy={() => setIsPrivacyPolicyVisible(false)} onShowAboutUs={() => setIsAboutUsVisible(false)} />
         </div>
     );
 };

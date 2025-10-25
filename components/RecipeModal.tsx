@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Recipe } from '../types';
 import XIcon from './icons/XIcon';
@@ -14,9 +10,10 @@ import UsersIcon from './icons/UsersIcon';
 import FireIcon from './icons/FireIcon';
 import * as ratingService from '../services/ratingService';
 import Rating from './Rating';
-import { findRecipeVideo } from '../services/geminiService';
+import { findRecipeVideo, generateWinePairing } from '../services/geminiService';
 import FilmIcon from './icons/FilmIcon';
 import SparklesIcon from './icons/SparklesIcon';
+import WineIcon from './icons/WineIcon';
 
 interface RecipeModalProps {
     recipe: Recipe;
@@ -37,6 +34,8 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onT
     const [ratings, setRatings] = useState(() => ratingService.getRatingsForRecipe(recipe.title));
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [isFindingVideo, setIsFindingVideo] = useState(true);
+    const [winePairing, setWinePairing] = useState<{ pairing: string; explanation: string; } | null>(null);
+    const [isFindingPairing, setIsFindingPairing] = useState(true);
 
     useEffect(() => {
         const fetchVideo = async () => {
@@ -54,6 +53,25 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onT
 
         fetchVideo();
     }, [recipe.title]);
+
+    useEffect(() => {
+        const fetchPairing = async () => {
+            setIsFindingPairing(true);
+            setWinePairing(null);
+            try {
+                const pairingData = await generateWinePairing(recipe.title, recipe.description);
+                setWinePairing(pairingData);
+            } catch (error) {
+                console.error("Error fetching wine pairing:", error);
+                setWinePairing(null);
+            } finally {
+                setIsFindingPairing(false);
+            }
+        };
+
+        fetchPairing();
+    }, [recipe.title, recipe.description]);
+
 
     const averageRating = useMemo(() => {
         return ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
@@ -176,6 +194,26 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onT
                                 size="lg"
                             />
                         </div>
+                    </div>
+
+                    <div className="my-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                        <h4 className="text-md font-semibold text-purple-800 mb-2 flex items-center gap-2">
+                            <WineIcon className="w-5 h-5" />
+                            AI Wine Pairing
+                        </h4>
+                        {isFindingPairing ? (
+                            <div className="flex items-center gap-2 text-sm text-purple-700">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                                <span>Finding the perfect wine...</span>
+                            </div>
+                        ) : winePairing ? (
+                            <div>
+                                <p className="font-bold text-purple-900">{winePairing.pairing}</p>
+                                <p className="text-sm text-purple-700 mt-1 italic">{winePairing.explanation}</p>
+                            </div>
+                        ) : (
+                            <p className="text-sm text-purple-600">Could not find a wine pairing suggestion at this time.</p>
+                        )}
                     </div>
 
                      <div className="grid grid-cols-2 gap-3 mb-6">
