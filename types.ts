@@ -156,3 +156,8 @@ export interface AffiliateProduct {
   price: number;
   url: string;
 }
+
+export interface MarketplaceSearchQuery {
+  query: string;
+  timestamp: string;
+}

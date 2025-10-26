@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Recipe, User, Lead, Newsletter, CookingClass, Lesson, AboutUsInfo, VideoCategory, Video } from '../types';
+import { Recipe, User, Lead, Newsletter, CookingClass, Lesson, AboutUsInfo, VideoCategory, Video, MarketplaceSearchQuery } from '../types';
 import { generateImage, generateRecipeContentFromPrompt, generateVideoDetails, generateNewsletterContent } from '../services/geminiService';
 import * as newsletterService from '../services/newsletterService';
 import * as aboutUsService from '../services/aboutUsService';
@@ -20,6 +20,8 @@ interface AdminDashboardProps {
     allLeads: Lead[];
     cookingClasses: CookingClass[];
     videos: VideoCategory[];
+    marketplaceSearchHistory: MarketplaceSearchQuery[];
+    onClearMarketplaceHistory: () => void;
     onDeleteUser: (email: string) => void;
     onGiveFreeTime: (email: string, months: number) => void;
     onUpdateUser: (email: string, updatedData: Partial<User>) => void;
@@ -44,7 +46,7 @@ interface AdminDashboardProps {
     onDeleteVideo: (categoryId: string, videoId: string) => void;
 }
 
-type AdminView = 'users' | 'recipes' | 'add_recipe' | 'leads' | 'newsletter' | 'classes' | 'about_us' | 'videos';
+type AdminView = 'users' | 'recipes' | 'add_recipe' | 'leads' | 'newsletter' | 'classes' | 'about_us' | 'videos' | 'marketplace';
 
 const statusMap: { [key in Recipe['status']]: string } = {
     active: 'All Recipes',
@@ -58,7 +60,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onRefreshAllImages, isRefreshingAllImages, refreshProgressMessage,
     onAddCookingClass, onUpdateCookingClass, onDeleteCookingClass, onAddLesson, onUpdateLesson,
     onDeleteLesson, onUpdateClassImage, onAddVideoCategory, onUpdateVideoCategory,
-    onDeleteVideoCategory, onAddVideo, onUpdateVideo, onDeleteVideo
+    onDeleteVideoCategory, onAddVideo, onUpdateVideo, onDeleteVideo,
+    marketplaceSearchHistory, onClearMarketplaceHistory
 }) => {
     const [currentView, setCurrentView] = useState<AdminView>('users');
     const [fixingImageTitle, setFixingImageTitle] = useState<string | null>(null);
@@ -902,6 +905,49 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
     );
 
+    const renderMarketplaceManagement = () => (
+        <div className="bg-white p-6 rounded-lg shadow-md border border-border-color mt-6">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-text-primary">Marketplace Search History ({marketplaceSearchHistory.length})</h2>
+                <button
+                    onClick={onClearMarketplaceHistory}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white font-semibold text-sm rounded-lg hover:bg-red-600 transition-colors"
+                >
+                    <TrashIcon className="w-5 h-5" />
+                    Clear History
+                </button>
+            </div>
+            <div className="overflow-x-auto max-h-96">
+                <table className="w-full text-sm text-left text-gray-500">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
+                        <tr>
+                            <th scope="col" className="px-6 py-3">Timestamp</th>
+                            <th scope="col" className="px-6 py-3">Search Query</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {marketplaceSearchHistory.length > 0 ? (
+                            marketplaceSearchHistory.map((item, index) => (
+                                <tr key={index} className="bg-white border-b hover:bg-gray-50">
+                                    <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
+                                        {new Date(item.timestamp).toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-4 font-medium text-gray-900">
+                                        {item.query}
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan={2} className="text-center py-8 text-gray-500">No one has searched for marketplace items yet.</td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+
     return (
         <div className="animate-fade-in py-8">
             <div className="flex justify-between items-center mb-8">
@@ -923,6 +969,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <button onClick={() => setCurrentView('classes')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'classes' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Cooking Classes</button>
                 <button onClick={() => setCurrentView('videos')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'videos' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Video Management</button>
                 <button onClick={() => setCurrentView('about_us')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'about_us' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>About Us</button>
+                <button onClick={() => setCurrentView('marketplace')} className={`flex-shrink-0 px-4 py-2 font-semibold ${currentView === 'marketplace' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>Marketplace</button>
             </div>
             
             {currentView === 'users' && renderUserManagement()}
@@ -933,6 +980,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {currentView === 'classes' && renderClassManagement()}
             {currentView === 'videos' && renderVideoManagement()}
             {currentView === 'about_us' && renderAboutUsEditor()}
+            {currentView === 'marketplace' && renderMarketplaceManagement()}
 
             {isEditUserModalOpen && editingUser && (
                 <EditUserModal

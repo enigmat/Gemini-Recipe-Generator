@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass, User, Lead, DrinkRecipe, Product, CartItem, AffiliateProduct } from './types';
+import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass, User, Lead, DrinkRecipe, Product, CartItem, AffiliateProduct, MarketplaceSearchQuery } from './types';
 import Header from './components/Header';
 import RecipeCard from './components/RecipeCard';
 import SearchBar from './components/SearchBar';
@@ -15,6 +15,7 @@ import * as userService from './services/userService';
 import * as leadService from './services/leadService';
 import * as imageStore from './services/imageStore';
 import * as ratingService from './services/ratingService';
+import * as marketplaceService from './services/marketplaceService';
 import IngredientInput from './components/IngredientInput';
 import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage, generateRecipeFromPrompt, categorizeShoppingListItem, generateRecipeVariation, generateMealPlanFromPrompt, parseShoppingListItem, generateProductsFromPrompt } from './services/geminiService';
 import Spinner from './components/Spinner';
@@ -169,6 +170,7 @@ const App: React.FC = () => {
     const [isMarketplaceLoading, setIsMarketplaceLoading] = useState(false);
     const [marketplaceError, setMarketplaceError] = useState<string | null>(null);
     const [cart, setCart] = useState<CartItem[]>([]);
+    const [marketplaceSearchHistory, setMarketplaceSearchHistory] = useState<MarketplaceSearchQuery[]>([]);
 
 
     // --- Data Loading and Persistence ---
@@ -209,6 +211,7 @@ const App: React.FC = () => {
             setVideos(JSON.parse(localStorage.getItem(VIDEOS_STORAGE_KEY) || JSON.stringify(initialVideoData)));
             setShoppingList(JSON.parse(localStorage.getItem(SHOPPING_LIST_KEY) || '[]'));
             setCart(JSON.parse(localStorage.getItem(CART_KEY) || '[]'));
+            setMarketplaceSearchHistory(marketplaceService.getSearchHistory());
             
             // Stripe checkout redirect handling
             const query = new URLSearchParams(window.location.search);
@@ -600,6 +603,8 @@ const App: React.FC = () => {
         setIsMarketplaceLoading(true);
         setMarketplaceError(null);
         try {
+            marketplaceService.logSearchQuery(prompt);
+            setMarketplaceSearchHistory(marketplaceService.getSearchHistory());
             const products = await generateProductsFromPrompt(prompt);
             setMarketplaceProducts(products);
         } catch (error) {
@@ -860,6 +865,13 @@ const App: React.FC = () => {
                     onAddVideo={handleAddVideo}
                     onUpdateVideo={handleUpdateVideo}
                     onDeleteVideo={handleDeleteVideo}
+                    marketplaceSearchHistory={marketplaceSearchHistory}
+                    onClearMarketplaceHistory={() => {
+                        if (window.confirm("Are you sure you want to clear all marketplace search history?")) {
+                            marketplaceService.clearSearchHistory();
+                            setMarketplaceSearchHistory([]);
+                        }
+                    }}
                 />
             </div>
         );
@@ -1030,7 +1042,7 @@ const App: React.FC = () => {
                                     ) : (
                                         <div className="text-center py-16 bg-white rounded-lg shadow-sm border">
                                             <p className="text-lg text-text-secondary">
-                                                {currentView === 'saved' ? 'You haven\'t saved any recipes yet.' : 'No recipes match your search.'}
+                                                {currentView === 'saved' ? 'You haven\\'t saved any recipes yet.' : 'No recipes match your search.'}
                                             </p>
                                         </div>
                                     )
