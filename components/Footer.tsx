@@ -9,7 +9,7 @@ const Footer: React.FC<FooterProps> = ({ onShowPrivacyPolicy, onShowAboutUs }) =
     return (
         <footer className="bg-gray-100 border-t border-border-color mt-16">
             <div className="container mx-auto px-4 py-6 text-center text-text-secondary text-sm">
-                <p>&copy; {new Date().getFullYear()} recipe extracted. All Rights Reserved.</p>
+                <p>&copy; {new Date().getFullYear()} Recipe Extracter. All Rights Reserved.</p>
                 <div className="mt-2 space-x-4">
                     <button onClick={onShowAboutUs} className="hover:text-primary hover:underline">
                         About Us

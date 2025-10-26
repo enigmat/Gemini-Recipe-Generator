@@ -64,10 +64,10 @@ import IdeaInput from './components/IdeaInput';
 
 
 const ITEMS_PER_PAGE = 12;
-const RECIPES_STORAGE_KEY = 'recipeextracted_allRecipes';
-const CLASSES_STORAGE_KEY = 'recipeextracted_cookingClasses';
-const VIDEOS_STORAGE_KEY = 'recipeextracted_videos';
-const SHOPPING_LIST_KEY = 'recipeextracted_shoppingList';
+const RECIPES_STORAGE_KEY = 'recipeextracter_allRecipes';
+const CLASSES_STORAGE_KEY = 'recipeextracter_cookingClasses';
+const VIDEOS_STORAGE_KEY = 'recipeextracter_videos';
+const SHOPPING_LIST_KEY = 'recipeextracter_shoppingList';
 
 type View = 'all' | 'saved' | 'plans' | 'videos' | 'bartender' | 'shopping' | 'classes' | 'expert';
 
@@ -807,7 +807,7 @@ const App: React.FC = () => {
                                         <CookbookButton elementIdToPrint="all-recipes-section" />
                                     )}
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                <div className="space-y-6 mb-8">
                                     <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
                                     <TagFilter allTags={allTags} selectedTags={selectedTags} onTagClick={handleTagClick} />
                                 </div>

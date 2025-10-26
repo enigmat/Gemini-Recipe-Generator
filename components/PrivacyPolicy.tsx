@@ -28,7 +28,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onClose }) => {
                     <p><strong>Last Updated:</strong> {new Date().toLocaleDateString()}</p>
 
                     <h3 className="text-lg font-semibold text-text-primary pt-2">1. Introduction</h3>
-                    <p>Welcome to recipe extracted ("we," "our," or "us"). We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our application.</p>
+                    <p>Welcome to Recipe Extracter ("we," "our," or "us"). We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our application.</p>
 
                     <h3 className="text-lg font-semibold text-text-primary pt-2">2. Information We Collect</h3>
                     <p>We may collect information about you in a variety of ways. The information we may collect via the Application includes:</p>
@@ -53,7 +53,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onClose }) => {
                     <p>We use administrative, technical, and physical security measures to help protect your personal information. While we have taken reasonable steps to secure the personal information you provide to us, please be aware that despite our efforts, no security measures are perfect or impenetrable, and no method of data transmission can be guaranteed against any interception or other type of misuse.</p>
                     
                     <h3 className="text-lg font-semibold text-text-primary pt-2">6. Contact Us</h3>
-                    <p>If you have questions or comments about this Privacy Policy, please contact us at: contact@recipeextracted.com</p>
+                    <p>If you have questions or comments about this Privacy Policy, please contact us at: contact@recipeextracter.com</p>
                 </div>
             </div>
         </div>

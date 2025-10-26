@@ -926,7 +926,7 @@ export const generateWinePairing = async (recipeTitle: string, recipeDescription
 
 export const generateNewsletterContent = async (topic: string): Promise<{ subject: string; body: string; }> => {
     const prompt = `
-        You are an expert marketing copywriter for a cooking website called "recipe extracted".
+        You are an expert marketing copywriter for a cooking website called "Recipe Extracter".
         Your task is to write an engaging newsletter based on a given topic.
         The newsletter should have a catchy subject line and a body written in a friendly, enthusiastic tone.
         The body should be formatted with paragraphs. You can use markdown for simple formatting like bolding.

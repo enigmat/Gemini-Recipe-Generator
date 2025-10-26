@@ -1,8 +1,8 @@
 import { User, Subscription, SubscriptionHistory } from '../types';
 
-const PREMIUM_STATUS_KEY_PREFIX = 'recipeextractedPremium_';
-const USER_KEY = 'recipeextractedUser';
-const ALL_USERS_KEY = 'recipeextractedAllUsers';
+const PREMIUM_STATUS_KEY_PREFIX = 'recipeextracterPremium_';
+const USER_KEY = 'recipeextracterUser';
+const ALL_USERS_KEY = 'recipeextracterAllUsers';
 
 const formatDate = (date: Date): string => date.toISOString().split('T')[0];
 

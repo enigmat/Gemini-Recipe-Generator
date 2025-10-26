@@ -1,4 +1,4 @@
-const FAVORITES_STORAGE_KEY = 'recipeextractedFavorites';
+const FAVORITES_STORAGE_KEY = 'recipeextracterFavorites';
 
 export const getSavedRecipeTitles = (): string[] => {
     try {

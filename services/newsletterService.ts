@@ -1,7 +1,7 @@
 import { Newsletter } from '../types';
 
-const NEWSLETTER_DRAFT_KEY = 'recipeextractedNewsletterDraft';
-const SENT_NEWSLETTERS_KEY = 'recipeextractedSentNewsletters';
+const NEWSLETTER_DRAFT_KEY = 'recipeextracterNewsletterDraft';
+const SENT_NEWSLETTERS_KEY = 'recipeextracterSentNewsletters';
 
 const formatDate = (date: Date): string => date.toISOString();
 

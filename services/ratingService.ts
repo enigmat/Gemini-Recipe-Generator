@@ -1,5 +1,5 @@
 
-const RATINGS_STORAGE_KEY = 'recipeextractedRatings';
+const RATINGS_STORAGE_KEY = 'recipeextracterRatings';
 
 interface AllRatings {
     [recipeName: string]: number[];
