@@ -15,7 +15,7 @@ import * as leadService from './services/leadService';
 import * as imageStore from './services/imageStore';
 import * as ratingService from './services/ratingService';
 import IngredientInput from './components/IngredientInput';
-import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage, generateRecipeFromPrompt, categorizeShoppingListItem, generateRecipeVariation } from './services/geminiService';
+import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage, generateRecipeFromPrompt, categorizeShoppingListItem, generateRecipeVariation, generateMealPlanFromPrompt } from './services/geminiService';
 import Spinner from './components/Spinner';
 import MealPlanCard from './components/MealPlanCard';
 import MealPlanDetail from './components/MealPlanDetail';
@@ -61,6 +61,7 @@ import FilmIcon from './components/icons/FilmIcon';
 import MortarPestleIcon from './components/icons/MortarPestleIcon';
 import QuestionMarkCircleIcon from './components/icons/QuestionMarkCircleIcon';
 import IdeaInput from './components/IdeaInput';
+import MealPlanGenerator from './components/MealPlanGenerator';
 
 
 const ITEMS_PER_PAGE = 12;
@@ -124,6 +125,8 @@ const App: React.FC = () => {
     const [shoppingListError, setShoppingListError] = useState<string | null>(null);
     const [shoppingListModalRecipe, setShoppingListModalRecipe] = useState<Recipe | MealPlan | null>(null);
     const [isAddingItem, setIsAddingItem] = useState(false);
+    const [isGeneratingMealPlanList, setIsGeneratingMealPlanList] = useState(false);
+    const [mealPlanListError, setMealPlanListError] = useState<string | null>(null);
 
     // States for Meal Plans
     const [selectedPlan, setSelectedPlan] = useState<MealPlan | null>(null);
@@ -482,6 +485,37 @@ const App: React.FC = () => {
             setVariationError(errorMessage);
         } finally {
             setIsGeneratingVariation(false);
+        }
+    };
+
+    const handleGenerateMealPlanList = async (prompt: string) => {
+        setIsGeneratingMealPlanList(true);
+        setMealPlanListError(null);
+        setShoppingListError(null);
+        setImportSuccessMessage(null);
+        setShoppingList([]); 
+    
+        try {
+            const { plan: newRecipes, title: planTitle } = await generateMealPlanFromPrompt(prompt);
+    
+            for (const recipe of newRecipes) {
+                await addRecipeToCookbook(recipe);
+            }
+    
+            const allIngredients = newRecipes.flatMap(recipe => recipe.ingredients);
+    
+            const list = await generateShoppingList(allIngredients);
+            setShoppingList(list);
+            localStorage.setItem(SHOPPING_LIST_KEY, JSON.stringify(list));
+    
+            setImportSuccessMessage(`Success! Generated shopping list for "${planTitle}". The new recipes have been added to your cookbook.`);
+    
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Failed to generate meal plan and shopping list.";
+            setMealPlanListError(errorMessage);
+            setShoppingListError(errorMessage);
+        } finally {
+            setIsGeneratingMealPlanList(false);
         }
     };
 
@@ -901,54 +935,69 @@ const App: React.FC = () => {
                             onAskAnother={() => setIsQuestionSubmitted(false)}
                         />
                     ) : currentView === 'shopping' ? (
-                        <div className="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-md border">
-                            <h2 className="text-3xl font-bold mb-6 text-center text-text-primary">My Shopping List</h2>
-                            <div className="mb-6">
-                                <ManualAddItem onAddItem={handleAddItemToList} isLoading={isAddingItem} />
-                            </div>
-                            {shoppingList.length > 0 ? (
-                                <div className="space-y-6">
-                                    {shoppingList.map(({ category, items }) => (
-                                        <div key={category}>
-                                            <h3 className="text-lg font-semibold text-primary mb-2 border-b-2 border-primary/20 pb-1">
-                                                {category}
-                                            </h3>
-                                            <ul className="space-y-2">
-                                                {items.map((item, index) => (
-                                                    <li key={index} className="flex items-center justify-between group">
-                                                        <div className="flex items-center">
-                                                            <input
-                                                                id={`shop-item-${category}-${index}`}
-                                                                type="checkbox"
-                                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"
-                                                            />
-                                                            <label htmlFor={`shop-item-${category}-${index}`} className="text-text-secondary group-hover:line-through">{item}</label>
-                                                        </div>
-                                                        <button onClick={() => handleDeleteItem(category, item)} className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <TrashIcon className="w-4 h-4 text-red-500" />
-                                                        </button>
-                                                    </li>
-                                                ))}
-                                            </ul>
+                        <div className="max-w-3xl mx-auto">
+                            <MealPlanGenerator 
+                                onGenerate={handleGenerateMealPlanList}
+                                isLoading={isGeneratingMealPlanList}
+                                error={mealPlanListError}
+                            />
+                            <div className="bg-white p-8 rounded-lg shadow-md border">
+                                <h2 className="text-3xl font-bold mb-2 text-center text-text-primary">My Shopping List</h2>
+                                {importSuccessMessage && <p className="mb-4 text-center text-green-600">{importSuccessMessage}</p>}
+                                <div className="relative flex py-4 items-center">
+                                    <div className="flex-grow border-t border-border-color"></div>
+                                    <span className="flex-shrink mx-4 text-sm font-semibold uppercase text-gray-400">OR ADD MANUALLY</span>
+                                    <div className="flex-grow border-t border-border-color"></div>
+                                </div>
+                                <div className="mb-6">
+                                    <ManualAddItem onAddItem={handleAddItemToList} isLoading={isAddingItem} />
+                                </div>
+                                {shoppingList.length > 0 ? (
+                                    <div className="space-y-6">
+                                        {shoppingList.map(({ category, items }) => (
+                                            <div key={category}>
+                                                <h3 className="text-lg font-semibold text-primary mb-2 border-b-2 border-primary/20 pb-1">
+                                                    {category}
+                                                </h3>
+                                                <ul className="space-y-2">
+                                                    {items.map((item, index) => (
+                                                        <li key={index} className="flex items-center justify-between group">
+                                                            <div className="flex items-center">
+                                                                <input
+                                                                    id={`shop-item-${category}-${index}`}
+                                                                    type="checkbox"
+                                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"
+                                                                />
+                                                                <label htmlFor={`shop-item-${category}-${index}`} className="text-text-secondary group-hover:line-through">{item}</label>
+                                                            </div>
+                                                            <button onClick={() => handleDeleteItem(category, item)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <TrashIcon className="w-4 h-4 text-red-500" />
+                                                            </button>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        ))}
+                                        <div className="pt-6 border-t mt-6 flex justify-end">
+                                            <button
+                                                onClick={handleClearShoppingList}
+                                                className="px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2"
+                                            >
+                                                <TrashIcon className="w-5 h-5"/>
+                                                Clear List
+                                            </button>
                                         </div>
-                                    ))}
-                                    <div className="pt-6 border-t mt-6 flex justify-end">
-                                        <button
-                                            onClick={handleClearShoppingList}
-                                            className="px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2"
-                                        >
-                                            <TrashIcon className="w-5 h-5"/>
-                                            Clear List
-                                        </button>
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="text-center py-12 text-text-secondary border-2 border-dashed rounded-lg">
-                                    <ShoppingCartIcon className="w-12 h-12 mx-auto text-gray-300 mb-2"/>
-                                    <p>Your shopping list is empty.</p>
-                                    <p className="text-sm">Add items from recipes or manually above.</p>
-                                </div>
-                            )}
+                                ) : isGeneratingMealPlanList ? (
+                                    <Spinner />
+                                ) : (
+                                    <div className="text-center py-12 text-text-secondary border-2 border-dashed rounded-lg">
+                                        <ShoppingCartIcon className="w-12 h-12 mx-auto text-gray-300 mb-2"/>
+                                        <p>Your shopping list is empty.</p>
+                                        <p className="text-sm">Generate a list with AI or add items manually above.</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     ) : null}
 

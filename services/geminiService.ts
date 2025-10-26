@@ -84,6 +84,26 @@ const singleRecipeSchema = {
     ...singleRecipeSchemaProperties
 }
 
+const mealPlanSchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: {
+            type: Type.STRING,
+            description: "A creative and descriptive title for the generated meal plan."
+        },
+        description: {
+            type: Type.STRING,
+            description: "A short, enticing description of the meal plan."
+        },
+        plan: {
+            type: Type.ARRAY,
+            description: "A list of 5 complete recipes that make up the meal plan.",
+            items: singleRecipeSchemaProperties
+        }
+    },
+    required: ["title", "description", "plan"]
+};
+
 
 export const generateRecipes = async (ingredients: string[]): Promise<Recipe[]> => {
     const prompt = `
@@ -972,5 +992,64 @@ export const generateNewsletterContent = async (topic: string): Promise<{ subjec
     } catch (error) {
         console.error("Error generating newsletter content:", error);
         throw new Error("Failed to generate newsletter content. The model may have been unable to fulfill the request.");
+    }
+};
+
+export const generateMealPlanFromPrompt = async (userPrompt: string): Promise<{ title: string; description: string; plan: Recipe[] }> => {
+    const prompt = `
+        You are an expert meal planner and chef. A user wants a meal plan based on their request.
+        Your task is to generate a complete 5-day meal plan. For each day, generate a complete recipe object that fits the user's criteria.
+        Each recipe must include: title, description, tags, ingredients (with metric quantities and isAvailable set to false), step-by-step instructions, prep time, cook time, servings, estimated nutrition, and a detailed image prompt.
+        You must also provide an overall title and description for the entire meal plan.
+
+        User's Meal Plan Request: "${userPrompt}"
+
+        Return the result as a single, valid JSON object that conforms to the provided schema.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-pro",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: mealPlanSchema,
+            },
+        });
+
+        const jsonText = response.text.trim();
+        const mealPlanData = JSON.parse(jsonText);
+
+        if (mealPlanData.plan && Array.isArray(mealPlanData.plan)) {
+            const recipes: Recipe[] = await Promise.all(
+                mealPlanData.plan.map(async (recipe: any) => {
+                    const imageUrl = await generateImage(recipe.imagePrompt || recipe.title);
+                    return {
+                        title: recipe.title,
+                        description: recipe.description,
+                        imageUrl: imageUrl,
+                        ingredients: recipe.ingredients.map((ing: { quantity: string; name:string; }) => `${ing.quantity} ${ing.name}`.trim()).filter(Boolean),
+                        instructions: recipe.instructions,
+                        tags: recipe.tags,
+                        servings: recipe.servings,
+                        prepTime: recipe.prepTime,
+                        cookTime: recipe.cookTime,
+                        status: 'active',
+                        nutrition: recipe.nutrition,
+                    };
+                })
+            );
+
+            return {
+                title: mealPlanData.title,
+                description: mealPlanData.description,
+                plan: recipes
+            };
+        } else {
+            throw new Error("Invalid response format from API. Expected a 'plan' array.");
+        }
+    } catch (error) {
+        console.error("Error generating meal plan from prompt:", error);
+        throw new Error("Failed to generate the meal plan. The model may have been unable to fulfill the request.");
     }
 };
