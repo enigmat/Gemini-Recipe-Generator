@@ -134,3 +134,25 @@ declare global {
     Stripe: any;
   }
 }
+
+export interface Product {
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  imagePrompt: string;
+}
+
+export interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
+export interface AffiliateProduct {
+  name: string;
+  brand: string;
+  description: string;
+  imageUrl: string;
+  price: number;
+  url: string;
+}

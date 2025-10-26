@@ -10,6 +10,7 @@ import PencilIcon from './icons/PencilIcon';
 import EditUserModal from './EditUserModal';
 import PlusIcon from './icons/PlusIcon';
 import SparklesIcon from './icons/SparklesIcon';
+import ArrowPathIcon from './icons/ArrowPathIcon';
 
 interface AdminDashboardProps {
     onBackToApp: () => void;
@@ -25,6 +26,9 @@ interface AdminDashboardProps {
     onDeleteRecipe: (title: string) => void;
     onUpdateRecipeStatus: (title: string, status: Recipe['status']) => void;
     onFixImage: (title: string) => Promise<void>;
+    onRefreshAllImages: () => Promise<void>;
+    isRefreshingAllImages: boolean;
+    refreshProgressMessage: string;
     onAddCookingClass: (newClass: Omit<CookingClass, 'id'>) => void;
     onUpdateCookingClass: (classId: string, updatedData: Partial<Omit<CookingClass, 'id' | 'lessons'>>) => void;
     onDeleteCookingClass: (classId: string) => void;
@@ -51,6 +55,7 @@ const statusMap: { [key in Recipe['status']]: string } = {
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onBackToApp, onAddRecipe, allUsers, allRecipes, allLeads, cookingClasses, videos, onDeleteUser,
     onGiveFreeTime, onUpdateUser, onDeleteRecipe, onUpdateRecipeStatus, onFixImage,
+    onRefreshAllImages, isRefreshingAllImages, refreshProgressMessage,
     onAddCookingClass, onUpdateCookingClass, onDeleteCookingClass, onAddLesson, onUpdateLesson,
     onDeleteLesson, onUpdateClassImage, onAddVideoCategory, onUpdateVideoCategory,
     onDeleteVideoCategory, onAddVideo, onUpdateVideo, onDeleteVideo
@@ -361,7 +366,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     const renderRecipeManagement = () => (
          <div className="bg-white p-6 rounded-lg shadow-md border border-border-color mt-6">
-            <h2 className="text-xl font-bold text-text-primary mb-4">Recipe Management</h2>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4">
+                <h2 className="text-xl font-bold text-text-primary">Recipe Management</h2>
+                <div className="flex items-center gap-2">
+                    {isRefreshingAllImages && <p className="text-sm text-gray-600 animate-pulse">{refreshProgressMessage}</p>}
+                    <button
+                        onClick={onRefreshAllImages}
+                        disabled={isRefreshingAllImages}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white font-semibold text-sm rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-wait"
+                    >
+                        {isRefreshingAllImages ? (
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        ) : (
+                            <ArrowPathIcon className="w-5 h-5" />
+                        )}
+                        <span>{isRefreshingAllImages ? 'Refreshing...' : 'Refresh All Images'}</span>
+                    </button>
+                </div>
+            </div>
             <div className="overflow-x-auto">
                  <table className="w-full text-sm text-left text-gray-500">
                     <thead className="text-xs text-gray-700 uppercase bg-gray-50">

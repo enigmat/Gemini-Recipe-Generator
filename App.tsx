@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass, User, Lead, DrinkRecipe } from './types';
+import { Recipe, ShoppingList, MealPlan, Video, VideoCategory, Lesson, CookingClass, User, Lead, DrinkRecipe, Product, CartItem, AffiliateProduct } from './types';
 import Header from './components/Header';
 import RecipeCard from './components/RecipeCard';
 import SearchBar from './components/SearchBar';
@@ -9,13 +9,14 @@ import { recipes as allRecipesData } from './data/recipes';
 import { mealPlans } from './data/mealPlans';
 import { videoData as initialVideoData } from './data/videos';
 import { cookingClasses as cookingClassesData } from './data/cookingClasses';
+import { affiliateProducts as affiliateProductsData } from './data/affiliateProducts';
 import * as favoritesService from './services/favoritesService';
 import * as userService from './services/userService';
 import * as leadService from './services/leadService';
 import * as imageStore from './services/imageStore';
 import * as ratingService from './services/ratingService';
 import IngredientInput from './components/IngredientInput';
-import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage, generateRecipeFromPrompt, categorizeShoppingListItem, generateRecipeVariation, generateMealPlanFromPrompt, parseShoppingListItem } from './services/geminiService';
+import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage, generateRecipeFromPrompt, categorizeShoppingListItem, generateRecipeVariation, generateMealPlanFromPrompt, parseShoppingListItem, generateProductsFromPrompt } from './services/geminiService';
 import Spinner from './components/Spinner';
 import MealPlanCard from './components/MealPlanCard';
 import MealPlanDetail from './components/MealPlanDetail';
@@ -61,8 +62,11 @@ import CalendarDaysIcon from './components/icons/CalendarDaysIcon';
 import FilmIcon from './components/icons/FilmIcon';
 import MortarPestleIcon from './components/icons/MortarPestleIcon';
 import QuestionMarkCircleIcon from './components/icons/QuestionMarkCircleIcon';
+import StoreIcon from './components/icons/StoreIcon';
 import IdeaInput from './components/IdeaInput';
 import MealPlanGenerator from './components/MealPlanGenerator';
+import Marketplace from './components/Marketplace';
+import AffiliateShowcase from './components/AffiliateShowcase';
 
 
 const ITEMS_PER_PAGE = 12;
@@ -70,8 +74,9 @@ const RECIPES_STORAGE_KEY = 'recipeextracter_allRecipes';
 const CLASSES_STORAGE_KEY = 'recipeextracter_cookingClasses';
 const VIDEOS_STORAGE_KEY = 'recipeextracter_videos';
 const SHOPPING_LIST_KEY = 'recipeextracter_shoppingList';
+const CART_KEY = 'recipeextracter_cart';
 
-type View = 'all' | 'saved' | 'plans' | 'videos' | 'bartender' | 'shopping' | 'classes' | 'expert';
+type View = 'all' | 'saved' | 'plans' | 'videos' | 'bartender' | 'shopping' | 'classes' | 'expert' | 'marketplace';
 
 const App: React.FC = () => {
     // Single source of truth for all recipes, with localStorage persistence
@@ -80,6 +85,7 @@ const App: React.FC = () => {
 
     const [cookingClasses, setCookingClasses] = useState<CookingClass[]>([]);
     const [videos, setVideos] = useState<VideoCategory[]>([]);
+    const [affiliateProducts, setAffiliateProducts] = useState<AffiliateProduct[]>(affiliateProductsData);
 
     // States for browsing and filtering
     const [searchQuery, setSearchQuery] = useState('');
@@ -154,6 +160,16 @@ const App: React.FC = () => {
     // State for about us modal
     const [isAboutUsVisible, setIsAboutUsVisible] = useState(false);
 
+    // State for bulk image refresh
+    const [isRefreshingAllImages, setIsRefreshingAllImages] = useState(false);
+    const [refreshProgressMessage, setRefreshProgressMessage] = useState('');
+
+    // Marketplace states
+    const [marketplaceProducts, setMarketplaceProducts] = useState<Product[]>([]);
+    const [isMarketplaceLoading, setIsMarketplaceLoading] = useState(false);
+    const [marketplaceError, setMarketplaceError] = useState<string | null>(null);
+    const [cart, setCart] = useState<CartItem[]>([]);
+
 
     // --- Data Loading and Persistence ---
     useEffect(() => {
@@ -188,10 +204,11 @@ const App: React.FC = () => {
             setAllRecipes(hydratedRecipes);
             setAreRecipesLoading(false);
             
-            // Load classes, videos, shopping list
+            // Load classes, videos, shopping list, cart
             setCookingClasses(JSON.parse(localStorage.getItem(CLASSES_STORAGE_KEY) || JSON.stringify(cookingClassesData)));
             setVideos(JSON.parse(localStorage.getItem(VIDEOS_STORAGE_KEY) || JSON.stringify(initialVideoData)));
             setShoppingList(JSON.parse(localStorage.getItem(SHOPPING_LIST_KEY) || '[]'));
+            setCart(JSON.parse(localStorage.getItem(CART_KEY) || '[]'));
             
             // Stripe checkout redirect handling
             const query = new URLSearchParams(window.location.search);
@@ -217,6 +234,11 @@ const App: React.FC = () => {
         }
     };
     
+    const saveCartToStorage = (updatedCart: CartItem[]) => {
+        localStorage.setItem(CART_KEY, JSON.stringify(updatedCart));
+        setCart(updatedCart);
+    };
+
     // --- Derived Data ---
     const activeRecipes = useMemo(() => allRecipes.filter(r => r.status === 'active'), [allRecipes]);
     const newThisMonthRecipes = useMemo(() => allRecipes.filter(r => r.status === 'new_this_month'), [allRecipes]);
@@ -573,6 +595,61 @@ const App: React.FC = () => {
         window.open(url, '_blank', 'noopener,noreferrer');
     };
 
+    // --- Marketplace Handlers ---
+    const handleSearchProducts = async (prompt: string) => {
+        setIsMarketplaceLoading(true);
+        setMarketplaceError(null);
+        try {
+            const products = await generateProductsFromPrompt(prompt);
+            setMarketplaceProducts(products);
+        } catch (error) {
+            setMarketplaceError(error instanceof Error ? error.message : "Failed to find products.");
+            setMarketplaceProducts([]);
+        } finally {
+            setIsMarketplaceLoading(false);
+        }
+    };
+
+    const handleAddToCart = (product: Product) => {
+        const existingItem = cart.find(item => item.product.name === product.name);
+        let newCart;
+        if (existingItem) {
+            newCart = cart.map(item =>
+                item.product.name === product.name
+                    ? { ...item, quantity: item.quantity + 1 }
+                    : item
+            );
+        } else {
+            newCart = [...cart, { product, quantity: 1 }];
+        }
+        saveCartToStorage(newCart);
+    };
+
+    const handleUpdateCartQuantity = (productName: string, newQuantity: number) => {
+        if (newQuantity <= 0) {
+            handleRemoveFromCart(productName);
+            return;
+        }
+        const newCart = cart.map(item =>
+            item.product.name === productName
+                ? { ...item, quantity: newQuantity }
+                : item
+        );
+        saveCartToStorage(newCart);
+    };
+
+    const handleRemoveFromCart = (productName: string) => {
+        const newCart = cart.filter(item => item.product.name !== productName);
+        saveCartToStorage(newCart);
+    };
+
+    const handleCheckout = () => {
+        if (cart.length === 0) return;
+        const total = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0).toFixed(2);
+        alert(`Thank you for your purchase! Your order total is $${total}. (This is a simulation)`);
+        saveCartToStorage([]);
+    };
+
     // Admin Handlers
     const handleAddRecipe = (recipe: Recipe) => {
         addRecipeToCookbook(recipe);
@@ -600,6 +677,37 @@ const App: React.FC = () => {
             alert(`Failed to fix image for ${title}.`);
         }
     };
+
+    const handleRefreshAllRecipeImages = async () => {
+        if (!window.confirm(`This will regenerate the images for all ${allRecipes.length} recipes. This may take several minutes. Continue?`)) {
+            return;
+        }
+        setIsRefreshingAllImages(true);
+        setRefreshProgressMessage('Starting image refresh...');
+
+        const updatedRecipes = [...allRecipes];
+
+        for (let i = 0; i < updatedRecipes.length; i++) {
+            const recipe = updatedRecipes[i];
+            setRefreshProgressMessage(`Updating ${i + 1} of ${allRecipes.length}: ${recipe.title}`);
+            try {
+                const newImageUrl = await fixRecipeImage(recipe);
+                if (newImageUrl.startsWith('data:')) {
+                    await imageStore.saveImage(recipe.title, newImageUrl);
+                }
+                updatedRecipes[i] = { ...recipe, imageUrl: newImageUrl };
+            } catch (error) {
+                console.error(`Failed to update image for ${recipe.title}:`, error);
+                // Continue to the next one even if one fails
+            }
+        }
+
+        saveAllRecipesToStorage(updatedRecipes);
+        setIsRefreshingAllImages(false);
+        setRefreshProgressMessage('');
+        alert('All recipe images have been refreshed.');
+    };
+
     const handleUpdateUser = (email: string, updatedData: Partial<User>) => {
         userService.updateUser(email, updatedData);
         setAllUsers(userService.getAllUsers());
@@ -735,6 +843,9 @@ const App: React.FC = () => {
                     onDeleteRecipe={handleDeleteRecipe}
                     onUpdateRecipeStatus={handleUpdateRecipeStatus}
                     onFixImage={handleFixRecipeImage}
+                    onRefreshAllImages={handleRefreshAllRecipeImages}
+                    isRefreshingAllImages={isRefreshingAllImages}
+                    refreshProgressMessage={refreshProgressMessage}
                     onAddCookingClass={handleAddCookingClass}
                     onUpdateCookingClass={handleUpdateCookingClass}
                     onDeleteCookingClass={handleDeleteCookingClass}
@@ -835,6 +946,7 @@ const App: React.FC = () => {
                         {renderNavButton('classes', 'Cooking Classes', <MortarPestleIcon className="w-4 h-4" />)}
                         {renderNavButton('bartender', 'Bartender Helper', <CocktailIcon className="w-4 h-4" />)}
                         {renderNavButton('expert', 'Ask an Expert', <QuestionMarkCircleIcon className="w-4 h-4" />)}
+                        {renderNavButton('marketplace', 'Marketplace', <StoreIcon className="w-4 h-4" />)}
                         {renderNavButton('shopping', 'Shopping List', <ShoppingCartIcon className="w-4 h-4" />)}
                     </nav>
                     
@@ -888,6 +1000,7 @@ const App: React.FC = () => {
 
                             <div id="all-recipes-section">
                                 {currentView === 'all' && <FavoriteRecipes recipes={topRatedRecipes} onSelectRecipe={handleSelectRecipe} savedRecipeTitles={savedRecipeTitles} onToggleSave={handleToggleSave}/>}
+                                {currentView === 'all' && <AffiliateShowcase products={affiliateProducts} />}
                                 {currentView === 'all' && <PremiumContent isPremium={isPremium} onUpgrade={() => setIsUpgradeModalOpen(true)} recipes={newThisMonthRecipes} onSelectRecipe={handleSelectRecipe} savedRecipeTitles={savedRecipeTitles} onToggleSave={handleToggleSave} />}
                                 
                                 <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
@@ -988,6 +1101,18 @@ const App: React.FC = () => {
                             isSubmitted={isQuestionSubmitted}
                             onSubmitQuestion={() => setIsQuestionSubmitted(true)}
                             onAskAnother={() => setIsQuestionSubmitted(false)}
+                        />
+                    ) : currentView === 'marketplace' ? (
+                        <Marketplace
+                            products={marketplaceProducts}
+                            cart={cart}
+                            isLoading={isMarketplaceLoading}
+                            error={marketplaceError}
+                            onSearch={handleSearchProducts}
+                            onAddToCart={handleAddToCart}
+                            onUpdateCartQuantity={handleUpdateCartQuantity}
+                            onRemoveFromCart={handleRemoveFromCart}
+                            onCheckout={handleCheckout}
                         />
                     ) : currentView === 'shopping' ? (
                         <div className="max-w-3xl mx-auto">

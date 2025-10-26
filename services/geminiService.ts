@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { Recipe, ShoppingList, DrinkRecipe } from '../types';
+import { Recipe, ShoppingList, DrinkRecipe, Product } from '../types';
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable is not set.");
@@ -102,6 +102,27 @@ const mealPlanSchema = {
         }
     },
     required: ["title", "description", "plan"]
+};
+
+const productSchema = {
+    type: Type.OBJECT,
+    properties: {
+        products: {
+            type: Type.ARRAY,
+            description: "A list of 5-10 fictional but realistic products based on the user's query.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    name: { type: Type.STRING, description: "The name of the product." },
+                    description: { type: Type.STRING, description: "A short, appealing description of the product." },
+                    price: { type: Type.NUMBER, description: "A realistic price for the product in USD." },
+                    imagePrompt: { type: Type.STRING, description: "A detailed, descriptive prompt for a text-to-image model to generate a high-quality, photorealistic image of the product, often on a clean background." }
+                },
+                required: ["name", "description", "price", "imagePrompt"]
+            }
+        }
+    },
+    required: ["products"]
 };
 
 
@@ -1108,5 +1129,53 @@ export const generateMealPlanFromPrompt = async (userPrompt: string): Promise<{ 
     } catch (error) {
         console.error("Error generating meal plan from prompt:", error);
         throw new Error("Failed to generate the meal plan. The model may have been unable to fulfill the request.");
+    }
+};
+
+export const generateProductsFromPrompt = async (prompt: string): Promise<Product[]> => {
+    const generationPrompt = `
+      You are an e-commerce specialist for a high-end kitchen supply store. A user is searching for products.
+      Based on their search query, generate a list of 5-10 fictional but realistic and appealing products.
+      For each product, provide a name, a short description, a realistic price in USD, and a detailed image prompt suitable for a text-to-image model.
+      The products should be relevant to cooking, kitchenware, or gourmet ingredients.
+
+      User's search query: "${prompt}"
+
+      Return the products in a valid JSON format according to the provided schema.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: generationPrompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: productSchema,
+            },
+        });
+
+        const jsonText = response.text.trim();
+        const parsedJson = JSON.parse(jsonText);
+
+        if (parsedJson.products && Array.isArray(parsedJson.products)) {
+            const products: Product[] = await Promise.all(
+                parsedJson.products.map(async (p: any) => {
+                    const imageUrl = await generateImage(p.imagePrompt || p.name);
+                    return {
+                        name: p.name,
+                        description: p.description,
+                        price: p.price,
+                        imageUrl: imageUrl,
+                        imagePrompt: p.imagePrompt,
+                    };
+                })
+            );
+            return products;
+        } else {
+            throw new Error("Invalid response format from API. Expected a 'products' array.");
+        }
+    } catch (error) {
+        console.error("Error generating products:", error);
+        throw new Error("Failed to generate products. The model may have been unable to fulfill the request.");
     }
 };
