@@ -1,15 +1,17 @@
 import React from 'react';
 import { ShoppingList } from '../types';
 import XIcon from './icons/XIcon';
+import ExternalLinkIcon from './icons/ExternalLinkIcon';
 
 interface ShoppingListModalProps {
     shoppingList: ShoppingList | null;
     error: string | null;
     recipeTitle: string;
     onClose: () => void;
+    onShopOnInstacart: () => void;
 }
 
-const ShoppingListModal: React.FC<ShoppingListModalProps> = ({ shoppingList, error, recipeTitle, onClose }) => {
+const ShoppingListModal: React.FC<ShoppingListModalProps> = ({ shoppingList, error, recipeTitle, onClose, onShopOnInstacart }) => {
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 animate-fade-in"
@@ -56,11 +58,13 @@ const ShoppingListModal: React.FC<ShoppingListModalProps> = ({ shoppingList, err
                                             {items.map((item, index) => (
                                                 <li key={index} className="flex items-center">
                                                     <input
-                                                        id={`item-${category}-${index}`}
+                                                        id={`modal-item-${category}-${index}`}
                                                         type="checkbox"
                                                         className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"
                                                     />
-                                                    <label htmlFor={`item-${category}-${index}`} className="text-text-secondary">{item}</label>
+                                                    <label htmlFor={`modal-item-${category}-${index}`} className="text-text-secondary">
+                                                        {item.quantity && <span className="font-semibold text-text-primary">{item.quantity}</span>} {item.name}
+                                                    </label>
                                                 </li>
                                             ))}
                                         </ul>
@@ -74,6 +78,18 @@ const ShoppingListModal: React.FC<ShoppingListModalProps> = ({ shoppingList, err
                         </div>
                     )}
                 </div>
+
+                {shoppingList && shoppingList.length > 0 && !error && (
+                    <div className="p-4 bg-gray-50 border-t border-border-color flex justify-end">
+                        <button
+                            onClick={onShopOnInstacart}
+                            className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-focus transition-colors flex items-center gap-2 text-sm"
+                        >
+                            <ExternalLinkIcon className="w-4 h-4"/>
+                            Shop on Instacart
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

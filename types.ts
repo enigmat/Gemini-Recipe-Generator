@@ -31,7 +31,11 @@ export interface DrinkRecipe {
 
 export interface ShoppingListItem {
   category: string;
-  items: string[];
+  items: {
+    name: string;
+    quantity: string;
+    checked: boolean;
+  }[];
 }
 
 export type ShoppingList = ShoppingListItem[];

@@ -15,7 +15,7 @@ import * as leadService from './services/leadService';
 import * as imageStore from './services/imageStore';
 import * as ratingService from './services/ratingService';
 import IngredientInput from './components/IngredientInput';
-import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage, generateRecipeFromPrompt, categorizeShoppingListItem, generateRecipeVariation, generateMealPlanFromPrompt } from './services/geminiService';
+import { generateRecipes, generateShoppingList, importRecipeFromUrl, fixRecipeImage, generateImage, generateRecipeFromPrompt, categorizeShoppingListItem, generateRecipeVariation, generateMealPlanFromPrompt, parseShoppingListItem } from './services/geminiService';
 import Spinner from './components/Spinner';
 import MealPlanCard from './components/MealPlanCard';
 import MealPlanDetail from './components/MealPlanDetail';
@@ -50,6 +50,7 @@ import ManualAddItem from './components/ManualAddItem';
 import ShoppingCartIcon from './components/icons/ShoppingCartIcon';
 import DownloadIcon from './components/icons/DownloadIcon';
 import TrashIcon from './components/icons/TrashIcon';
+import ExternalLinkIcon from './components/icons/ExternalLinkIcon';
 import Footer from './components/Footer';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import AboutUsModal from './components/AboutUsModal';
@@ -437,27 +438,45 @@ const App: React.FC = () => {
             setIsShoppingListLoading(false);
         }
     };
-    const handleAddItemToList = async (item: string) => {
+    
+    const handleAddItemToList = async (itemStr: string) => {
         setIsAddingItem(true);
-        const category = await categorizeShoppingListItem(item);
-        setShoppingList(prevList => {
-            const newList = JSON.parse(JSON.stringify(prevList));
-            const categoryIndex = newList.findIndex((c: { category: string; }) => c.category === category);
-            if (categoryIndex > -1) {
-                newList[categoryIndex].items.push(item);
-            } else {
-                newList.push({ category, items: [item] });
-            }
-            localStorage.setItem(SHOPPING_LIST_KEY, JSON.stringify(newList));
-            return newList;
-        });
-        setIsAddingItem(false);
+        try {
+            const [parsedItem, category] = await Promise.all([
+                parseShoppingListItem(itemStr),
+                categorizeShoppingListItem(itemStr)
+            ]);
+
+            const newItem = { ...parsedItem, checked: false };
+
+            setShoppingList(prevList => {
+                const newList = JSON.parse(JSON.stringify(prevList));
+                const categoryIndex = newList.findIndex((c: { category: string; }) => c.category === category);
+                
+                if (categoryIndex > -1) {
+                    const itemExists = newList[categoryIndex].items.some((i: { name: string; }) => i.name.toLowerCase() === newItem.name.toLowerCase());
+                    if (!itemExists) {
+                        newList[categoryIndex].items.push(newItem);
+                    }
+                } else {
+                    newList.push({ category, items: [newItem] });
+                }
+                localStorage.setItem(SHOPPING_LIST_KEY, JSON.stringify(newList));
+                return newList;
+            });
+        } catch (error) {
+            console.error("Failed to add item to list:", error);
+            setShoppingListError("Could not add item. Please try again.");
+        } finally {
+            setIsAddingItem(false);
+        }
     };
-    const handleDeleteItem = (category: string, item: string) => {
+
+    const handleDeleteItem = (categoryName: string, itemName: string) => {
         setShoppingList(prevList => {
             const newList = prevList.map(cat => {
-                if (cat.category === category) {
-                    return { ...cat, items: cat.items.filter(i => i !== item) };
+                if (cat.category === categoryName) {
+                    return { ...cat, items: cat.items.filter(i => i.name !== itemName) };
                 }
                 return cat;
             }).filter(cat => cat.items.length > 0);
@@ -465,6 +484,28 @@ const App: React.FC = () => {
             return newList;
         });
     };
+
+    const handleToggleItemChecked = (categoryName: string, itemName: string) => {
+        setShoppingList(prevList => {
+            const newList = prevList.map(category => {
+                if (category.category === categoryName) {
+                    return {
+                        ...category,
+                        items: category.items.map(item => {
+                            if (item.name === itemName) {
+                                return { ...item, checked: !item.checked };
+                            }
+                            return item;
+                        })
+                    };
+                }
+                return category;
+            });
+            localStorage.setItem(SHOPPING_LIST_KEY, JSON.stringify(newList));
+            return newList;
+        });
+    };
+
     const handleClearShoppingList = () => {
         if (window.confirm("Are you sure you want to clear the entire shopping list?")) {
             setShoppingList([]);
@@ -517,6 +558,19 @@ const App: React.FC = () => {
         } finally {
             setIsGeneratingMealPlanList(false);
         }
+    };
+
+    const handleShopOnInstacart = () => {
+        if (shoppingList.length === 0) return;
+
+        const allItems = shoppingList.flatMap(category => category.items);
+        const itemNames = allItems.map(item => item.name.trim()).filter(Boolean);
+
+        if (itemNames.length === 0) return;
+
+        const searchQuery = itemNames.join(', ');
+        const url = `https://www.instacart.com/store/search/${encodeURIComponent(searchQuery)}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
     };
 
     // Admin Handlers
@@ -730,6 +784,7 @@ const App: React.FC = () => {
                     error={shoppingListError}
                     recipeTitle={shoppingListModalRecipe.title}
                     onClose={() => setShoppingListModalRecipe(null)}
+                    onShopOnInstacart={handleShopOnInstacart}
                 />
             )}
             {cookingRecipe && <CookMode recipe={cookingRecipe} onExit={() => setCookingRecipe(null)} />}
@@ -963,16 +1018,20 @@ const App: React.FC = () => {
                                                 </h3>
                                                 <ul className="space-y-2">
                                                     {items.map((item, index) => (
-                                                        <li key={index} className="flex items-center justify-between group">
+                                                        <li key={`${item.name}-${index}`} className="flex items-center justify-between group">
                                                             <div className="flex items-center">
                                                                 <input
                                                                     id={`shop-item-${category}-${index}`}
                                                                     type="checkbox"
+                                                                    checked={item.checked}
+                                                                    onChange={() => handleToggleItemChecked(category, item.name)}
                                                                     className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"
                                                                 />
-                                                                <label htmlFor={`shop-item-${category}-${index}`} className="text-text-secondary group-hover:line-through">{item}</label>
+                                                                <label htmlFor={`shop-item-${category}-${index}`} className={`text-text-secondary transition-all ${item.checked ? 'line-through text-gray-400' : ''}`}>
+                                                                    {item.quantity && <span className="font-semibold text-text-primary">{item.quantity}</span>} {item.name}
+                                                                </label>
                                                             </div>
-                                                            <button onClick={() => handleDeleteItem(category, item)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button onClick={() => handleDeleteItem(category, item.name)} className="opacity-0 group-hover:opacity-100 transition-opacity">
                                                                 <TrashIcon className="w-4 h-4 text-red-500" />
                                                             </button>
                                                         </li>
@@ -980,10 +1039,17 @@ const App: React.FC = () => {
                                                 </ul>
                                             </div>
                                         ))}
-                                        <div className="pt-6 border-t mt-6 flex justify-end">
+                                        <div className="pt-6 border-t mt-6 flex flex-col sm:flex-row justify-end gap-3">
+                                            <button
+                                                onClick={handleShopOnInstacart}
+                                                className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-focus transition-colors flex items-center justify-center gap-2"
+                                            >
+                                                <ExternalLinkIcon className="w-5 h-5"/>
+                                                Shop on Instacart
+                                            </button>
                                             <button
                                                 onClick={handleClearShoppingList}
-                                                className="px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2"
+                                                className="px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
                                             >
                                                 <TrashIcon className="w-5 h-5"/>
                                                 Clear List

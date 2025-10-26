@@ -558,7 +558,7 @@ export const generateShoppingList = async (ingredients: string[]): Promise<Shopp
         2. Combine quantities for any identical ingredients. For example, if "100g flour" and "25g flour" appear, combine them into "125g flour". If units are different, like "1 cup chicken broth" and "250ml chicken broth", combine them into a single metric unit like "500ml chicken broth", assuming 1 cup is approx 250ml.
         3. Group the combined ingredients into logical grocery store categories (e.g., "Produce", "Meat & Poultry", "Dairy & Eggs", "Pantry", "Bakery", "Spices & Seasonings").
         4. Do not include common items like "water", "salt", or "pepper" unless a specific, non-standard quantity or type is mentioned (e.g., 'coarse sea salt').
-        5. Return the result as a valid JSON object according to the provided schema.
+        5. Return the result as a valid JSON object according to the provided schema. Each item in the list should be an object with a 'name' and a 'quantity'.
 
         Ingredient list:
         ${ingredients.join('\n')}
@@ -569,19 +569,24 @@ export const generateShoppingList = async (ingredients: string[]): Promise<Shopp
         properties: {
             shoppingList: {
                 type: Type.ARRAY,
-                description: "A categorized shopping list. Each element in the array is an object with a category and a list of items.",
+                description: "A categorized shopping list. Each element is an object with a category and a list of item objects.",
                 items: {
                     type: Type.OBJECT,
                     properties: {
                         category: {
                             type: Type.STRING,
-                            description: "The name of the grocery store category (e.g., 'Produce', 'Dairy & Eggs')."
+                            description: "The name of the grocery store category (e.g., 'Produce')."
                         },
                         items: {
                             type: Type.ARRAY,
-                            description: "The list of ingredients for this category, with combined quantities.",
+                            description: "The list of ingredients for this category.",
                             items: {
-                                type: Type.STRING
+                                type: Type.OBJECT,
+                                properties: {
+                                    name: { type: Type.STRING, description: "The name of the ingredient (e.g., 'all-purpose flour')." },
+                                    quantity: { type: Type.STRING, description: "The combined quantity (e.g., '250g' or '2 cups')." }
+                                },
+                                required: ["name", "quantity"]
                             }
                         }
                     },
@@ -606,13 +611,65 @@ export const generateShoppingList = async (ingredients: string[]): Promise<Shopp
         const parsedJson = JSON.parse(jsonText);
 
         if (parsedJson.shoppingList && Array.isArray(parsedJson.shoppingList)) {
-            return parsedJson.shoppingList as ShoppingList;
+            // Add the 'checked' property to each item
+            const listWithChecked: ShoppingList = parsedJson.shoppingList.map((category: { category: string; items: { name: string; quantity: string; }[]; }) => ({
+                ...category,
+                items: category.items.map((item: {name: string, quantity: string}) => ({ ...item, checked: false }))
+            }));
+            return listWithChecked;
         } else {
             throw new Error("Invalid response format from API. Expected a 'shoppingList' array.");
         }
     } catch (error) {
         console.error("Error generating shopping list:", error);
         throw new Error("Failed to generate a shopping list. The model may have been unable to process the ingredients.");
+    }
+};
+
+export const parseShoppingListItem = async (itemString: string): Promise<{ quantity: string; name: string; }> => {
+    const prompt = `
+        You are a shopping list parsing assistant. Your task is to take a single shopping list item string and separate it into its quantity and its name.
+        - If there is no quantity, the quantity should be an empty string.
+        - The name should be the clean name of the item.
+        - For example, if the input is "2 cups all-purpose flour", the output should be { "quantity": "2 cups", "name": "all-purpose flour" }.
+        - If the input is "salt", the output should be { "quantity": "", "name": "salt" }.
+
+        Item to parse: "${itemString}"
+
+        Please return the result as a single JSON object with two keys: "quantity" and "name".
+    `;
+
+    const itemSchema = {
+        type: Type.OBJECT,
+        properties: {
+            quantity: { type: Type.STRING, description: "The quantity of the item, or an empty string if none." },
+            name: { type: Type.STRING, description: "The name of the item." }
+        },
+        required: ["quantity", "name"]
+    };
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: itemSchema,
+            },
+        });
+
+        const jsonText = response.text.trim();
+        const parsedJson = JSON.parse(jsonText);
+
+        if (parsedJson.quantity !== undefined && parsedJson.name) {
+            return parsedJson;
+        } else {
+            throw new Error("Invalid response format from API.");
+        }
+    } catch (error) {
+        console.error("Error parsing shopping list item:", error);
+        // Fallback for failed parsing
+        return { quantity: '', name: itemString };
     }
 };
 
