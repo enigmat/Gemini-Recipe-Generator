@@ -937,6 +937,8 @@ const App: React.FC = () => {
                     ) : currentView === 'shopping' ? (
                         <div className="max-w-3xl mx-auto">
                             <MealPlanGenerator 
+                                isPremium={isPremium}
+                                onUpgrade={() => setIsUpgradeModalOpen(true)}
                                 onGenerate={handleGenerateMealPlanList}
                                 isLoading={isGeneratingMealPlanList}
                                 error={mealPlanListError}

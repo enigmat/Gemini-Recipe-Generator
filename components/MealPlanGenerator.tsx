@@ -1,19 +1,43 @@
 import React, { useState } from 'react';
 import SparklesIcon from './icons/SparklesIcon';
+import LockClosedIcon from './icons/LockClosedIcon';
 
 interface MealPlanGeneratorProps {
     onGenerate: (prompt: string) => void;
     isLoading: boolean;
     error: string | null;
+    isPremium: boolean;
+    onUpgrade: () => void;
 }
 
-const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({ onGenerate, isLoading, error }) => {
+const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({ onGenerate, isLoading, error, isPremium, onUpgrade }) => {
     const [prompt, setPrompt] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onGenerate(prompt);
     };
+
+    if (!isPremium) {
+        return (
+            <div className="bg-yellow-50 text-yellow-900 p-6 rounded-lg shadow-sm border border-yellow-200 mb-8 text-center">
+                <div className="flex justify-center items-center gap-2">
+                     <LockClosedIcon className="w-6 h-6 text-yellow-500" />
+                     <h3 className="text-xl font-bold text-yellow-800">Generate a Shopping List with AI</h3>
+                </div>
+                <p className="mt-2 text-sm text-yellow-700 max-w-xl mx-auto">
+                    This premium feature allows you to describe your week, and we'll generate a full meal plan and shopping list for you.
+                </p>
+                <button
+                    onClick={onUpgrade}
+                    className="mt-4 px-6 py-2 bg-yellow-400 text-gray-900 font-bold text-sm rounded-lg shadow-md hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-yellow-50 focus:ring-yellow-400 transition-colors duration-200 flex items-center gap-2 mx-auto"
+                >
+                    <SparklesIcon className="w-5 h-5" />
+                    <span>Upgrade to Premium</span>
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-sm border border-border-color mb-8">
