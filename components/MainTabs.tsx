@@ -10,6 +10,7 @@ import StoreIcon from './icons/StoreIcon';
 import SparklesIcon from './icons/SparklesIcon';
 import { User } from '../types';
 import CrownIcon from './icons/CrownIcon';
+import RefrigeratorIcon from './icons/RefrigeratorIcon';
 
 interface MainTabsProps {
   activeTab: string;
@@ -20,6 +21,7 @@ interface MainTabsProps {
 const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser }) => {
   const allTabs = [
     { id: 'All Recipes', name: 'All Recipes', icon: null },
+    { id: 'Pantry Chef', name: 'Pantry Chef', icon: <RefrigeratorIcon className="w-5 h-5" /> },
     { id: 'My Cookbook', name: 'My Cookbook', icon: <HeartIcon className="w-5 h-5" /> },
     { id: 'My Bar', name: 'My Bar', icon: <CocktailIcon className="w-5 h-5" /> },
     { id: 'Shopping List', name: 'Shopping List', icon: <ShoppingCartIcon className="w-5 h-5" /> },

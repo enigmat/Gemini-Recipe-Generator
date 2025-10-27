@@ -68,6 +68,7 @@ import MyBar from './components/MyBar';
 import AdvancedClasses from './components/AdvancedClasses';
 import ExpertQAPremiumOffer from './components/ExpertQAPremiumOffer';
 import { initialExpertQuestions } from './data/expertQuestions';
+import PantryChef from './components/PantryChef';
 
 const RECIPES_PER_PAGE = 12;
 
@@ -464,6 +465,16 @@ const App: React.FC = () => {
         }
     };
 
+    const handleRecipeGenerated = (recipeDetails: Omit<Recipe, 'id' | 'image'>, image: string) => {
+        const newRecipe: Recipe = {
+            id: Date.now(),
+            image,
+            ...recipeDetails
+        };
+        setAllRecipes(prev => [newRecipe, ...prev]);
+        setSelectedRecipe(newRecipe);
+    };
+
     const handleSubscribe = (email: string) => {
         newsletterService.subscribeByEmail(email);
         leadService.addLead(email);
@@ -542,6 +553,8 @@ const App: React.FC = () => {
     
     const renderContent = () => {
         switch(activeTab) {
+            case 'Pantry Chef':
+                return <PantryChef onRecipeGenerated={handleRecipeGenerated} />;
             case 'My Cookbook':
                 return (
                     <div className="space-y-8">

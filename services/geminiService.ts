@@ -354,3 +354,83 @@ export const generateProductFromPrompt = async (prompt: string): Promise<Omit<Pr
         throw new Error("Failed to generate product details. The AI may be unable to process this request. Please try a different prompt.");
     }
 };
+
+export const generateRecipeFromIngredients = async (ingredients: string[], dietaryNotes: string): Promise<Omit<Recipe, 'id' | 'image'>> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        
+        let prompt = `Act as a creative chef. Based on the following ingredients: "${ingredients.join(', ')}", generate a unique and delicious recipe.`;
+        if (dietaryNotes.trim()) {
+            prompt += ` Please adhere to these dietary notes: "${dietaryNotes}".`;
+        }
+        prompt += ` The user has these ingredients, so prioritize them, but you can assume they have basic pantry staples like oil, salt, pepper, water, and common spices. Provide a creative, appealing title for the dish. The recipe must be well-written, easy to follow, and appealing. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing.`;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING, description: "The final, polished title of the recipe." },
+                        description: { type: Type.STRING, description: "A brief, enticing description of the dish." },
+                        cookTime: { type: Type.STRING, description: "e.g., '45 minutes'" },
+                        servings: { type: Type.STRING, description: "e.g., '4 servings' or '4-6'" },
+                        ingredients: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    name: { type: Type.STRING },
+                                    metric: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            quantity: { type: Type.STRING },
+                                            unit: { type: Type.STRING }
+                                        },
+                                        required: ['quantity', 'unit']
+                                    },
+                                    us: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            quantity: { type: Type.STRING },
+                                            unit: { type: Type.STRING }
+                                        },
+                                        required: ['quantity', 'unit']
+                                    }
+                                },
+                                required: ['name', 'metric', 'us']
+                            }
+                        },
+                        instructions: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        },
+                        tags: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        },
+                        winePairing: {
+                            type: Type.OBJECT,
+                            properties: {
+                                suggestion: { type: Type.STRING },
+                                description: { type: Type.STRING }
+                            },
+                        }
+                    },
+                    required: ['title', 'description', 'cookTime', 'servings', 'ingredients', 'instructions', 'tags']
+                }
+            }
+        });
+        
+        const jsonText = response.text;
+        const recipeData = JSON.parse(jsonText);
+
+        return recipeData;
+
+    } catch (error) {
+        console.error("Error generating recipe from ingredients with Gemini:", error);
+        throw new Error("Failed to generate a recipe from your ingredients. The AI might be stumped! Please try a different combination.");
+    }
+};
