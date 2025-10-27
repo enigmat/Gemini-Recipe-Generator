@@ -8,14 +8,16 @@ import CocktailIcon from './icons/CocktailIcon';
 import QuestionMarkCircleIcon from './icons/QuestionMarkCircleIcon';
 import StoreIcon from './icons/StoreIcon';
 import SparklesIcon from './icons/SparklesIcon';
+import { User } from '../types';
+import CrownIcon from './icons/CrownIcon';
 
 interface MainTabsProps {
   activeTab: string;
   onSelectTab: (tab: string) => void;
-  favoritesCount: number; // This prop is no longer used for display but keep for signature consistency
+  currentUser: User | null;
 }
 
-const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab }) => {
+const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser }) => {
   const allTabs = [
     { id: 'All Recipes', name: 'All Recipes', icon: null },
     { id: 'My Cookbook', name: 'My Cookbook', icon: <HeartIcon className="w-5 h-5" /> },
@@ -29,10 +31,14 @@ const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab }) => {
     { id: 'Ask an Expert', name: 'Ask an Expert', icon: <QuestionMarkCircleIcon className="w-5 h-5" /> },
   ];
 
+  const premiumTabs = ['Cooking Classes', 'Ask an Expert'];
+
   return (
     <div className="flex justify-center flex-wrap gap-3 my-8">
       {allTabs.map((tab) => {
         const isActive = activeTab === tab.id;
+        const isPremiumFeature = premiumTabs.includes(tab.id);
+        const showPremiumBadge = isPremiumFeature && !currentUser?.isPremium;
         return (
           <button
             key={tab.id}
@@ -47,6 +53,9 @@ const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab }) => {
             {/* Special handling for HeartIcon fill state */}
             {tab.id === 'My Cookbook' ? <HeartIcon className="w-5 h-5" isFilled={isActive} /> : tab.icon}
             <span>{tab.name}</span>
+            {showPremiumBadge && (
+                <CrownIcon className="w-4 h-4 text-amber-500" />
+            )}
           </button>
         );
       })}

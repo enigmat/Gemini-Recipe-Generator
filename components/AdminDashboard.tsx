@@ -11,6 +11,7 @@ import AdminVideoManagement from './AdminVideoManagement';
 import AdminAboutUs from './AdminAboutUs';
 import AdminMarketplace from './AdminMarketplace';
 import EditUserModal from './EditUserModal';
+import AdminApiKeyManagement from './AdminApiKeyManagement';
 
 interface AdminDashboardProps {
     allRecipes: Recipe[];
@@ -39,7 +40,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
     const [editingUser, setEditingUser] = useState<User | null>(null);
 
     const menuItems = [
-        'User Management', 'Leads', 'Newsletter', 'Recipe Management', 
+        'User Management', 'API Key Management', 'Leads', 'Newsletter', 'Recipe Management', 
         'Add Recipe', 'Cooking Classes', 'Video Management', 'Marketplace Management', 'About Us'
     ];
 
@@ -53,6 +54,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                         onEditUser={setEditingUser}
                     />
                 );
+            case 'API Key Management':
+                return <AdminApiKeyManagement />;
             case 'Leads':
                 return <AdminLeadsManagement leads={props.collectedLeads} />;
             case 'Recipe Management':

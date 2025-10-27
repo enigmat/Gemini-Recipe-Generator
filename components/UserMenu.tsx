@@ -6,6 +6,7 @@ import UserIcon from './icons/UserIcon';
 import { User } from '../types';
 import ListIcon from './icons/ListIcon';
 import LayoutDashboardIcon from './icons/LayoutDashboardIcon';
+import CrownIcon from './icons/CrownIcon';
 
 interface UserMenuProps {
   user: User;
@@ -44,7 +45,10 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout, onShowFavorites, on
                 <UserIcon className="w-6 h-6 text-gray-500" />
             )}
         </div>
-        <span>Hello, {user.name}</span>
+        <span className="flex items-center gap-1.5">
+          <span>Hello, {user.name}</span>
+          {user.isPremium && <CrownIcon className="w-4 h-4 text-amber-500" title="Premium Member" />}
+        </span>
         <ChevronDownIcon className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       {isOpen && (

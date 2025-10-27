@@ -1,7 +1,7 @@
 import React from 'react';
 import LockClosedIcon from './icons/LockClosedIcon';
 import CrownIcon from './icons/CrownIcon';
-import CheckIcon from './icons/CheckIcon';
+import SparklesIcon from './icons/SparklesIcon';
 
 interface PremiumContentProps {
   isPremium: boolean;
@@ -27,12 +27,20 @@ const PremiumContent: React.FC<PremiumContentProps> = ({
   }
 
   return (
-    <div className="relative p-8 bg-gray-50 rounded-lg text-center border-2 border-dashed border-gray-300">
-      <div className="flex flex-col items-center">
-        <LockClosedIcon className="w-12 h-12 text-gray-400" />
-        <h3 className="mt-4 text-xl font-semibold text-gray-800">{featureTitle}</h3>
+    <div className="relative p-8 bg-amber-50/70 rounded-lg text-center border border-amber-200 shadow-sm">
+      <div className="flex flex-col items-center max-w-2xl mx-auto">
+        <div className="relative inline-block mb-4">
+            <CrownIcon className="w-12 h-12 text-amber-400" />
+            <LockClosedIcon className="absolute w-4 h-4 text-amber-600 bottom-1 left-1/2 -translate-x-1/2" />
+        </div>
+
+        <div className="flex items-center gap-2">
+            <SparklesIcon className="w-5 h-5 text-amber-500" />
+            <h3 className="text-xl font-bold text-gray-800">{featureTitle}</h3>
+        </div>
+
         {featureDescription && (
-            <p className="mt-2 text-gray-600 max-w-sm">
+            <p className="mt-2 text-gray-600 max-w-lg">
                 {featureDescription}
             </p>
         )}
@@ -40,19 +48,21 @@ const PremiumContent: React.FC<PremiumContentProps> = ({
         {featureNodes}
 
         {features && features.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 max-w-3xl my-6 text-gray-700 text-left">
-                {features.map((feature, index) => (
-                    <div key={index} className="flex items-start">
-                        <CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-1" />
-                        <span>{feature}</span>
-                    </div>
-                ))}
+            <div className="my-6 text-gray-700 text-left inline-block">
+                <p className="font-semibold mb-2 text-center">Premium Features Include:</p>
+                <ul className="list-disc list-inside space-y-1">
+                    {features.map((feature, index) => (
+                        <li key={index}>
+                            <span>{feature}</span>
+                        </li>
+                    ))}
+                </ul>
             </div>
         )}
 
         <button
           onClick={onUpgradeClick}
-          className="mt-6 flex items-center gap-2 px-6 py-3 bg-amber-500 text-white font-bold rounded-lg shadow-md hover:bg-amber-600 transition-colors"
+          className="mt-4 flex items-center gap-2 px-8 py-3 bg-gradient-to-b from-amber-400 to-amber-500 text-gray-900 font-bold rounded-lg shadow-md hover:from-amber-500 hover:to-amber-600 transition-all transform hover:scale-105"
         >
           <CrownIcon className="w-5 h-5" />
           Upgrade to Premium

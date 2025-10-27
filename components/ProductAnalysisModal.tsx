@@ -2,21 +2,7 @@ import React from 'react';
 import { ProductAnalysis } from '../types';
 import XIcon from './icons/XIcon';
 import CheckCircleIcon from './icons/CheckCircleIcon';
-import XCircleIcon from './icons/XCircleIcon'; // Assuming this exists or will be created
-
-// A simple XCircleIcon for the modal
-const XCircleIconFC: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    fill="none" 
-    viewBox="0 0 24 24" 
-    strokeWidth={1.5} 
-    stroke="currentColor" 
-    {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
-
+import XCircleIcon from './icons/XCircleIcon';
 
 interface ProductAnalysisModalProps {
   isOpen: boolean;
@@ -85,7 +71,7 @@ const ProductAnalysisModal: React.FC<ProductAnalysisModalProps> = ({ isOpen, onC
                     <ul className="space-y-2">
                         {analysis.cons.map((con, index) => (
                             <li key={index} className="flex items-start">
-                                <XCircleIconFC className="w-5 h-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+                                <XCircleIcon className="w-5 h-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
                                 <span className="text-sm text-gray-700">{con}</span>
                             </li>
                         ))}

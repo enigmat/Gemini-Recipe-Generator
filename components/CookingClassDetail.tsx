@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { CookingClass } from '../types';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import PlayCircleIcon from './icons/PlayCircleIcon';
+import MortarPestleIcon from './icons/MortarPestleIcon';
+import GraduationCapIcon from './icons/GraduationCapIcon';
+import SparklesIcon from './icons/SparklesIcon';
+import CheckIcon from './icons/CheckIcon';
 
 interface CookingClassDetailProps {
   cookingClass: CookingClass;
@@ -72,6 +76,50 @@ const CookingClassDetail: React.FC<CookingClassDetailProps> = ({ cookingClass, o
                     ))}
                 </ul>
             </div>
+        </div>
+      </div>
+      <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="flex items-center gap-3 mb-3">
+                <MortarPestleIcon className="w-6 h-6 text-teal-600" />
+                <h4 className="text-lg font-bold text-gray-800">Techniques Covered</h4>
+            </div>
+            <ul className="space-y-2">
+                {cookingClass.techniquesCovered.map((tech, i) => (
+                    <li key={i} className="flex items-start">
+                        <CheckIcon className="w-5 h-5 text-teal-500 mr-2 flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-600">{tech}</span>
+                    </li>
+                ))}
+            </ul>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="flex items-center gap-3 mb-3">
+                <GraduationCapIcon className="w-6 h-6 text-teal-600" />
+                <h4 className="text-lg font-bold text-gray-800">What You'll Learn</h4>
+            </div>
+             <ul className="space-y-2">
+                {cookingClass.whatYouWillLearn.map((item, i) => (
+                    <li key={i} className="flex items-start">
+                        <CheckIcon className="w-5 h-5 text-teal-500 mr-2 flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-600">{item}</span>
+                    </li>
+                ))}
+            </ul>
+        </div>
+        <div className="bg-amber-50 p-6 rounded-lg shadow-sm border border-amber-200">
+            <div className="flex items-center gap-3 mb-3">
+                <SparklesIcon className="w-6 h-6 text-amber-500" />
+                <h4 className="text-lg font-bold text-gray-800">Pro Tips</h4>
+            </div>
+             <ul className="space-y-2">
+                {cookingClass.proTips.map((tip, i) => (
+                     <li key={i} className="flex items-start">
+                        <SparklesIcon className="w-4 h-4 text-amber-400 mr-2 flex-shrink-0 mt-0.5" />
+                        <span className="text-amber-800 font-medium">{tip}</span>
+                    </li>
+                ))}
+            </ul>
         </div>
       </div>
     </div>

@@ -88,6 +88,9 @@ export interface CookingClass {
   chef: string;
   thumbnailUrl: string;
   steps: ClassStep[];
+  whatYouWillLearn: string[];
+  techniquesCovered: string[];
+  proTips: string[];
 }
 
 export interface Newsletter {
@@ -143,4 +146,17 @@ export interface ProductAnalysis {
   pros: string[];
   cons: string[];
   additives: string[];
+}
+
+export interface ExpertQuestion {
+  id: string;
+  question: string;
+  topic: string;
+  status: 'Pending' | 'Answered';
+  submittedDate: string;
+  answer?: {
+    chefName: string;
+    answeredDate: string;
+    text: string;
+  };
 }

@@ -3,7 +3,7 @@ import { recipes as initialRecipes } from './data/recipes';
 import RecipeCard from './components/RecipeCard';
 import RecipeModal from './components/RecipeModal';
 import TagFilter from './components/TagFilter';
-import { Recipe, User, ShoppingList, MealPlan, Video, CookingClass, Newsletter, Lead, Product, AboutUsContent, CocktailRecipe, SavedCocktail } from './types';
+import { Recipe, User, ShoppingList, MealPlan, Video, CookingClass, Newsletter, Lead, Product, AboutUsContent, CocktailRecipe, SavedCocktail, ExpertQuestion } from './types';
 import * as favoritesService from './services/favoritesService';
 import EmptyState from './components/EmptyState';
 import BookOpenIcon from './components/icons/BookOpenIcon';
@@ -65,6 +65,9 @@ import AboutUsModal from './components/AboutUsModal';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import * as cocktailService from './services/cocktailService';
 import MyBar from './components/MyBar';
+import AdvancedClasses from './components/AdvancedClasses';
+import ExpertQAPremiumOffer from './components/ExpertQAPremiumOffer';
+import { initialExpertQuestions } from './data/expertQuestions';
 
 const RECIPES_PER_PAGE = 12;
 
@@ -140,6 +143,9 @@ const App: React.FC = () => {
     
     // My Bar state
     const [savedCocktails, setSavedCocktails] = useState<SavedCocktail[]>([]);
+
+    // Expert Q&A state
+    const [expertQuestions, setExpertQuestions] = useState<ExpertQuestion[]>(initialExpertQuestions);
 
     useEffect(() => {
         const savedSystem = localStorage.getItem('recipeAppMeasurementSystem');
@@ -274,7 +280,7 @@ const App: React.FC = () => {
     };
     
     const handleSelectTab = (tab: string) => {
-        if (['My Cookbook', 'Shopping List', 'Cooking Classes', 'My Bar'].includes(tab)) {
+        if (['My Cookbook', 'Shopping List', 'My Bar'].includes(tab)) {
             if (!currentUser) {
                 setIsLoginModalOpen(true);
                 return;
@@ -283,6 +289,10 @@ const App: React.FC = () => {
                 setIsListsOverviewOpen(true);
                 return; 
             }
+        }
+        if (['Cooking Classes', 'Ask an Expert'].includes(tab) && !currentUser?.isPremium) {
+            setActiveTab(tab); // Allow navigation to see the upsell
+            return;
         }
         setActiveTab(tab);
         setSearchQuery('');
@@ -372,6 +382,17 @@ const App: React.FC = () => {
         if (!currentUser) return;
         cocktailService.deleteCocktail(cocktailId, currentUser.email);
         setSavedCocktails(prev => prev.filter(c => c.id !== cocktailId));
+    };
+
+    const handleAddExpertQuestion = (question: string, topic: string) => {
+        const newQuestion: ExpertQuestion = {
+            id: `q${Date.now()}`,
+            question,
+            topic,
+            status: 'Pending',
+            submittedDate: new Date().toISOString(),
+        };
+        setExpertQuestions(prev => [newQuestion, ...prev]);
     };
 
     // Admin panel functions
@@ -568,40 +589,29 @@ const App: React.FC = () => {
                     </div>
                 );
             case 'Cooking Classes':
-                 return (
-                     <PremiumContent 
-                        isPremium={!!currentUser?.isPremium} 
-                        onUpgradeClick={() => setIsUpgradeModalOpen(true)}
-                        featureTitle="Advanced Cooking Classes"
-                        featureDescription="Unlock expert-led video courses to master new culinary skills."
-                        features={[
-                            "Step-by-step video lessons from professional chefs.",
-                            "Downloadable workbooks and recipe guides.",
-                            "Exclusive access to new classes every month."
-                        ]}
-                     >
-                         {viewingCookingClass ? (
-                             <CookingClassDetail cookingClass={viewingCookingClass} onBack={() => setViewingCookingClass(null)} />
-                         ) : (
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                 {cookingClasses.map(cc => (
-                                     <CookingClassCard key={cc.id} cookingClass={cc} onClick={setViewingCookingClass} />
-                                 ))}
-                             </div>
-                         )}
-                     </PremiumContent>
-                 );
+                if (!currentUser?.isPremium) {
+                    return <AdvancedClasses onUpgradeClick={() => setIsUpgradeModalOpen(true)} />;
+                }
+                return (
+                    <>
+                        {viewingCookingClass ? (
+                            <CookingClassDetail cookingClass={viewingCookingClass} onBack={() => setViewingCookingClass(null)} />
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {cookingClasses.map(cc => (
+                                    <CookingClassCard key={cc.id} cookingClass={cc} onClick={setViewingCookingClass} />
+                                ))}
+                            </div>
+                        )}
+                    </>
+                );
             case 'Bartender Helper':
                 return <BartenderHelper currentUser={currentUser} savedCocktails={savedCocktails} onSaveCocktail={handleSaveCocktail} />;
             case 'Ask an Expert':
-                return <PremiumContent 
-                            isPremium={!!currentUser?.isPremium} 
-                            onUpgradeClick={() => setIsUpgradeModalOpen(true)}
-                            featureTitle="Ask a Professional Chef"
-                            featureDescription="Get personalized answers to your toughest cooking questions from our team of experts."
-                        >
-                            <AskAnExpert />
-                       </PremiumContent>;
+                if (!currentUser?.isPremium) {
+                    return <ExpertQAPremiumOffer onUpgradeClick={() => setIsUpgradeModalOpen(true)} />;
+                }
+                return <AskAnExpert questions={expertQuestions} onAskQuestion={handleAddExpertQuestion} />;
             case 'Marketplace':
                 return <Marketplace allProducts={products} />;
             case 'All Recipes':
@@ -616,17 +626,40 @@ const App: React.FC = () => {
                             <UrlInput onExtract={handleExtractFromUrl} isExtracting={isExtracting} error={extractError} />
                         </div>
 
-                        <RecipeCarousel
-                            title="New This Month"
-                            recipes={newThisMonthRecipes}
-                            favorites={favorites}
-                            selectedRecipeIds={selectedRecipeIds}
-                            onCardClick={handleCardClick}
-                            onToggleFavorite={handleToggleFavorite}
-                            onToggleSelect={handleToggleSelect}
-                        />
+                        {!currentUser?.isPremium && (
+                            <PremiumContent
+                                isPremium={false}
+                                onUpgradeClick={() => setIsUpgradeModalOpen(true)}
+                                featureTitle="New This Month"
+                                featureDescription="Discover exclusive premium recipes curated monthly by our chef experts"
+                                features={[
+                                    "12 exclusive recipes each month",
+                                    "Chef-curated seasonal specialties",
+                                    "Early access to trending dishes",
+                                    "Premium ingredient recommendations",
+                                ]}
+                            />
+                        )}
+
+                        {currentUser?.isPremium && (
+                            <RecipeCarousel
+                                title="New This Month"
+                                recipes={newThisMonthRecipes}
+                                favorites={favorites}
+                                selectedRecipeIds={selectedRecipeIds}
+                                onCardClick={handleCardClick}
+                                onToggleFavorite={handleToggleFavorite}
+                                onToggleSelect={handleToggleSelect}
+                            />
+                        )}
     
                         <div>
+                             <div className="text-center mb-8">
+                                <h2 className="text-3xl font-bold text-gray-800 tracking-tight">Discover Our Recipes</h2>
+                                <p className="mt-2 text-lg text-gray-500">
+                                    Discover from <span className="font-bold text-green-600">{allRecipes.length.toLocaleString()}</span> authentic recipes
+                                </p>
+                            </div>
                             <TagFilter tags={ALL_CATEGORY_TAGS} selectedTag={selectedTag} onSelectTag={handleSelectTag} />
                             
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -693,7 +726,7 @@ const App: React.FC = () => {
             </header>
     
             <main className="container mx-auto p-4 sm:p-6 lg:p-8">
-                <MainTabs activeTab={activeTab} onSelectTab={handleSelectTab} favoritesCount={favorites.length} />
+                <MainTabs activeTab={activeTab} onSelectTab={handleSelectTab} currentUser={currentUser} />
                 
                 <div className="mt-8">
                     {renderContent()}
@@ -711,7 +744,18 @@ const App: React.FC = () => {
             {isSaveListModalOpen && <SaveListModal isOpen={isSaveListModalOpen} onClose={() => setIsSaveListModalOpen(false)} onSave={handleSaveList} existingListNames={shoppingLists.map(l => l.name)} />}
             {isListsOverviewOpen && <ListsOverviewModal isOpen={isListsOverviewOpen} onClose={() => setIsListsOverviewOpen(false)} lists={shoppingLists} onView={(list) => { setViewingList(list); setIsListsOverviewOpen(false); }} onDelete={handleDeleteList} onRename={handleRenameList} />}
             {playingVideo && <VideoPlayerModal video={playingVideo} onClose={handleCloseVideo} />}
-            {isUpgradeModalOpen && <UpgradeModal isOpen={isUpgradeModalOpen} onClose={() => setIsUpgradeModalOpen(false)} onUpgrade={handleUpgradeUser} />}
+            {isUpgradeModalOpen && (
+                <UpgradeModal 
+                    isOpen={isUpgradeModalOpen} 
+                    onClose={() => setIsUpgradeModalOpen(false)} 
+                    onUpgrade={handleUpgradeUser} 
+                    currentUser={currentUser}
+                    onLoginRequest={() => {
+                        setIsUpgradeModalOpen(false);
+                        setIsLoginModalOpen(true);
+                    }}
+                />
+            )}
             {isAboutUsOpen && <AboutUsModal isOpen={isAboutUsOpen} onClose={() => setIsAboutUsOpen(false)} content={aboutUsContent} />}
             {isPrivacyPolicyOpen && <PrivacyPolicy isOpen={isPrivacyPolicyOpen} onClose={() => setIsPrivacyPolicyOpen(false)} />}
     
