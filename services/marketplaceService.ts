@@ -1,45 +1,47 @@
-import { MarketplaceSearchQuery } from '../types';
+import { Product } from '../types';
+import { affiliateProducts as initialProducts } from '../data/affiliateProducts';
 
-const SEARCH_HISTORY_KEY = 'recipeextracterMarketplaceSearchHistory';
+const PRODUCTS_KEY = 'recipeAppMarketplaceProducts';
 
-export const getSearchHistory = (): MarketplaceSearchQuery[] => {
+// Initialize with default products if none exist
+if (!localStorage.getItem(PRODUCTS_KEY)) {
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(initialProducts));
+}
+
+export const getProducts = (): Product[] => {
     try {
-        const historyJson = localStorage.getItem(SEARCH_HISTORY_KEY);
-        return historyJson ? JSON.parse(historyJson) : [];
+        const productsJson = localStorage.getItem(PRODUCTS_KEY);
+        return productsJson ? JSON.parse(productsJson) : [];
     } catch (error) {
-        console.error("Error parsing marketplace search history from localStorage", error);
+        console.error('Could not get products from localStorage', error);
         return [];
     }
 };
 
-export const logSearchQuery = (query: string): void => {
-    if (!query.trim()) return;
-
-    const history = getSearchHistory();
-    const newEntry: MarketplaceSearchQuery = {
-        query,
-        timestamp: new Date().toISOString(),
-    };
-
-    // Add to the beginning of the array
-    const updatedHistory = [newEntry, ...history];
-
-    // Optional: Limit history size to prevent localStorage from getting too large
-    if (updatedHistory.length > 500) {
-        updatedHistory.pop();
-    }
-
+export const saveProducts = (products: Product[]): void => {
     try {
-        localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updatedHistory));
+        localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
     } catch (error) {
-        console.error("Error saving marketplace search history to localStorage", error);
+        console.error('Could not save products to localStorage', error);
     }
 };
 
-export const clearSearchHistory = (): void => {
-    try {
-        localStorage.removeItem(SEARCH_HISTORY_KEY);
-    } catch (error) {
-        console.error("Error clearing marketplace search history", error);
-    }
+export const addProduct = (product: Omit<Product, 'id'>): Product => {
+    const products = getProducts();
+    const newProduct: Product = { ...product, id: `prod${Date.now()}` };
+    saveProducts([newProduct, ...products]);
+    return newProduct;
+};
+
+export const updateProduct = (updatedProduct: Product): Product => {
+    const products = getProducts();
+    const updatedProducts = products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
+    saveProducts(updatedProducts);
+    return updatedProduct;
+};
+
+export const deleteProduct = (productId: string): void => {
+    const products = getProducts();
+    const updatedProducts = products.filter(p => p.id !== productId);
+    saveProducts(updatedProducts);
 };

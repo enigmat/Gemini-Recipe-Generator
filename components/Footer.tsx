@@ -1,27 +1,23 @@
 import React from 'react';
 
 interface FooterProps {
-    onShowPrivacyPolicy: () => void;
-    onShowAboutUs: () => void;
+  onAboutClick: () => void;
+  onPrivacyClick: () => void;
 }
 
-const Footer: React.FC<FooterProps> = ({ onShowPrivacyPolicy, onShowAboutUs }) => {
-    return (
-        <footer className="bg-gray-100 border-t border-border-color mt-16">
-            <div className="container mx-auto px-4 py-6 text-center text-text-secondary text-sm">
-                <p>&copy; {new Date().getFullYear()} Recipe Extracter. All Rights Reserved.</p>
-                <div className="mt-2 space-x-4">
-                    <button onClick={onShowAboutUs} className="hover:text-primary hover:underline">
-                        About Us
-                    </button>
-                    <span className="text-gray-400">|</span>
-                    <button onClick={onShowPrivacyPolicy} className="hover:text-primary hover:underline">
-                        Privacy Policy
-                    </button>
-                </div>
-            </div>
-        </footer>
-    );
+const Footer: React.FC<FooterProps> = ({ onAboutClick, onPrivacyClick }) => {
+  return (
+    <footer className="w-full mt-16 py-8 bg-gray-100 print:hidden">
+      <div className="container mx-auto text-center text-gray-500 text-sm">
+        <p>© 2025 Recipe Extracter. All Rights Reserved.</p>
+        <div className="mt-2">
+          <button onClick={onAboutClick} className="hover:text-gray-800 transition-colors">About Us</button>
+          <span className="mx-2">|</span>
+          <button onClick={onPrivacyClick} className="hover:text-gray-800 transition-colors">Privacy Policy</button>
+        </div>
+      </div>
+    </footer>
+  );
 };
 
 export default Footer;

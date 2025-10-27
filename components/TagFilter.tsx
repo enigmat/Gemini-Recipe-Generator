@@ -1,34 +1,30 @@
 import React from 'react';
 
 interface TagFilterProps {
-  allTags: string[];
-  selectedTags: string[];
-  onTagClick: (tag: string) => void;
+  tags: string[];
+  selectedTag: string;
+  onSelectTag: (tag: string) => void;
 }
 
-const TagFilter: React.FC<TagFilterProps> = ({ allTags, selectedTags, onTagClick }) => {
+const TagFilter: React.FC<TagFilterProps> = ({ tags, selectedTag, onSelectTag }) => {
+  const allTags = ['All', ...tags];
+
   return (
-    <div>
-        <h3 className="text-sm font-semibold text-text-secondary mb-2">Filter by Tag:</h3>
-        <div className="flex flex-wrap gap-2">
-            {allTags.map(tag => {
-                const isSelected = selectedTags.includes(tag);
-                return (
-                    <button
-                        key={tag}
-                        onClick={() => onTagClick(tag)}
-                        className={`px-3 py-1.5 text-sm font-medium rounded-full border-2 transition-colors duration-200 ${
-                            isSelected
-                                ? 'bg-primary border-primary text-white'
-                                : 'bg-white border-border-color text-text-secondary hover:bg-gray-100 hover:border-gray-400'
-                        }`}
-                        aria-pressed={isSelected}
-                    >
-                        {tag}
-                    </button>
-                );
-            })}
-        </div>
+    <div className="flex flex-wrap justify-center gap-2 mb-8">
+      {allTags.map((tag) => (
+        <button
+          key={tag}
+          onClick={() => onSelectTag(tag)}
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${
+            selectedTag === tag
+              ? 'bg-amber-500 text-white shadow-sm'
+              : 'bg-white text-gray-700 hover:bg-amber-100 shadow-sm border border-gray-200'
+          }`}
+          aria-pressed={selectedTag === tag}
+        >
+          {tag}
+        </button>
+      ))}
     </div>
   );
 };

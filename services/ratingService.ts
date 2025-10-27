@@ -1,38 +1,62 @@
+import { Recipe } from '../types';
 
-const RATINGS_STORAGE_KEY = 'recipeextracterRatings';
+const RATINGS_KEY = 'recipeAppRatings';
 
-interface AllRatings {
-    [recipeName: string]: number[];
-}
+// Structure for storing ratings: { [recipeId: number]: { totalScore: number; count: number; userRatings: { [userEmail: string]: number } } }
+type RatingsStore = Record<number, { totalScore: number; count: number; userRatings: Record<string, number> }>;
 
-const getAllRatings = (): AllRatings => {
+let ratings: RatingsStore = {};
+
+export const loadRatings = (): void => {
     try {
-        const ratingsJson = localStorage.getItem(RATINGS_STORAGE_KEY);
-        return ratingsJson ? JSON.parse(ratingsJson) : {};
+        const storedRatings = localStorage.getItem(RATINGS_KEY);
+        if (storedRatings) {
+            ratings = JSON.parse(storedRatings);
+        } else {
+            ratings = {};
+        }
     } catch (error) {
-        console.error("Error parsing ratings from localStorage", error);
-        return {};
+        console.error("Could not load ratings from localStorage", error);
+        ratings = {};
     }
 };
 
-export const getRatingsForRecipe = (recipeName: string): number[] => {
-    const allRatings = getAllRatings();
-    return allRatings[recipeName] || [];
+const saveRatings = (): void => {
+    try {
+        localStorage.setItem(RATINGS_KEY, JSON.stringify(ratings));
+    } catch (error) {
+        console.error("Could not save ratings to localStorage", error);
+    }
 };
 
-export const saveRatingForRecipe = (recipeName: string, rating: number): void => {
-    if (rating < 1 || rating > 5) {
-        console.error("Invalid rating value. Must be between 1 and 5.");
-        return;
+export const addRating = (recipeId: number, score: number, userEmail: string): void => {
+    if (!ratings[recipeId]) {
+        ratings[recipeId] = { totalScore: 0, count: 0, userRatings: {} };
     }
-    const allRatings = getAllRatings();
-    const recipeRatings = allRatings[recipeName] || [];
-    recipeRatings.push(rating);
-    allRatings[recipeName] = recipeRatings;
 
-    try {
-        localStorage.setItem(RATINGS_STORAGE_KEY, JSON.stringify(allRatings));
-    } catch (error) {
-        console.error("Error saving ratings to localStorage", error);
+    const recipeRating = ratings[recipeId];
+    const previousScore = recipeRating.userRatings[userEmail];
+
+    if (previousScore !== undefined) {
+        // User is changing their rating
+        recipeRating.totalScore = recipeRating.totalScore - previousScore + score;
+    } else {
+        // New rating from this user
+        recipeRating.totalScore += score;
+        recipeRating.count += 1;
     }
+    
+    recipeRating.userRatings[userEmail] = score;
+    saveRatings();
+};
+
+export const getRating = (recipeId: number): Recipe['rating'] | undefined => {
+    const ratingData = ratings[recipeId];
+    if (!ratingData || ratingData.count === 0) {
+        return undefined;
+    }
+    return {
+        score: ratingData.totalScore / ratingData.count,
+        count: ratingData.count,
+    };
 };

@@ -1,70 +1,72 @@
-
 import React, { useState } from 'react';
 import PlusIcon from './icons/PlusIcon';
 import XIcon from './icons/XIcon';
 
 interface IngredientInputProps {
-    ingredients: string[];
-    setIngredients: React.Dispatch<React.SetStateAction<string[]>>;
+  ingredients: string[];
+  onChange: (ingredients: string[]) => void;
 }
 
-const IngredientInput: React.FC<IngredientInputProps> = ({ ingredients, setIngredients }) => {
-    const [currentIngredient, setCurrentIngredient] = useState('');
+const IngredientInput: React.FC<IngredientInputProps> = ({ ingredients, onChange }) => {
+  const [inputValue, setInputValue] = useState('');
 
-    const handleAddIngredient = () => {
-        const trimmedIngredient = currentIngredient.trim();
-        if (trimmedIngredient && !ingredients.includes(trimmedIngredient)) {
-            setIngredients([...ingredients, trimmedIngredient]);
-            setCurrentIngredient('');
-        }
-    };
+  const handleAddIngredient = () => {
+    const trimmedValue = inputValue.trim();
+    if (trimmedValue && !ingredients.map(i => i.toLowerCase()).includes(trimmedValue.toLowerCase())) {
+      onChange([...ingredients, trimmedValue]);
+      setInputValue('');
+    }
+  };
 
-    const handleRemoveIngredient = (ingredientToRemove: string) => {
-        setIngredients(ingredients.filter(ing => ing !== ingredientToRemove));
-    };
+  const handleRemoveIngredient = (ingredientToRemove: string) => {
+    onChange(ingredients.filter(ing => ing !== ingredientToRemove));
+  };
 
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            handleAddIngredient();
-        }
-    };
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddIngredient();
+    }
+  };
 
-    return (
-        <div className="w-full max-w-2xl mx-auto">
-            <div className="flex items-center gap-2 bg-white p-2 rounded-lg shadow-md border border-border-color">
-                <input
-                    type="text"
-                    value={currentIngredient}
-                    onChange={(e) => setCurrentIngredient(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="e.g., chicken breast, tomatoes, rice"
-                    className="flex-grow p-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
-                />
-                <button
-                    onClick={handleAddIngredient}
-                    className="bg-primary text-white p-2 rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus transition-colors duration-200"
-                    aria-label="Add ingredient"
-                >
-                    <PlusIcon className="h-6 w-6" />
-                </button>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-                {ingredients.map((ingredient) => (
-                    <span key={ingredient} className="flex items-center bg-green-100 text-green-800 text-sm font-medium pl-3 pr-1 py-1 rounded-full">
-                        {ingredient}
-                        <button
-                            onClick={() => handleRemoveIngredient(ingredient)}
-                            className="ml-1.5 p-0.5 rounded-full text-green-600 hover:bg-green-200 focus:outline-none"
-                            aria-label={`Remove ${ingredient}`}
-                        >
-                           <XIcon className="h-4 w-4" />
-                        </button>
-                    </span>
-                ))}
-            </div>
+  return (
+    <div>
+        <div className="relative">
+            <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="e.g., chicken breast, tomatoes, rice"
+                className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow text-base"
+                aria-label="Add an ingredient"
+            />
+            <button
+                onClick={handleAddIngredient}
+                className="absolute inset-y-0 right-0 m-1.5 w-9 h-9 bg-teal-500 text-white font-semibold rounded-md hover:bg-teal-600 transition-colors flex items-center justify-center disabled:bg-teal-300"
+                disabled={!inputValue.trim()}
+                aria-label="Add ingredient"
+            >
+                <PlusIcon className="w-6 h-6" />
+            </button>
         </div>
-    );
+        {ingredients.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+            {ingredients.map((ingredient) => (
+                <div
+                key={ingredient}
+                className="flex items-center gap-2 bg-teal-100 text-teal-800 text-sm font-medium px-3 py-1.5 rounded-full animate-fade-in"
+                >
+                <span>{ingredient}</span>
+                <button onClick={() => handleRemoveIngredient(ingredient)} aria-label={`Remove ${ingredient}`}>
+                    <XIcon className="w-4 h-4 text-teal-700 hover:text-teal-900" />
+                </button>
+                </div>
+            ))}
+            </div>
+        )}
+    </div>
+  );
 };
 
 export default IngredientInput;

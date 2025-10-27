@@ -1,121 +1,131 @@
-// Conversion rates
-const G_TO_OZ = 0.035274;
-const ML_TO_TSP = 0.202884;
-const ML_TO_TBSP = 0.067628;
-const ML_TO_CUP = 0.00422675;
+import { Ingredient, IngredientUnit } from '../types';
 
-export function parseIngredient(ingredientString: string): { quantity: number; unit: string; name: string } | null {
-    const originalString = ingredientString.trim();
-    // Regex to handle various formats like "1", "1.5", "1/2", "1 1/2"
-    const quantityRegex = /^(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.?\d+)/;
-    const quantityMatch = originalString.match(quantityRegex);
+// --- Parsing ---
 
-    if (!quantityMatch) {
-        return { quantity: 0, unit: '', name: originalString };
-    }
+const parseFraction = (fraction: string): number => {
+    if (!fraction || !fraction.includes('/')) return 0;
+    const [num, den] = fraction.split('/').map(s => parseInt(s.trim(), 10));
+    return den ? num / den : num;
+};
 
-    const quantityStr = quantityMatch[0];
-    let quantity: number;
-    if (quantityStr.includes('/')) {
-        const parts = quantityStr.split(/\s+/);
-        quantity = parts.reduce((acc, part) => {
-            if (part.includes('/')) {
-                const [num, den] = part.split('/').map(Number);
-                return acc + (den ? num / den : 0);
+const parseQuantity = (quantity: number | string): number => {
+    if (typeof quantity === 'number') return quantity;
+    if (typeof quantity !== 'string' || !quantity.trim()) return 0;
+
+    const trimmedQuantity = quantity.trim();
+    
+    if (trimmedQuantity.includes(' ') && trimmedQuantity.includes('/')) {
+        const parts = trimmedQuantity.split(' ');
+        if (parts.length === 2) {
+            const whole = parseInt(parts[0], 10);
+            const frac = parseFraction(parts[1]);
+            if (!isNaN(whole)) {
+                return whole + frac;
             }
-            return acc + (Number(part) || 0);
-        }, 0);
-    } else {
-        quantity = parseFloat(quantityStr);
-    }
-
-    const restOfString = originalString.substring(quantityStr.length).trim();
-    
-    // Common units list
-    const units = ['g', 'gram', 'grams', 'kg', 'kilogram', 'kilograms', 'ml', 'milliliter', 'milliliters', 'l', 'liter', 'liters', 'tsp', 'teaspoon', 'teaspoons', 'tbsp', 'tablespoon', 'tablespoons', 'cup', 'cups', 'oz', 'ounce', 'ounces', 'clove', 'cloves', 'can', 'cans', 'packet', 'packets', 'sprig', 'sprigs', 'head', 'heads'];
-    const unitRegex = new RegExp(`^(${units.join('|')})\\b`, 'i');
-    const unitMatch = restOfString.match(unitRegex);
-
-    let unit = '';
-    let name = restOfString;
-
-    if (unitMatch) {
-        unit = unitMatch[0].toLowerCase();
-        name = restOfString.substring(unit.length).trim();
-    }
-    
-    name = name.replace(/^[\s,.]+/g, '');
-
-    return { quantity, unit, name };
-}
-
-export function parseServings(servingsString: string | undefined): number {
-    if (!servingsString) return 4; // Default if not provided
-    const match = servingsString.match(/\d+/);
-    return match ? parseInt(match[0], 10) : 4;
-}
-
-function toFraction(decimal: number): string {
-    const whole = Math.floor(decimal);
-    const frac = decimal - whole;
-
-    if (frac < 0.05) return `${whole > 0 ? whole : ''}`;
-    if (Math.abs(frac - 1) < 0.05) return `${whole + 1}`;
-
-    const fractions: [number, number, string][] = [
-        [1, 8, '⅛'], [1, 4, '¼'], [1, 3, '⅓'], [3, 8, '⅜'], 
-        [1, 2, '½'], [5, 8, '⅝'], [2, 3, '⅔'], [3, 4, '¾'], [7, 8, '⅞']
-    ];
-    
-    for (const [num, den, sym] of fractions) {
-        if (Math.abs(frac - num / den) < 0.05) {
-            return whole > 0 ? `${whole} ${sym}` : `${sym}`;
         }
     }
     
-    const rounded = Math.round(decimal * 10) / 10;
-    return `${rounded}`; // Fallback to decimal if no close fraction
-}
-
-
-export function convertToAmerican(quantity: number, unit: string): { newQuantityStr: string; newUnit: string } {
-    const singularUnit = unit.toLowerCase().replace(/s$/, '');
-
-    if (['g', 'gram'].includes(singularUnit)) {
-        const oz = quantity * G_TO_OZ;
-        return { newQuantityStr: oz.toFixed(oz < 1 ? 2 : 1), newUnit: 'oz' };
+    if (trimmedQuantity.includes('/')) {
+        return parseFraction(trimmedQuantity);
     }
 
-    if (['kg', 'kilogram'].includes(singularUnit)) {
-        const oz = quantity * 1000 * G_TO_OZ;
-        return { newQuantityStr: oz.toFixed(1), newUnit: 'oz' };
-    }
-
-    if (['ml', 'milliliter'].includes(singularUnit)) {
-        const cups = quantity * ML_TO_CUP;
-        if (cups >= 0.25) {
-            const finalCups = toFraction(cups);
-            return { newQuantityStr: finalCups, newUnit: cups > 1 ? 'cups' : 'cup' };
-        }
-        const tbsp = quantity * ML_TO_TBSP;
-        if (tbsp >= 0.5) {
-            const finalTbsp = toFraction(tbsp);
-            return { newQuantityStr: finalTbsp, newUnit: 'tbsp' };
-        }
-        const tsp = quantity * ML_TO_TSP;
-        const finalTsp = toFraction(tsp);
-        return { newQuantityStr: finalTsp, newUnit: 'tsp' };
+    if (!isNaN(Number(trimmedQuantity))) {
+        return parseFloat(trimmedQuantity);
     }
     
-    if (['l', 'liter'].includes(singularUnit)) {
-        const cups = quantity * 1000 * ML_TO_CUP;
-        const finalCups = toFraction(cups);
-        return { newQuantityStr: finalCups, newUnit: cups > 1 ? 'cups' : 'cup' };
+    return 0; 
+};
+
+// --- Formatting ---
+
+const toFraction = (decimal: number): string => {
+    if (decimal % 1 === 0) return decimal.toString();
+
+    const tolerance = 1.0E-6;
+    let h1 = 1, h2 = 0, k1 = 0, k2 = 1;
+    let b = decimal;
+    do {
+        let a = Math.floor(b);
+        let aux = h1; h1 = a * h1 + h2; h2 = aux;
+        aux = k1; k1 = a * k1 + k2; k2 = aux;
+        b = 1 / (b - a);
+    } while (Math.abs(decimal - h1 / k1) > decimal * tolerance);
+
+    const numerator = h1;
+    const denominator = k1;
+
+    if (denominator > 16) { 
+        return decimal.toFixed(2);
+    }
+    
+    if (numerator > denominator) {
+        const whole = Math.floor(numerator / denominator);
+        const rem = numerator % denominator;
+        return rem === 0 ? `${whole}` : `${whole} ${rem}/${denominator}`;
     }
 
-    // For units that don't need conversion
-    const finalQuantity = Number(quantity.toFixed(2));
-    const newQuantityStr = toFraction(finalQuantity);
-    
-    return { newQuantityStr, newUnit: singularUnit };
-}
+    return `${numerator}/${denominator}`;
+};
+
+// --- Main Functions ---
+
+export const formatIngredient = (
+  ingredient: Ingredient,
+  system: 'metric' | 'us'
+): string => {
+  const { name } = ingredient;
+  const unitDetails = system === 'metric' ? ingredient.metric : ingredient.us;
+  const { quantity, unit } = unitDetails;
+
+  if (typeof quantity === 'string' && isNaN(parseQuantity(quantity))) {
+    return `${quantity} ${unit ? unit + ' ' : ''}${name}`.trim();
+  }
+  
+  const numericQuantity = parseQuantity(quantity);
+  if (numericQuantity === 0) {
+      return name;
+  }
+  
+  const formattedQuantity = system === 'us' ? toFraction(numericQuantity) : numericQuantity.toString();
+
+  return `${formattedQuantity}${unit ? ' ' + unit : ''} ${name}`.trim();
+};
+
+export const adjustIngredient = (
+    ingredient: Ingredient,
+    originalServings: number,
+    newServings: number
+): Ingredient => {
+    const ratio = newServings / originalServings;
+
+    const adjustUnit = (unit: IngredientUnit): IngredientUnit => {
+        const originalQuantity = parseQuantity(unit.quantity);
+        if (originalQuantity === 0) {
+            return unit;
+        }
+        const newQuantity = originalQuantity * ratio;
+        
+        if (unit === ingredient.us) {
+            return { ...unit, quantity: newQuantity }; 
+        }
+        
+        const roundedQuantity = parseFloat(newQuantity.toFixed(2));
+        return { ...unit, quantity: roundedQuantity };
+    };
+
+    return {
+        ...ingredient,
+        metric: adjustUnit(ingredient.metric),
+        us: adjustUnit(ingredient.us),
+    };
+};
+
+export const formatInstruction = (
+  instruction: string,
+  system: 'metric' | 'us'
+): string => {
+  const tempRegex = /\[temp:(\d+):(\d+)\]/g;
+  return instruction.replace(tempRegex, (_match, celsius, fahrenheit) => {
+    return system === 'metric' ? `${celsius}°C` : `${fahrenheit}°F`;
+  });
+};

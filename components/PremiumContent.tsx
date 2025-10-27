@@ -1,60 +1,65 @@
 import React from 'react';
-import { Recipe } from '../types';
 import LockClosedIcon from './icons/LockClosedIcon';
-import RecipeCard from './RecipeCard';
-import SparklesIcon from './icons/SparklesIcon';
+import CrownIcon from './icons/CrownIcon';
+import CheckIcon from './icons/CheckIcon';
 
 interface PremiumContentProps {
-    isPremium: boolean;
-    onUpgrade: () => void;
-    recipes: Recipe[];
-    onSelectRecipe: (recipe: Recipe) => void;
-    savedRecipeTitles: string[];
-    onToggleSave: (recipeTitle: string) => void;
+  isPremium: boolean;
+  onUpgradeClick: () => void;
+  children: React.ReactNode;
+  featureTitle?: string;
+  featureDescription?: string;
+  features?: string[];
+  featureNodes?: React.ReactNode;
 }
 
-const PremiumContent: React.FC<PremiumContentProps> = ({ isPremium, onUpgrade, recipes, onSelectRecipe, savedRecipeTitles, onToggleSave }) => {
-    if (!isPremium) {
-        return (
-            <div className="bg-yellow-50 text-yellow-900 p-8 rounded-lg shadow-md text-center my-12 border border-yellow-200">
-                <div className="flex justify-center items-center gap-3">
-                     <LockClosedIcon className="w-8 h-8 text-yellow-500" />
-                     <h2 className="text-2xl font-bold text-yellow-800">New This Month</h2>
-                </div>
-                <p className="mt-2 text-yellow-700 max-w-md mx-auto">
-                    Unlock exclusive, curated recipes every month by upgrading to Premium.
-                </p>
-                <button
-                    onClick={onUpgrade}
-                    className="mt-6 px-8 py-3 bg-yellow-400 text-gray-900 font-bold rounded-lg shadow-md hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-yellow-50 focus:ring-yellow-400 transition-colors duration-200 flex items-center gap-2 mx-auto"
-                >
-                    <SparklesIcon className="w-5 h-5" />
-                    <span>Upgrade to Premium</span>
-                </button>
-            </div>
-        );
-    }
+const PremiumContent: React.FC<PremiumContentProps> = ({ 
+    isPremium, 
+    onUpgradeClick, 
+    children,
+    featureTitle = "This is a Premium Feature",
+    featureDescription,
+    features,
+    featureNodes
+}) => {
+  if (isPremium) {
+    return <>{children}</>;
+  }
 
-    return (
-        <div className="my-12">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <SparklesIcon className="w-6 h-6 text-yellow-500" />
-                New This Month
-            </h2>
-            <div className="flex overflow-x-auto space-x-6 pb-4 -mx-4 px-4">
-                {recipes.map(recipe => (
-                     <div key={recipe.title} className="flex-shrink-0 w-72">
-                         <RecipeCard
-                            recipe={recipe}
-                            onClick={() => onSelectRecipe(recipe)}
-                            isSaved={savedRecipeTitles.includes(recipe.title)}
-                            onToggleSave={() => onToggleSave(recipe.title)}
-                        />
+  return (
+    <div className="relative p-8 bg-gray-50 rounded-lg text-center border-2 border-dashed border-gray-300">
+      <div className="flex flex-col items-center">
+        <LockClosedIcon className="w-12 h-12 text-gray-400" />
+        <h3 className="mt-4 text-xl font-semibold text-gray-800">{featureTitle}</h3>
+        {featureDescription && (
+            <p className="mt-2 text-gray-600 max-w-sm">
+                {featureDescription}
+            </p>
+        )}
+        
+        {featureNodes}
+
+        {features && features.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 max-w-3xl my-6 text-gray-700 text-left">
+                {features.map((feature, index) => (
+                    <div key={index} className="flex items-start">
+                        <CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-1" />
+                        <span>{feature}</span>
                     </div>
                 ))}
             </div>
-        </div>
-    );
+        )}
+
+        <button
+          onClick={onUpgradeClick}
+          className="mt-6 flex items-center gap-2 px-6 py-3 bg-amber-500 text-white font-bold rounded-lg shadow-md hover:bg-amber-600 transition-colors"
+        >
+          <CrownIcon className="w-5 h-5" />
+          Upgrade to Premium
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export default PremiumContent;

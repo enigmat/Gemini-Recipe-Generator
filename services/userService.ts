@@ -1,265 +1,125 @@
-import { User, Subscription, SubscriptionHistory } from '../types';
+import { User } from '../types';
+import { initialUsers } from '../data/users';
 
-const PREMIUM_STATUS_KEY_PREFIX = 'recipeextracterPremium_';
-const USER_KEY = 'recipeextracterUser';
-const ALL_USERS_KEY = 'recipeextracterAllUsers';
+const USER_KEY = 'recipeAppCurrentUser';
+const ALL_USERS_KEY = 'recipeAppAllUsers';
+const ADMIN_EMAIL = 'billhanoman@gmail.com';
 
-const formatDate = (date: Date): string => date.toISOString().split('T')[0];
+// Initialize with default users if none exist
+if (!localStorage.getItem(ALL_USERS_KEY)) {
+    localStorage.setItem(ALL_USERS_KEY, JSON.stringify(initialUsers));
+}
 
-// --- Mock User Database ---
-const getInitialUsers = (): User[] => {
-    const today = new Date();
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(today.getMonth() - 1);
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(today.getMonth() - 3);
-    const nextMonth = new Date();
-    nextMonth.setMonth(today.getMonth() + 1);
-
-    return [
-        {
-            name: 'Bill Hanoman',
-            email: 'billhanoman@gmail.com',
-            isAdmin: true,
-            joinDate: formatDate(threeMonthsAgo)
-        },
-        {
-            name: 'Regular User',
-            email: 'user1@example.com',
-            isAdmin: false,
-            joinDate: formatDate(oneMonthAgo)
-        },
-        {
-            name: 'Another User',
-            email: 'user2@example.com',
-            isAdmin: false,
-            joinDate: formatDate(today)
-        },
-        {
-            name: 'Premium User',
-            email: 'premium_user@example.com',
-            isAdmin: false,
-            joinDate: formatDate(threeMonthsAgo),
-            subscription: {
-                planType: 'monthly',
-                status: 'active',
-                startDate: formatDate(oneMonthAgo),
-                endDate: formatDate(nextMonth),
-                nextBillingDate: formatDate(nextMonth),
-            },
-            subscriptionHistory: [
-                { date: formatDate(oneMonthAgo), action: 'Subscribed', description: 'Started monthly plan.' }
-            ]
-        },
-    ];
+const createDefaultUser = (email: string): User => {
+    const name = email.split('@')[0];
+    const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+    const isAdmin = email.toLowerCase() === ADMIN_EMAIL;
+    return {
+        email,
+        name: capitalizedName,
+        profileImage: undefined,
+        isPremium: isAdmin, // Admins get premium access
+        isAdmin: isAdmin,
+        isSubscribed: true, // Subscribe new users by default
+    };
 };
 
-const initializeUsers = (): void => {
-    try {
-        const storedUsers = localStorage.getItem(ALL_USERS_KEY);
-        if (!storedUsers) {
-            localStorage.setItem(ALL_USERS_KEY, JSON.stringify(getInitialUsers()));
-        }
-    } catch (error) {
-        console.error("Error initializing mock user database", error);
-    }
-};
-
-// Initialize on load
-initializeUsers();
-
+// --- All Users Management (for Admin) ---
 
 export const getAllUsers = (): User[] => {
     try {
         const usersJson = localStorage.getItem(ALL_USERS_KEY);
         return usersJson ? JSON.parse(usersJson) : [];
     } catch (error) {
-        console.error("Error getting all users from localStorage", error);
+        console.error('Could not get all users from localStorage', error);
         return [];
     }
 };
 
-const saveAllUsers = (users: User[]): void => {
+export const saveAllUsers = (users: User[]): void => {
     try {
         localStorage.setItem(ALL_USERS_KEY, JSON.stringify(users));
     } catch (error) {
-        console.error("Error saving all users to localStorage", error);
+        console.error('Could not save all users to localStorage', error);
     }
 };
 
-export const getUserByEmail = (email: string): User | undefined => {
-    return getAllUsers().find(user => user.email === email);
+export const addUserToList = (newUser: User): void => {
+    const users = getAllUsers();
+    if (!users.find(u => u.email === newUser.email)) {
+        saveAllUsers([...users, newUser]);
+    }
+};
+
+export const updateUserInList = (userToUpdate: User): void => {
+    const users = getAllUsers();
+    const updatedUsers = users.map(u => u.email === userToUpdate.email ? userToUpdate : u);
+    saveAllUsers(updatedUsers);
+};
+
+export const deleteUser = (userEmail: string): void => {
+    const users = getAllUsers();
+    const updatedUsers = users.filter(u => u.email !== userEmail);
+    saveAllUsers(updatedUsers);
 }
 
-export const updateUser = (email: string, updatedData: Partial<User>): User | null => {
+// --- Current User Session Management ---
+
+export const signup = (email: string, password?: string): User | null => {
     let users = getAllUsers();
-    const userIndex = users.findIndex(u => u.email === email);
-    if (userIndex === -1) return null;
-    
-    users[userIndex] = { ...users[userIndex], ...updatedData };
-    saveAllUsers(users);
-    
-    // If the updated user is the current user, update their session too
-    const currentUser = getCurrentUser();
-    if(currentUser && currentUser.email === email) {
-        localStorage.setItem(USER_KEY, JSON.stringify(users[userIndex]));
+    const existingUser = users.find(u => u.email === email);
+    if (existingUser) {
+        // In a real app, you might show an error. Here we'll just log them in.
+        return login(email, password);
     }
 
-    return users[userIndex];
+    const newUser = createDefaultUser(email);
+    addUserToList(newUser);
+    return login(email, password);
 };
 
-
-export const deleteUser = (email: string): void => {
-    let users = getAllUsers();
-    users = users.filter(user => user.email !== email);
-    saveAllUsers(users);
-};
-
-export const giveFreeTime = (email: string, months: number): void => {
-    const user = getUserByEmail(email);
-    if (!user) return;
-
-    const today = new Date();
-    let newEndDate: Date;
-
-    if (user.subscription && user.subscription.status === 'active' && new Date(user.subscription.endDate) > today) {
-        // Extend existing subscription
-        newEndDate = new Date(user.subscription.endDate);
-    } else {
-        // Start a new subscription from today
-        newEndDate = today;
+export const login = (email: string, password?: string): User | null => {
+    let user = getAllUsers().find(u => u.email === email);
+    if (!user) {
+      // If user logs in but isn't in the list (e.g., first time), create them.
+      user = createDefaultUser(email);
+      addUserToList(user);
     }
     
-    newEndDate.setMonth(newEndDate.getMonth() + months);
-
-    const updatedSubscription: Subscription = {
-        planType: user.subscription?.planType || 'monthly',
-        status: 'active',
-        startDate: user.subscription?.startDate || formatDate(today),
-        endDate: formatDate(newEndDate),
-        nextBillingDate: formatDate(newEndDate),
-    };
-
-    const historyEntry: SubscriptionHistory = {
-        date: formatDate(new Date()),
-        action: 'Admin Grant',
-        description: `Granted ${months} free month(s). New end date: ${formatDate(newEndDate)}.`
-    };
-
-    const updatedHistory = [...(user.subscriptionHistory || []), historyEntry];
-
-    updateUser(email, { subscription: updatedSubscription, subscriptionHistory: updatedHistory });
-};
-
-export const grantPremium = (email: string): void => {
-    const user = getUserByEmail(email);
-    if (user && user.subscription?.status === 'active') return; // Already premium
-
-    const today = new Date();
-    const nextMonth = new Date();
-    nextMonth.setMonth(today.getMonth() + 1);
-
-    const newSubscription: Subscription = {
-        planType: 'monthly',
-        status: 'active',
-        startDate: formatDate(today),
-        endDate: formatDate(nextMonth),
-        nextBillingDate: formatDate(nextMonth),
-    };
-
-    const historyEntry: SubscriptionHistory = {
-        date: formatDate(today),
-        action: 'Subscribed',
-        description: 'Started monthly plan via admin grant.'
-    };
-    
-    const updatedHistory = [...(user?.subscriptionHistory || []), historyEntry];
-    
-    updateUser(email, { subscription: newSubscription, subscriptionHistory: updatedHistory });
-};
-
-// --- Single User Session Management ---
-
-export const getPremiumStatus = (): boolean => {
-    const currentUser = getCurrentUser();
-    if (!currentUser) return false;
-    
-    // Admins are always premium
-    if (currentUser.isAdmin) return true;
-
-    if (currentUser.subscription && currentUser.subscription.status === 'active') {
-        return new Date(currentUser.subscription.endDate) >= new Date();
+    try {
+        sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+        return user;
+    } catch (error) {
+        console.error('Could not save user to sessionStorage', error);
+        return null;
     }
-    
-    return false;
 };
 
-// This function is for external triggers like Stripe, not admin actions
-export const setPremiumStatus = (isPremium: boolean): void => {
-    const currentUser = getCurrentUser();
-    if (!currentUser) return;
-    
-    if (isPremium) {
-        const today = new Date();
-        const nextMonth = new Date();
-        nextMonth.setMonth(today.getMonth() + 1);
-        const sub: Subscription = {
-            planType: 'monthly',
-            status: 'active',
-            startDate: formatDate(today),
-            endDate: formatDate(nextMonth),
-            nextBillingDate: formatDate(nextMonth),
-        };
-        const history: SubscriptionHistory = {
-            date: formatDate(today),
-            action: 'Subscribed',
-            description: 'Started monthly plan via checkout.'
-        };
-        updateUser(currentUser.email, {
-             subscription: sub,
-             subscriptionHistory: [...(currentUser.subscriptionHistory || []), history]
-        });
-    } else {
-        // Handle cancellation logic if needed
+export const logout = (): void => {
+    try {
+        sessionStorage.removeItem(USER_KEY);
+    } catch (error) {
+        console.error('Could not remove user from sessionStorage', error);
     }
 };
 
 export const getCurrentUser = (): User | null => {
     try {
-        const userJson = localStorage.getItem(USER_KEY);
+        const userJson = sessionStorage.getItem(USER_KEY);
         return userJson ? JSON.parse(userJson) : null;
     } catch (error) {
-        console.error("Error parsing user from localStorage", error);
+        console.error('Could not get user from sessionStorage', error);
         return null;
     }
 };
 
-export const loginUser = (email: string): void => {
+export const updateUser = (user: User): User | null => {
     try {
-        const allUsers = getAllUsers();
-        let user = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-        
-        if (!user) {
-            // Create a new user if they don't exist in our mock DB
-            user = {
-                name: email.split('@')[0],
-                email: email,
-                isAdmin: false,
-                joinDate: formatDate(new Date())
-            };
-            saveAllUsers([...allUsers, user]);
-        }
-        
-        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+        updateUserInList(user); // Ensure master list is also updated
+        return user;
     } catch (error) {
-        console.error("Error saving user to localStorage", error);
+        console.error('Could not update user in sessionStorage', error);
+        return null;
     }
-};
-
-export const logoutUser = (): void => {
-    try {
-        localStorage.removeItem(USER_KEY);
-    } catch (error) {
-        console.error("Error removing user from localStorage", error);
-    }
-};
+}

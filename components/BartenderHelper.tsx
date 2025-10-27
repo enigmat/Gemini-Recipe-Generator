@@ -1,153 +1,144 @@
-import React, { useState } from 'react';
-import { generateDrinkRecipe } from '../services/geminiService';
-import { DrinkRecipe } from '../types';
+import React, { useState, useMemo } from 'react';
+import { CocktailRecipe, SavedCocktail, User } from '../types';
+import { generateCocktailRecipe, generateImageFromPrompt } from '../services/geminiService';
 import Spinner from './Spinner';
 import SparklesIcon from './icons/SparklesIcon';
-import HeartIcon from './icons/HeartIcon';
 
 interface BartenderHelperProps {
-    savedItemNames: string[];
-    onToggleSave: (name: string, drink: DrinkRecipe) => void;
+  currentUser: User | null;
+  savedCocktails: SavedCocktail[];
+  onSaveCocktail: (recipe: CocktailRecipe, image: string) => void;
 }
 
-const BartenderHelper: React.FC<BartenderHelperProps> = ({ savedItemNames, onToggleSave }) => {
-    const [prompt, setPrompt] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [drinkRecipe, setDrinkRecipe] = useState<DrinkRecipe | null>(null);
+const BartenderHelper: React.FC<BartenderHelperProps> = ({ currentUser, savedCocktails, onSaveCocktail }) => {
+  const [prompt, setPrompt] = useState('');
+  const [recipe, setRecipe] = useState<CocktailRecipe | null>(null);
+  const [image, setImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    const handleGenerate = async () => {
-        if (!prompt.trim()) {
-            setError("Please describe the drink you'd like to make.");
-            return;
-        }
-        setIsLoading(true);
-        setError(null);
-        setDrinkRecipe(null);
+  const isAlreadySaved = useMemo(() => {
+    if (!recipe) return false;
+    return savedCocktails.some(c => c.title.toLowerCase() === recipe.title.toLowerCase());
+  }, [recipe, savedCocktails]);
 
-        try {
-            const recipe = await generateDrinkRecipe(prompt);
-            setDrinkRecipe(recipe);
-        } catch (err) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError("An unknown error occurred.");
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const handleCreateDrink = async () => {
+    if (!prompt.trim()) return;
     
-    const handleStartOver = () => {
-        setDrinkRecipe(null);
-        setPrompt('');
-        setError(null);
-    };
+    setIsLoading(true);
+    setError(null);
+    setRecipe(null);
+    setImage(null);
 
-    const renderInputForm = () => (
-        <div className="bg-white p-8 rounded-2xl shadow-lg max-w-2xl mx-auto border border-border-color text-center animate-fade-in">
-            <h2 className="text-3xl font-bold text-text-primary">Bartender Helper</h2>
-            <p className="mt-2 text-text-secondary">Describe the kind of drink you're in the mood for, and I'll mix up a recipe for you.</p>
-            <div className="mt-6">
-                <textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="e.g., a refreshing gin cocktail with cucumber and elderflower"
-                    className="w-full p-3 border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
-                    rows={4}
-                    disabled={isLoading}
-                />
-            </div>
-            {error && <p className="mt-4 text-red-600">{error}</p>}
-            <div className="mt-4">
-                <button
-                    onClick={handleGenerate}
-                    disabled={isLoading}
-                    className="w-full px-8 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                    <SparklesIcon className="w-5 h-5"/>
-                    <span>{isLoading ? 'Mixing...' : 'Create My Drink'}</span>
-                </button>
-            </div>
-        </div>
-    );
-    
-    const renderRecipe = () => {
-        if (!drinkRecipe) return null;
+    try {
+      const generatedRecipe = await generateCocktailRecipe(prompt);
+      setRecipe(generatedRecipe);
+      
+      const generatedImage = await generateImageFromPrompt(generatedRecipe.imagePrompt);
+      setImage(generatedImage);
 
-        const isSaved = savedItemNames.includes(drinkRecipe.name);
-
-        const handleSaveClick = (e: React.MouseEvent) => {
-            e.stopPropagation();
-            onToggleSave(drinkRecipe.name, drinkRecipe);
-        };
-
-        return (
-            <div className="bg-white rounded-2xl shadow-lg max-w-4xl mx-auto border border-border-color overflow-hidden animate-fade-in">
-                <div className="grid grid-cols-1 md:grid-cols-2">
-                    <div className="relative aspect-square bg-gray-100">
-                        <img src={drinkRecipe.imageUrl} alt={drinkRecipe.name} className="absolute inset-0 w-full h-full object-cover" />
-                        <button
-                            onClick={handleSaveClick}
-                            className={`absolute top-4 right-4 p-2 rounded-full transition-colors duration-200 ${isSaved ? 'text-red-500 bg-white/80' : 'text-gray-600 bg-white/70 backdrop-blur-sm hover:bg-white'}`}
-                            aria-label={isSaved ? 'Unsave drink' : 'Save drink'}
-                        >
-                            <HeartIcon isFilled={isSaved} className="w-6 h-6" />
-                        </button>
-                    </div>
-                    <div className="p-6 md:p-8 flex flex-col">
-                        <h2 className="text-3xl font-bold text-text-primary">{drinkRecipe.name}</h2>
-                        <p className="mt-2 text-text-secondary">{drinkRecipe.description}</p>
-                        
-                        <div className="mt-4 text-sm font-medium grid grid-cols-2 gap-x-4 gap-y-1">
-                            <p><strong className="text-text-primary">Glassware:</strong> {drinkRecipe.glassware}</p>
-                            <p><strong className="text-text-primary">Garnish:</strong> {drinkRecipe.garnish}</p>
-                        </div>
-
-                        <div className="mt-6 space-y-4 flex-grow overflow-y-auto pr-2">
-                            <div>
-                                <h3 className="text-xl font-semibold text-primary border-b-2 border-primary/20 pb-1 mb-3">Ingredients</h3>
-                                <ul className="list-disc list-inside space-y-1.5 text-text-secondary pl-2">
-                                    {drinkRecipe.ingredients.map((item, i) => <li key={i}>{item}</li>)}
-                                </ul>
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-semibold text-primary border-b-2 border-primary/20 pb-1 mb-3">Instructions</h3>
-                                 <ol className="list-decimal list-inside space-y-3 text-text-secondary pl-2">
-                                    {drinkRecipe.instructions.map((step, i) => <li key={i}>{step}</li>)}
-                                </ol>
-                            </div>
-                        </div>
-                        
-                        <div className="mt-8 flex-shrink-0">
-                             <button
-                                onClick={handleStartOver}
-                                className="w-full px-8 py-3 bg-gray-200 text-text-primary font-semibold rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors duration-200"
-                            >
-                                Make Another Drink
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )
-    };
-    
-    if (isLoading) {
-        return (
-            <div className="text-center py-16">
-                <Spinner />
-                <p className="mt-4 text-text-secondary">Mixing up the perfect drink for you...</p>
-            </div>
-        );
+    } catch (e: any) {
+      setError(e.message || "An unexpected error occurred.");
+    } finally {
+      setIsLoading(false);
     }
+  };
 
+  const handleReset = () => {
+    setPrompt('');
+    setRecipe(null);
+    setImage(null);
+    setError(null);
+  };
+
+  if (recipe && image) {
     return (
-        <div className="py-8">
-            {drinkRecipe ? renderRecipe() : renderInputForm()}
+      <div className="bg-white rounded-2xl shadow-xl w-full md:max-w-4xl mx-auto my-8 animate-fade-in">
+        <div className="flex flex-col md:flex-row">
+          <div className="md:w-1/2">
+            <img src={image} alt={recipe.title} className="w-full h-64 md:h-full object-cover rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none" />
+          </div>
+          <div className="md:w-1/2 p-6 md:p-8 flex flex-col">
+            <h2 className="text-3xl font-bold mb-3 text-gray-800">{recipe.title}</h2>
+            <p className="text-gray-600 mb-4">{recipe.description}</p>
+            
+            <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+              <div>
+                <p className="font-semibold text-gray-700">Glassware:</p>
+                <p className="text-gray-600">{recipe.glassware}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-700">Garnish:</p>
+                <p className="text-gray-600">{recipe.garnish}</p>
+              </div>
+            </div>
+
+            <div className="flex-grow">
+                <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800 border-b pb-2">Ingredients</h3>
+                <ul className="list-disc list-inside space-y-1 text-gray-700 mt-3">
+                {recipe.ingredients.map((ing, i) => <li key={i}>{ing}</li>)}
+                </ul>
+
+                <h3 className="text-xl font-semibold mt-6 mb-2 text-gray-800 border-b pb-2">Instructions</h3>
+                <ol className="list-decimal list-inside space-y-2 text-gray-700 mt-3">
+                {recipe.instructions.map((inst, i) => <li key={i}>{inst}</li>)}
+                </ol>
+            </div>
+            
+            <div className="mt-8 space-y-3">
+              <button
+                onClick={() => recipe && image && onSaveCocktail(recipe, image)}
+                disabled={isAlreadySaved}
+                className="w-full py-3 px-4 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition-colors disabled:bg-green-300 disabled:cursor-not-allowed"
+              >
+                {isAlreadySaved ? 'Saved in My Bar' : 'Save Drink'}
+              </button>
+              <button 
+                onClick={handleReset} 
+                className="w-full py-3 px-4 bg-gray-200 text-gray-800 font-bold rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Make Another Drink
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
     );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto mt-8">
+      <div className="bg-white rounded-2xl shadow-xl p-8 text-center animate-fade-in">
+        <h2 className="text-3xl font-bold text-gray-800">Bartender Helper</h2>
+        <p className="text-gray-600 mt-2 mb-6 max-w-md mx-auto">Describe the kind of drink you're in the mood for, and I'll mix up a recipe for you.</p>
+        
+        <div className="relative">
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="e.g., a refreshing gin cocktail with cucumber and elderflower"
+            className="w-full h-28 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow resize-none"
+            aria-label="Describe your drink mood"
+            disabled={isLoading}
+          />
+        </div>
+        
+        <button 
+          onClick={handleCreateDrink} 
+          disabled={isLoading || !prompt.trim()}
+          className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 bg-teal-500 text-white font-bold rounded-lg shadow-md hover:bg-teal-600 transition-colors disabled:bg-teal-300 disabled:cursor-wait"
+        >
+          {isLoading ? (
+            <Spinner size="w-5 h-5" />
+          ) : (
+            <SparklesIcon className="w-5 h-5" />
+          )}
+          <span>{isLoading ? 'Creating Your Drink...' : 'Create My Drink'}</span>
+        </button>
+        {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
+      </div>
+    </div>
+  );
 };
 
 export default BartenderHelper;

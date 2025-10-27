@@ -5,11 +5,15 @@ const UsersIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
-    strokeWidth={1.5}
     stroke="currentColor"
     {...props}
   >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m-7.5-2.969A4.502 4.502 0 0 1 12 15a4.502 4.502 0 0 1 5.474-3.416m-5.474 0a4.502 4.502 0 0 0-5.474-3.416A4.502 4.502 0 0 0 6 15a4.502 4.502 0 0 0 5.474 3.416M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.653-.124-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.653.124-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+    />
   </svg>
 );
 

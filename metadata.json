@@ -1,6 +1,6 @@
 {
-  "name": "recipeextracter",
-  "description": "Your go-to app for delicious recipes, from quick meals to gourmet dishes.",
+  "name": "Recipe Extracter",
+  "description": "The starting point for a brand new recipe application.",
   "requestFramePermissions": [
     "camera"
   ]

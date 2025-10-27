@@ -1,74 +1,56 @@
-import { Newsletter } from '../types';
+import { Newsletter, User } from '../types';
+import * as userService from './userService';
 
-const NEWSLETTER_DRAFT_KEY = 'recipeextracterNewsletterDraft';
-const SENT_NEWSLETTERS_KEY = 'recipeextracterSentNewsletters';
+const NEWSLETTERS_KEY = 'recipeAppNewsletters';
 
-const formatDate = (date: Date): string => date.toISOString();
+export const subscribeByEmail = (email: string): void => {
+    const allUsers = userService.getAllUsers();
+    const existingUser = allUsers.find(u => u.email === email);
 
-// --- Draft Management ---
-
-export const saveNewsletterDraft = (subject: string, body: string): void => {
-    try {
-        const draft = { subject, body };
-        localStorage.setItem(NEWSLETTER_DRAFT_KEY, JSON.stringify(draft));
-    } catch (error) {
-        console.error("Error saving newsletter draft", error);
+    if (existingUser) {
+        if (!existingUser.isSubscribed) {
+            const updatedUser = { ...existingUser, isSubscribed: true };
+            userService.updateUserInList(updatedUser);
+        }
+    } else {
+        const name = email.split('@')[0];
+        const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+        const newUser: User = {
+            email,
+            name: capitalizedName,
+            isSubscribed: true,
+            isAdmin: false,
+            isPremium: false,
+        };
+        userService.addUserToList(newUser);
     }
 };
-
-export const getNewsletterDraft = (): { subject: string; body: string } => {
-    try {
-        const draftJson = localStorage.getItem(NEWSLETTER_DRAFT_KEY);
-        return draftJson ? JSON.parse(draftJson) : { subject: '', body: '' };
-    } catch (error) {
-        console.error("Error retrieving newsletter draft", error);
-        return { subject: '', body: '' };
-    }
-};
-
-export const clearNewsletterDraft = (): void => {
-    try {
-        localStorage.removeItem(NEWSLETTER_DRAFT_KEY);
-    } catch (error) {
-        console.error("Error clearing newsletter draft", error);
-    }
-};
-
-// --- Sent Newsletter Management ---
 
 export const getSentNewsletters = (): Newsletter[] => {
     try {
-        const newslettersJson = localStorage.getItem(SENT_NEWSLETTERS_KEY);
+        const newslettersJson = localStorage.getItem(NEWSLETTERS_KEY);
         return newslettersJson ? JSON.parse(newslettersJson) : [];
     } catch (error) {
-        console.error("Error getting sent newsletters", error);
+        console.error('Could not get newsletters from localStorage', error);
         return [];
     }
 };
 
-const saveSentNewsletters = (newsletters: Newsletter[]): void => {
-    try {
-        localStorage.setItem(SENT_NEWSLETTERS_KEY, JSON.stringify(newsletters));
-    } catch (error) {
-        console.error("Error saving sent newsletters", error);
-    }
-};
-
-export const sendNewsletter = (subject: string, body: string, recipientCount: number): void => {
-    const sentNewsletters = getSentNewsletters();
-    
+export const sendNewsletter = (newsletterData: Omit<Newsletter, 'id' | 'sentDate'>): Newsletter => {
     const newNewsletter: Newsletter = {
-        id: new Date().getTime().toString(), // Simple unique ID
-        subject,
-        body,
-        sentDate: formatDate(new Date()),
-        recipientCount,
+        ...newsletterData,
+        id: Date.now().toString(),
+        sentDate: new Date().toISOString(),
     };
-
-    // Add the new newsletter to the top of the list
-    const updatedNewsletters = [newNewsletter, ...sentNewsletters];
-    saveSentNewsletters(updatedNewsletters);
-
-    // Clear the draft after sending
-    clearNewsletterDraft();
+    
+    const allNewsletters = getSentNewsletters();
+    const updatedNewsletters = [newNewsletter, ...allNewsletters];
+    
+    try {
+        localStorage.setItem(NEWSLETTERS_KEY, JSON.stringify(updatedNewsletters));
+    } catch (error) {
+        console.error('Could not save newsletter to localStorage', error);
+    }
+    
+    return newNewsletter;
 };

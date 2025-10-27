@@ -1,44 +1,29 @@
 import React from 'react';
 import { CookingClass } from '../types';
-import MortarPestleIcon from './icons/MortarPestleIcon';
 
 interface CookingClassCardProps {
-    cookingClass: CookingClass;
-    onClick: () => void;
+  cookingClass: CookingClass;
+  onClick: (cookingClass: CookingClass) => void;
 }
 
 const CookingClassCard: React.FC<CookingClassCardProps> = ({ cookingClass, onClick }) => {
-    return (
-        <div
-            onClick={onClick}
-            className="group block bg-white rounded-xl overflow-hidden cursor-pointer shadow-md border border-border-color hover:shadow-xl hover:border-primary/50 transition-all duration-300"
-            aria-label={`View class: ${cookingClass.title}`}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick()}
-        >
-            <div className="h-56 w-full overflow-hidden">
-                <img
-                    alt={cookingClass.title}
-                    src={cookingClass.imageUrl}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                />
-            </div>
-            <div className="p-4 sm:p-6">
-                 <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-1">
-                    By {cookingClass.chef}
-                </p>
-                <h3 className="text-xl font-bold text-text-primary leading-tight group-hover:text-primary transition-colors">
-                    {cookingClass.title}
-                </h3>
-                <p className="mt-2 text-sm text-text-secondary line-clamp-3">
-                    {cookingClass.description}
-                </p>
-            </div>
-        </div>
-    );
+  return (
+    <div
+      className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transform hover:scale-105 transition-all duration-300 border border-gray-100"
+      onClick={() => onClick(cookingClass)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(cookingClass) }}
+      aria-label={`View class: ${cookingClass.title}`}
+    >
+      <img src={cookingClass.thumbnailUrl} alt={cookingClass.title} className="w-full h-48 object-cover" />
+      <div className="p-5">
+        <p className="text-teal-600 font-semibold text-xs uppercase tracking-wider">By Chef {cookingClass.chef}</p>
+        <h3 className="text-xl font-bold text-gray-900 mt-1">{cookingClass.title}</h3>
+        <p className="text-gray-600 mt-2 text-sm">{cookingClass.description}</p>
+      </div>
+    </div>
+  );
 };
 
 export default CookingClassCard;

@@ -1,26 +1,23 @@
 import React from 'react';
 import CameraIcon from './icons/CameraIcon';
 
-interface CameraInputProps {
-    onClick: () => void;
-    disabled?: boolean;
-}
+const CameraInput: React.FC = () => {
+    const handleScan = () => {
+        // Placeholder for camera functionality
+        alert('Camera scanning not implemented yet.');
+    };
 
-const CameraInput: React.FC<CameraInputProps> = ({ onClick, disabled }) => {
     return (
-        <div className="w-full">
-            <label className="block text-sm font-medium text-text-secondary mb-1">
-                Scan with Camera
-            </label>
+        <div className="flex flex-col h-full">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2 text-center">Scan with Camera</h3>
             <button
-                onClick={onClick}
-                disabled={disabled}
-                className="w-full h-full flex items-center justify-center gap-2 bg-white p-2 rounded-lg shadow-md border border-border-color text-text-secondary hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
-                aria-label="Scan ingredients with camera"
+                onClick={handleScan}
+                className="w-full flex-grow flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors font-semibold text-gray-700 text-sm"
             >
-                <CameraIcon className="h-6 w-6" />
+                <CameraIcon className="w-5 h-5" />
                 <span>Scan Ingredients</span>
             </button>
+             <div className="h-4" /> {/* Spacer to align with UrlInput error message */}
         </div>
     );
 };

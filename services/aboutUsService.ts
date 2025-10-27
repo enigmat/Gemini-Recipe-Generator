@@ -1,42 +1,27 @@
-import { AboutUsInfo } from '../types';
+import { AboutUsContent } from '../types';
+import { aboutUsData as initialData } from '../data/aboutUs';
 
-const ABOUT_US_KEY = 'recipeextracterAboutUs';
+const ABOUT_US_KEY = 'recipeAppAboutUs';
 
-const getInitialData = (): AboutUsInfo => ({
-    companyName: 'Recipe Extracter Inc.',
-    missionStatement: 'To inspire home cooks everywhere with delicious, easy-to-follow recipes and powerful tools to make cooking a joy.',
-    history: 'Founded in 2023, Recipe Extracter started as a small blog and has grown into a vibrant community of food lovers. We believe that everyone can cook, and we\'re here to help!',
-    contactEmail: 'contact@recipeextracter.com',
-    address: '123 Culinary Lane, Foodie City, 90210',
-});
+// Initialize with default data if none exists, this allows admin to change it later
+if (!localStorage.getItem(ABOUT_US_KEY)) {
+    localStorage.setItem(ABOUT_US_KEY, JSON.stringify(initialData));
+}
 
-const initializeData = (): void => {
+export const getAboutUsContent = (): AboutUsContent => {
     try {
-        const storedData = localStorage.getItem(ABOUT_US_KEY);
-        if (!storedData) {
-            localStorage.setItem(ABOUT_US_KEY, JSON.stringify(getInitialData()));
-        }
+        const contentJson = localStorage.getItem(ABOUT_US_KEY);
+        return contentJson ? JSON.parse(contentJson) : initialData;
     } catch (error) {
-        console.error("Error initializing About Us data", error);
+        console.error('Could not get About Us content from localStorage', error);
+        return initialData;
     }
 };
 
-initializeData();
-
-export const getAboutUsInfo = (): AboutUsInfo => {
+export const saveAboutUsContent = (content: AboutUsContent): void => {
     try {
-        const dataJson = localStorage.getItem(ABOUT_US_KEY);
-        return dataJson ? JSON.parse(dataJson) : getInitialData();
+        localStorage.setItem(ABOUT_US_KEY, JSON.stringify(content));
     } catch (error) {
-        console.error("Error getting About Us info from localStorage", error);
-        return getInitialData();
-    }
-};
-
-export const saveAboutUsInfo = (info: AboutUsInfo): void => {
-    try {
-        localStorage.setItem(ABOUT_US_KEY, JSON.stringify(info));
-    } catch (error) {
-        console.error("Error saving About Us info to localStorage", error);
+        console.error('Could not save About Us content to localStorage', error);
     }
 };

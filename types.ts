@@ -1,76 +1,83 @@
+export interface IngredientUnit {
+  quantity: number | string;
+  unit: string;
+}
+
+export interface Ingredient {
+  name: string;
+  metric: IngredientUnit;
+  us: IngredientUnit;
+}
+
+export interface WinePairing {
+  suggestion: string;
+  description: string;
+}
 
 export interface Recipe {
+  id: number;
+  title: string;
+  image: string;
+  description: string;
+  cookTime: string;
+  servings: string;
+  ingredients: Ingredient[];
+  instructions: string[];
+  tags?: string[];
+  winePairing?: WinePairing;
+  rating?: {
+    score: number;
+    count: number;
+  };
+}
+
+export interface RecipeVariation {
   title: string;
   description: string;
-  imageUrl: string;
-  ingredients: string[];
-  instructions: string[];
-  tags: string[];
-  servings: string;
-  prepTime: string;
-  cookTime: string;
-  status: 'active' | 'new_this_month' | 'archived';
-  nutrition: {
-    calories: string;
-    protein: string;
-    carbs: string;
-    fat: string;
-  };
-  videoUrl?: string;
 }
 
-export interface DrinkRecipe {
+export interface User {
+  email: string;
   name: string;
-  description: string;
-  imageUrl: string;
-  glassware: string;
-  ingredients: string[];
-  instructions: string[];
-  garnish: string;
+  profileImage?: string; // base64 encoded image string
+  isPremium?: boolean;
+  isAdmin?: boolean;
+  isSubscribed?: boolean;
+  planEndDate?: string;
 }
 
-export interface ShoppingListItem {
-  category: string;
-  items: {
-    name: string;
-    quantity: string;
-    checked: boolean;
-  }[];
+export interface AggregatedIngredient {
+  name: string;
+  quantity: number | string;
+  unit: string;
 }
 
-export type ShoppingList = ShoppingListItem[];
-
-export interface MealPlanDay {
-    day: string;
-    recipeTitle: string;
+export interface ShoppingList {
+  id: string;
+  name:string;
+  recipeIds: number[];
 }
 
 export interface MealPlan {
-    title: string;
-    description: string;
-    imageUrl: string;
-    plan: MealPlanDay[];
+  id: string;
+  title: string;
+  description: string;
+  recipeIds: number[];
 }
 
 export interface Video {
   id: string;
+  category: string;
   title: string;
   description: string;
-  thumbnailUrl: string;
   videoUrl: string;
+  thumbnailUrl: string;
 }
 
-export interface VideoCategory {
-  id: string;
-  title: string;
-  videos: Video[];
-}
-
-export interface Lesson {
+export interface ClassStep {
   id: string;
   title: string;
   duration: string;
-  thumbnailUrl: string;
   videoUrl: string;
 }
 
@@ -79,85 +86,61 @@ export interface CookingClass {
   title: string;
   description: string;
   chef: string;
-  imageUrl: string;
-  lessons: Lesson[];
+  thumbnailUrl: string;
+  steps: ClassStep[];
 }
 
-export interface SubscriptionHistory {
-  date: string;
-  action: string;
+export interface Newsletter {
+    id: string;
+    subject: string;
+    message: string;
+    recipeIds: number[];
+    target: 'all' | 'premium';
+    sentDate: string;
+}
+
+export interface CocktailRecipe {
+  title: string;
   description: string;
+  imagePrompt: string;
+  glassware: string;
+  garnish: string;
+  ingredients: string[];
+  instructions: string[];
 }
 
-export interface Subscription {
-  planType: 'monthly' | 'yearly' | 'free_trial';
-  status: 'active' | 'canceled' | 'expired';
-  startDate: string;
-  endDate: string;
-  nextBillingDate?: string;
-}
-
-
-export interface User {
-  name: string;
-  email: string;
-  isAdmin: boolean;
-  joinDate: string;
-  subscription?: Subscription;
-  subscriptionHistory?: SubscriptionHistory[];
+export interface SavedCocktail extends CocktailRecipe {
+  id: string;
+  image: string;
 }
 
 export interface Lead {
   email: string;
-  collectedDate: string;
+  dateCollected: string;
 }
 
-export interface Newsletter {
-  id: string;
-  subject: string;
-  body: string;
-  sentDate: string;
-  recipientCount: number;
-}
-
-export interface AboutUsInfo {
+export interface AboutUsContent {
   companyName: string;
   missionStatement: string;
-  history: string;
+  companyHistory: string;
   contactEmail: string;
   address: string;
 }
 
-
-declare global {
-  interface Window {
-    Stripe: any;
-  }
-}
-
 export interface Product {
-  name: string;
-  description: string;
-  price: number;
-  imageUrl: string;
-  imagePrompt: string;
-}
-
-export interface CartItem {
-  product: Product;
-  quantity: number;
-}
-
-export interface AffiliateProduct {
+  id: string;
   name: string;
   brand: string;
   description: string;
   imageUrl: string;
-  price: number;
-  url: string;
+  affiliateUrl: string;
+  category: string;
 }
 
-export interface MarketplaceSearchQuery {
-  query: string;
-  timestamp: string;
+export interface ProductAnalysis {
+  score: number;
+  summary: string;
+  pros: string[];
+  cons: string[];
+  additives: string[];
 }

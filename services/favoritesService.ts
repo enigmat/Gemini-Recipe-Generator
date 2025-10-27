@@ -1,33 +1,33 @@
-const FAVORITES_STORAGE_KEY = 'recipeextracterFavorites';
+const getFavoritesKey = (userEmail: string) => `recipeAppFavorites_${userEmail}`;
 
-export const getSavedRecipeTitles = (): string[] => {
-    try {
-        const savedTitlesJson = localStorage.getItem(FAVORITES_STORAGE_KEY);
-        return savedTitlesJson ? JSON.parse(savedTitlesJson) : [];
-    } catch (error) {
-        console.error("Error parsing saved recipes from localStorage", error);
-        return [];
-    }
+export const getFavorites = (userEmail: string | null): number[] => {
+  if (!userEmail) return [];
+  try {
+    const favoritesKey = getFavoritesKey(userEmail);
+    const favorites = localStorage.getItem(favoritesKey);
+    return favorites ? JSON.parse(favorites) : [];
+  } catch (error) {
+    console.error('Could not get favorites from localStorage', error);
+    return [];
+  }
 };
 
-const setSavedRecipeTitles = (titles: string[]): void => {
-    try {
-        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(titles));
-    } catch (error) {
-        console.error("Error saving recipes to localStorage", error);
-    }
+export const addFavorite = (recipeId: number, userEmail: string): void => {
+  const favorites = getFavorites(userEmail);
+  if (!favorites.includes(recipeId)) {
+    const newFavorites = [...favorites, recipeId];
+    localStorage.setItem(getFavoritesKey(userEmail), JSON.stringify(newFavorites));
+  }
 };
 
-export const saveRecipe = (recipeTitle: string): void => {
-    const currentTitles = getSavedRecipeTitles();
-    if (!currentTitles.includes(recipeTitle)) {
-        const newTitles = [...currentTitles, recipeTitle];
-        setSavedRecipeTitles(newTitles);
-    }
+export const removeFavorite = (recipeId: number, userEmail: string): void => {
+  let favorites = getFavorites(userEmail);
+  favorites = favorites.filter((id) => id !== recipeId);
+  localStorage.setItem(getFavoritesKey(userEmail), JSON.stringify(favorites));
 };
 
-export const unsaveRecipe = (recipeTitle: string): void => {
-    const currentTitles = getSavedRecipeTitles();
-    const newTitles = currentTitles.filter(title => title !== recipeTitle);
-    setSavedRecipeTitles(newTitles);
+export const isFavorite = (recipeId: number, userEmail: string | null): boolean => {
+  if (!userEmail) return false;
+  const favorites = getFavorites(userEmail);
+  return favorites.includes(recipeId);
 };

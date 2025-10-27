@@ -1,104 +1,141 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Recipe } from '../types';
 import XIcon from './icons/XIcon';
+import ChevronLeftIcon from './icons/ChevronLeftIcon';
+import ChevronRightIcon from './icons/ChevronRightIcon';
+import { formatIngredient, formatInstruction } from '../utils/recipeUtils';
 
-interface CookModeProps {
-    recipe: Recipe;
-    onExit: () => void;
+// A WakeLockSentinel object is the return value of navigator.wakeLock.request().
+// It can be used to release the wake lock and to respond to release events.
+// This interface is provided for type safety as it may not be in default TS libs.
+interface WakeLockSentinel extends EventTarget {
+  release(): Promise<void>;
+  readonly released: boolean;
+  type: 'screen';
 }
 
-const CookMode: React.FC<CookModeProps> = ({ recipe, onExit }) => {
-    const [currentStep, setCurrentStep] = useState(0);
-    const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+interface CookModeProps {
+  recipe: Recipe;
+  onExit: () => void;
+  measurementSystem: 'metric' | 'us';
+}
 
-    useEffect(() => {
-        // Function to acquire the wake lock
-        const requestWakeLock = async () => {
-            if ('wakeLock' in navigator) {
-                try {
-                    wakeLockRef.current = await navigator.wakeLock.request('screen');
-                    console.log('Screen Wake Lock is active.');
-                    
-                    // Re-acquire lock if it's released, e.g., when tab visibility changes
-                    wakeLockRef.current.addEventListener('release', () => {
-                        console.log('Screen Wake Lock was released.');
-                    });
+const CookMode: React.FC<CookModeProps> = ({ recipe, onExit, measurementSystem }) => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
-                } catch (err) {
-                    if (err instanceof Error) {
-                        console.error(`${err.name}, ${err.message}`);
-                    }
-                }
-            }
-        };
-
-        requestWakeLock();
-
-        // Cleanup function to release the wake lock
-        return () => {
-            if (wakeLockRef.current) {
-                wakeLockRef.current.release();
-                wakeLockRef.current = null;
-                console.log('Screen Wake Lock released.');
-            }
-        };
-    }, []);
-
-    const handleNext = () => {
-        if (currentStep < recipe.instructions.length - 1) {
-            setCurrentStep(currentStep + 1);
+  useEffect(() => {
+    // Function to acquire the screen wake lock
+    const acquireLock = async () => {
+      if ('wakeLock' in navigator) {
+        try {
+          // Type assertion to access the wakeLock API
+          wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+          console.log('Screen Wake Lock is active.');
+          // Re-acquire the lock if it's released by the system
+          wakeLockRef.current.addEventListener('release', () => {
+            console.log('Screen Wake Lock was released by the system.');
+          });
+        } catch (err: any) {
+          console.error(`Could not acquire screen wake lock: ${err.name}, ${err.message}`);
         }
+      } else {
+        console.warn('Screen Wake Lock API is not supported by this browser.');
+      }
     };
 
-    const handlePrev = () => {
-        if (currentStep > 0) {
-            setCurrentStep(currentStep - 1);
-        }
+    // Function to release the screen wake lock
+    const releaseLock = async () => {
+      if (wakeLockRef.current && !wakeLockRef.current.released) {
+        await wakeLockRef.current.release();
+        wakeLockRef.current = null;
+        console.log('Screen Wake Lock released.');
+      }
     };
 
-    return (
-        <div className="fixed inset-0 bg-background z-50 flex flex-col p-4 md:p-8" role="dialog" aria-modal="true">
-            <header className="flex justify-between items-center mb-4 flex-shrink-0">
-                <div>
-                    <h1 className="text-xl md:text-2xl font-bold text-primary">{recipe.title}</h1>
-                    <p className="text-text-secondary font-semibold">
-                        Step {currentStep + 1} of {recipe.instructions.length}
-                    </p>
-                </div>
-                <button
-                    onClick={onExit}
-                    className="px-4 py-2 bg-gray-200 text-text-secondary font-semibold rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
-                >
-                    <XIcon className="h-5 w-5" />
-                    <span className="hidden sm:inline">Exit Cook Mode</span>
-                </button>
-            </header>
+    // Re-acquire the lock when the page becomes visible again
+    const handleVisibilityChange = () => {
+      if (wakeLockRef.current && document.visibilityState === 'visible') {
+        acquireLock();
+      }
+    };
 
-            <main className="flex-grow flex items-center justify-center">
-                <p className="text-3xl md:text-5xl lg:text-6xl font-bold text-text-primary text-center leading-tight md:leading-tight max-w-4xl">
-                    {recipe.instructions[currentStep]}
-                </p>
-            </main>
+    acquireLock();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
-            <footer className="flex justify-between items-center mt-4 flex-shrink-0">
-                <button
-                    onClick={handlePrev}
-                    disabled={currentStep === 0}
-                    className="px-8 py-4 bg-gray-200 text-text-primary font-bold rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                    Previous
-                </button>
-                <button
-                    onClick={handleNext}
-                    disabled={currentStep === recipe.instructions.length - 1}
-                    className="px-8 py-4 bg-primary text-white font-bold rounded-lg hover:bg-primary-focus disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                    Next
-                </button>
-            </footer>
+    // Release the lock when the component unmounts
+    return () => {
+      releaseLock();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  const goToNextStep = () => {
+    if (currentStep < recipe.instructions.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const goToPrevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-100 z-50 flex flex-col p-4 sm:p-6 lg:p-8 animate-fade-in">
+      {/* Header */}
+      <header className="flex-shrink-0 flex items-center justify-between mb-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-amber-600 truncate">{recipe.title}</h1>
+          <p className="text-amber-600 font-medium">Step {currentStep + 1} of {recipe.instructions.length}</p>
         </div>
-    );
+        <button onClick={onExit} className="p-2 rounded-full bg-white shadow-md hover:bg-gray-200 transition-colors" aria-label="Exit Cook Mode">
+          <XIcon className="w-6 h-6 text-gray-700" />
+        </button>
+      </header>
+      
+      {/* Main Content */}
+      <main className="flex-grow flex flex-col md:flex-row gap-8 overflow-hidden">
+        {/* Ingredients Panel (visible on medium screens and up) */}
+        <aside className="hidden md:block md:w-1/3 lg:w-1/4 flex-shrink-0 bg-white p-4 rounded-lg shadow-sm overflow-y-auto">
+          <h2 className="text-lg font-bold mb-3 text-amber-600">Ingredients</h2>
+          <ul className="list-disc list-inside space-y-2 text-gray-600">
+            {recipe.ingredients.map((ing, i) => (
+              <li key={i}>{formatIngredient(ing, measurementSystem)}</li>
+            ))}
+          </ul>
+        </aside>
+
+        {/* Instruction Panel */}
+        <section className="flex-grow flex flex-col justify-center items-center text-center bg-white p-6 rounded-lg shadow-sm">
+           <p className="text-2xl md:text-3xl lg:text-4xl font-medium text-gray-800 leading-relaxed">
+             {formatInstruction(recipe.instructions[currentStep], measurementSystem)}
+           </p>
+        </section>
+      </main>
+
+      {/* Footer Navigation */}
+      <footer className="flex-shrink-0 flex items-center justify-between mt-4">
+        <button 
+            onClick={goToPrevStep} 
+            disabled={currentStep === 0}
+            className="flex items-center gap-2 px-6 py-3 bg-white text-gray-800 font-bold rounded-lg shadow-md hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <ChevronLeftIcon className="w-6 h-6"/>
+          <span>Previous</span>
+        </button>
+        <button 
+            onClick={goToNextStep} 
+            disabled={currentStep === recipe.instructions.length - 1}
+            className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white font-bold rounded-lg shadow-md hover:bg-amber-600 transition-colors disabled:bg-amber-300 disabled:cursor-not-allowed"
+        >
+          <span>Next</span>
+          <ChevronRightIcon className="w-6 h-6"/>
+        </button>
+      </footer>
+    </div>
+  );
 };
 
 export default CookMode;

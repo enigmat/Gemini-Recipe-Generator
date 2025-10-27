@@ -1,73 +1,75 @@
 import React, { useState } from 'react';
-import * as leadService from '../services/leadService';
 import MailIcon from './icons/MailIcon';
+import { User } from '../types';
 
-const NewsletterSignup: React.FC = () => {
-    const [email, setEmail] = useState('');
-    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-    const [message, setMessage] = useState('');
+interface NewsletterSignupProps {
+  onSubscribe: (email: string) => void;
+  currentUser: User | null;
+}
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        setStatus('loading');
-        
-        // Simulate network delay
-        setTimeout(() => {
-            const result = leadService.addLead(email);
-            setMessage(result.message);
-            if (result.success) {
-                setStatus('success');
-            } else {
-                setStatus('error');
-            }
-        }, 500);
-    };
+const NewsletterSignup: React.FC<NewsletterSignupProps> = ({ onSubscribe, currentUser }) => {
+  const [email, setEmail] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
 
-    if (status === 'success') {
-        return (
-            <div className="bg-primary/10 border-2 border-dashed border-primary/30 p-8 rounded-lg text-center my-12">
-                <h3 className="text-2xl font-bold text-primary">Thank You for Subscribing!</h3>
-                <p className="mt-2 text-text-secondary">{message}</p>
-            </div>
-        )
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const emailToSubmit = currentUser ? currentUser.email : email;
+    if (!emailToSubmit.trim() || !emailToSubmit.includes('@')) {
+      setError('Please enter a valid email address.');
+      return;
     }
+    setError('');
+    onSubscribe(emailToSubmit);
+    setSubmitted(true);
+    if (!currentUser) {
+        setEmail('');
+    }
+  };
 
-    return (
-        <div className="bg-white rounded-2xl shadow-lg p-8 my-12 border border-border-color max-w-5xl mx-auto">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                <div className="flex-1 text-center md:text-left">
-                    <div className="flex justify-center md:justify-start items-center gap-3 text-primary">
-                        <MailIcon className="w-8 h-8" />
-                        <h2 className="text-3xl font-bold">Join Our Newsletter</h2>
-                    </div>
-                    <p className="mt-2 text-lg text-text-secondary">
-                        Get our latest recipes, cooking tips, and exclusive content delivered right to your inbox.
-                    </p>
-                </div>
-                <div className="flex-1 w-full">
-                    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-center gap-2">
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="your.email@example.com"
-                            required
-                            className="flex-grow w-full p-3 border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
-                            aria-label="Email address for newsletter"
-                        />
-                        <button
-                            type="submit"
-                            disabled={status === 'loading'}
-                            className="w-full sm:w-auto px-6 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus disabled:bg-gray-400 disabled:cursor-wait transition-colors"
-                        >
-                            {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
-                        </button>
-                    </form>
-                    {status === 'error' && <p className="mt-2 text-sm text-red-600 text-center sm:text-left">{message}</p>}
-                </div>
-            </div>
+  const content = submitted ? (
+      <div className="text-center">
+        <h3 className="text-2xl font-bold text-teal-600">Thank You!</h3>
+        <p className="text-gray-600 mt-2">You're subscribed! Keep an eye on your inbox for delicious recipes.</p>
+      </div>
+  ) : (
+    <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+      <div className="text-center lg:text-left">
+          <div className="flex items-center gap-3 justify-center lg:justify-start">
+               <MailIcon className="w-8 h-8 text-teal-500" />
+               <h3 className="text-3xl font-bold text-teal-500">Join Our Newsletter</h3>
+          </div>
+        <p className="text-gray-600 mt-2 max-w-md">Get our latest recipes, cooking tips, and exclusive content delivered right to your inbox.</p>
+      </div>
+      <form onSubmit={handleSubmit} className="w-full max-w-md flex-shrink-0">
+        <div className="flex gap-2">
+            <input
+            type="email"
+            value={currentUser?.email || email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="your.email@example.com"
+            className="flex-grow px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow shadow-sm w-full disabled:bg-gray-100"
+            aria-label="Email address"
+            required
+            disabled={!!currentUser}
+            />
+            <button
+            type="submit"
+            className="px-6 py-3 bg-teal-500 text-white font-semibold rounded-lg shadow-md hover:bg-teal-600 transition-colors"
+            >
+            Subscribe
+            </button>
         </div>
-    );
+         {error && <p className="text-red-500 text-sm mt-2 text-right">{error}</p>}
+      </form>
+    </div>
+  );
+
+  return (
+    <div className="bg-white rounded-xl shadow-lg p-8 md:p-12 border">
+        {content}
+    </div>
+  );
 };
 
 export default NewsletterSignup;

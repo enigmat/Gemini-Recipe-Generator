@@ -1,76 +1,70 @@
-import React from 'react';
-import { Product, CartItem } from '../types';
-import MarketplaceSearch from './MarketplaceSearch';
-import ShoppingCart from './ShoppingCart';
+import React, { useState, useMemo } from 'react';
+import { Product } from '../types';
 import ProductCard from './ProductCard';
-import Spinner from './Spinner';
-import StoreIcon from './icons/StoreIcon';
+import SearchBar from './SearchBar';
+import ProductAnalyzer from './ProductAnalyzer';
 
 interface MarketplaceProps {
-    products: Product[];
-    cart: CartItem[];
-    isLoading: boolean;
-    error: string | null;
-    onSearch: (prompt: string) => void;
-    onAddToCart: (product: Product) => void;
-    onUpdateCartQuantity: (productName: string, newQuantity: number) => void;
-    onRemoveFromCart: (productName: string) => void;
-    onCheckout: () => void;
+    allProducts: Product[];
 }
 
-const Marketplace: React.FC<MarketplaceProps> = ({
-    products, cart, isLoading, error, onSearch, onAddToCart,
-    onUpdateCartQuantity, onRemoveFromCart, onCheckout
-}) => {
+const Marketplace: React.FC<MarketplaceProps> = ({ allProducts }) => {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('All');
+
+    const categories = useMemo(() => {
+        const uniqueCategories = [...new Set(allProducts.map(p => p.category))].sort();
+        return ['All', ...uniqueCategories];
+    }, [allProducts]);
+
+    const filteredProducts = useMemo(() => {
+        return allProducts.filter(product => {
+            const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
+            const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                  product.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                  product.description.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesCategory && matchesSearch;
+        });
+    }, [allProducts, searchQuery, selectedCategory]);
+
     return (
-        <div className="max-w-7xl mx-auto animate-fade-in">
-            <div className="text-center mb-8">
-                <div className="flex justify-center items-center gap-3 text-primary">
-                    <StoreIcon className="w-10 h-10" />
-                    <h1 className="text-4xl font-bold">AI Marketplace</h1>
-                </div>
-                <p className="mt-2 text-lg text-text-secondary max-w-2xl mx-auto">
-                    Looking for something specific? Describe any kitchen item, ingredient, or gadget, and let our AI find it for you.
-                </p>
-            </div>
+        <div className="space-y-12">
+            <ProductAnalyzer />
 
-            <div className="mb-8">
-                <MarketplaceSearch onSearch={onSearch} isLoading={isLoading} />
-                {error && <p className="mt-4 text-center text-red-600">{error}</p>}
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                <div className="lg:col-span-2">
-                    {isLoading ? (
-                        <Spinner />
-                    ) : products.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                            {products.map(product => (
-                                <ProductCard
-                                    key={product.name}
-                                    product={product}
-                                    onAddToCart={() => onAddToCart(product)}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-dashed">
-                            <p className="text-lg text-text-secondary">
-                                Search for products to get started.
-                            </p>
-                            <p className="text-sm">e.g., "high quality non-stick pan" or "spices for thai curry"</p>
-                        </div>
-                    )}
+            <div>
+                <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-6">
+                    <h2 className="text-3xl font-bold text-gray-800">Shop Our Favorites</h2>
+                    <div className="w-full md:w-auto md:max-w-xs">
+                        <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search products..." />
+                    </div>
                 </div>
-
-                <div className="lg:col-span-1 lg:sticky lg:top-8">
-                    <ShoppingCart
-                        cart={cart}
-                        onUpdateQuantity={onUpdateCartQuantity}
-                        onRemove={onRemoveFromCart}
-                        onCheckout={onCheckout}
-                    />
+                <div className="flex flex-wrap justify-center gap-2 mb-8">
+                    {categories.map(category => (
+                        <button
+                            key={category}
+                            onClick={() => setSelectedCategory(category)}
+                            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${
+                                selectedCategory === category
+                                ? 'bg-gray-800 text-white shadow-sm'
+                                : 'bg-white text-gray-700 hover:bg-gray-100 shadow-sm border border-gray-200'
+                            }`}
+                        >
+                            {category}
+                        </button>
+                    ))}
                 </div>
+                {filteredProducts.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredProducts.map(product => (
+                            <ProductCard key={product.id} product={product} />
+                        ))}
+                    </div>
+                ) : (
+                     <div className="text-center py-16 px-6 bg-white rounded-lg shadow-sm">
+                        <h3 className="mt-4 text-xl font-semibold text-gray-800">No Products Found</h3>
+                        <p className="mt-2 text-gray-500">Try adjusting your search or filters.</p>
+                    </div>
+                )}
             </div>
         </div>
     );

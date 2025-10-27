@@ -1,61 +1,55 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { AboutUsContent } from '../types';
 import XIcon from './icons/XIcon';
-import { AboutUsInfo } from '../types';
-import * as aboutUsService from '../services/aboutUsService';
+import ChefHatIcon from './icons/ChefHatIcon';
 
 interface AboutUsModalProps {
-    onClose: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  content: AboutUsContent | null;
 }
 
-const AboutUsModal: React.FC<AboutUsModalProps> = ({ onClose }) => {
-    const [info, setInfo] = useState<AboutUsInfo | null>(null);
+const AboutUsModal: React.FC<AboutUsModalProps> = ({ isOpen, onClose, content }) => {
+  if (!isOpen || !content) return null;
 
-    useEffect(() => {
-        setInfo(aboutUsService.getAboutUsInfo());
-    }, []);
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 animate-fade-in"
+      onClick={onClose}
+      aria-modal="true"
+      role="dialog"
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-11/12 md:max-w-2xl max-h-[90vh] flex flex-col relative"
+        onClick={e => e.stopPropagation()}
+      >
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors z-10" aria-label="Close modal">
+          <XIcon className="h-6 w-6" />
+        </button>
 
-    if (!info) {
-        return null; // Or a loading spinner
-    }
+        <div className="p-6 md:p-8 text-center border-b">
+            <ChefHatIcon className="w-12 h-12 text-amber-500 mx-auto" />
+            <h2 className="text-3xl font-bold text-gray-800 mt-4">{content.companyName}</h2>
+        </div>
 
-    return (
-        <div
-            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 animate-fade-in"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="about-us-title"
-            onClick={onClose}
-        >
-            <div
-                className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="p-6 border-b border-border-color flex justify-between items-center">
-                    <h2 id="about-us-title" className="text-2xl font-bold text-text-primary">{info.companyName}</h2>
-                    <button onClick={onClose} className="p-1.5 rounded-full text-gray-500 hover:bg-gray-100">
-                        <XIcon className="h-6 w-6" />
-                    </button>
-                </div>
-                <div className="p-6 overflow-y-auto text-text-secondary space-y-4">
-                    <div>
-                        <h3 className="text-lg font-semibold text-text-primary">Our Mission</h3>
-                        <p className="italic">"{info.missionStatement}"</p>
-                    </div>
-
-                    <div>
-                        <h3 className="text-lg font-semibold text-text-primary">Our Story</h3>
-                        <p>{info.history}</p>
-                    </div>
-
-                    <div className="pt-4 mt-4 border-t border-border-color">
-                        <h3 className="text-lg font-semibold text-text-primary">Contact Us</h3>
-                        <p><strong>Email:</strong> <a href={`mailto:${info.contactEmail}`} className="text-primary hover:underline">{info.contactEmail}</a></p>
-                        <p><strong>Address:</strong> {info.address}</p>
-                    </div>
-                </div>
+        <div className="flex-grow overflow-y-auto px-6 md:px-8 py-8 space-y-6 text-gray-600">
+            <div>
+                <h3 className="font-semibold text-lg text-gray-700 text-center">Our Mission</h3>
+                <p className="mt-2 text-center italic">"{content.missionStatement}"</p>
+            </div>
+            <div className="border-t pt-6">
+                <h3 className="font-semibold text-lg text-gray-700">Our Story</h3>
+                <p className="mt-2">{content.companyHistory}</p>
+            </div>
+             <div className="border-t pt-6 text-center text-sm">
+                <h3 className="font-semibold text-lg text-gray-700 mb-2">Contact Us</h3>
+                <p><strong>Email:</strong> <a href={`mailto:${content.contactEmail}`} className="text-teal-600 hover:underline">{content.contactEmail}</a></p>
+                <p><strong>Address:</strong> {content.address}</p>
             </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default AboutUsModal;

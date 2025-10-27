@@ -1,1181 +1,356 @@
-import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { Recipe, ShoppingList, DrinkRecipe, Product } from '../types';
+import { GoogleGenAI, Type } from "@google/genai";
+import { Recipe, CocktailRecipe, RecipeVariation, ProductAnalysis, Product } from "../types";
 
-if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable is not set.");
-}
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-const singleRecipeSchemaProperties = {
-    type: Type.OBJECT,
-    properties: {
-        title: {
-            type: Type.STRING,
-            description: "The title of the recipe."
-        },
-        description: {
-            type: Type.STRING,
-            description: "A short, enticing description of the dish."
-        },
-        tags: {
-            type: Type.ARRAY,
-            description: "A list of relevant tags for the recipe (e.g., 'Vegan', 'Quick & Easy', 'Pasta').",
-            items: {
-                type: Type.STRING
-            }
-        },
-        ingredients: {
-            type: Type.ARRAY,
-            description: "A list of ingredients. For each ingredient, specify if it was from the user's provided list.",
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    name: { type: Type.STRING, description: "Ingredient name." },
-                    quantity: { type: Type.STRING, description: "e.g., '100g' or '250ml'. Must be in metric units." },
-                    isAvailable: { type: Type.BOOLEAN, description: "True if this ingredient was in the user's provided list." }
-                },
-                required: ["name", "quantity", "isAvailable"]
-            }
-        },
-        instructions: {
-            type: Type.ARRAY,
-            description: "Step-by-step cooking instructions.",
-            items: {
-                type: Type.STRING
-            }
-        },
-        prepTime: { type: Type.STRING, description: "e.g., '15 minutes'" },
-        cookTime: { type: Type.STRING, description: "e.g., '30 minutes'" },
-        servings: { type: Type.STRING, description: "e.g., '4 servings'" },
-        nutrition: {
-            type: Type.OBJECT,
-            description: "Estimated nutritional information per serving.",
-            properties: {
-                calories: { type: Type.STRING, description: "e.g., '450 kcal'" },
-                protein: { type: Type.STRING, description: "e.g., '30g'" },
-                carbs: { type: Type.STRING, description: "e.g., '50g'" },
-                fat: { type: Type.STRING, description: "e.g., '15g'" }
-            },
-            required: ["calories", "protein", "carbs", "fat"]
-        },
-        imagePrompt: {
-            type: Type.STRING,
-            description: "A detailed, descriptive prompt for a text-to-image model to generate a photorealistic and appetizing image of the final dish."
-        },
-    },
-    required: ["title", "description", "tags", "ingredients", "instructions", "prepTime", "cookTime", "servings", "nutrition", "imagePrompt"]
-};
-
-const recipeSchema = {
-    type: Type.OBJECT,
-    properties: {
-        recipes: {
-            type: Type.ARRAY,
-            description: "A list of 3-5 creative recipes.",
-            items: singleRecipeSchemaProperties
-        }
-    },
-    required: ["recipes"]
-};
-
-const singleRecipeSchema = {
-    type: Type.OBJECT,
-    ...singleRecipeSchemaProperties
-}
-
-const mealPlanSchema = {
-    type: Type.OBJECT,
-    properties: {
-        title: {
-            type: Type.STRING,
-            description: "A creative and descriptive title for the generated meal plan."
-        },
-        description: {
-            type: Type.STRING,
-            description: "A short, enticing description of the meal plan."
-        },
-        plan: {
-            type: Type.ARRAY,
-            description: "A list of 5 complete recipes that make up the meal plan.",
-            items: singleRecipeSchemaProperties
-        }
-    },
-    required: ["title", "description", "plan"]
-};
-
-const productSchema = {
-    type: Type.OBJECT,
-    properties: {
-        products: {
-            type: Type.ARRAY,
-            description: "A list of 5-10 fictional but realistic products based on the user's query.",
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    name: { type: Type.STRING, description: "The name of the product." },
-                    description: { type: Type.STRING, description: "A short, appealing description of the product." },
-                    price: { type: Type.NUMBER, description: "A realistic price for the product in USD." },
-                    imagePrompt: { type: Type.STRING, description: "A detailed, descriptive prompt for a text-to-image model to generate a high-quality, photorealistic image of the product, often on a clean background." }
-                },
-                required: ["name", "description", "price", "imagePrompt"]
-            }
-        }
-    },
-    required: ["products"]
-};
-
-
-export const generateRecipes = async (ingredients: string[]): Promise<Recipe[]> => {
-    const prompt = `
-      You are a creative chef and nutritionist. Based on the ingredients provided, generate 3-5 diverse and delicious recipes. 
-      Prioritize using the available ingredients, but you can include a few common pantry staples (like salt, pepper, oil, water) if necessary.
-      All ingredient quantities must be in metric units (e.g., grams, ml, liters). Do not use imperial units like cups, oz, or tbsp.
-      For each ingredient in the recipes, clearly indicate if it was part of the user's provided list.
-      For each recipe, provide a title, a short description, and a list of relevant tags (e.g., 'Vegan', 'Quick & Easy').
-      For each recipe, provide an estimated nutrition guide per serving, including calories, protein, carbs, and fat.
-      For each recipe, also create a detailed, descriptive prompt that a text-to-image model could use to generate a photorealistic and appetizing photo of the final dish. The prompt should describe the food, the plating, and the background.
-      
-      Available ingredients: ${ingredients.join(', ')}.
-
-      Please return the recipes in a valid JSON format according to the provided schema.
-    `;
-
+export const generateImageFromPrompt = async (prompt: string): Promise<string> => {
     try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const descriptivePrompt = `A high-quality, professional food photograph of ${prompt}, beautifully plated and ready to eat. Bright, natural lighting.`;
+
+        const response = await ai.models.generateImages({
+            model: 'imagen-4.0-generate-001',
+            prompt: descriptivePrompt,
             config: {
-                responseMimeType: "application/json",
-                responseSchema: recipeSchema,
+                numberOfImages: 1,
+                outputMimeType: 'image/jpeg',
+                aspectRatio: '1:1',
             },
         });
 
-        const jsonText = response.text.trim();
-        const parsedJson = JSON.parse(jsonText);
-        
-        if (parsedJson.recipes && Array.isArray(parsedJson.recipes)) {
-            const richRecipes: any[] = parsedJson.recipes;
-
-            const recipes: Recipe[] = await Promise.all(
-                richRecipes.map(async (recipe) => {
-                    const imageUrl = await generateImage(recipe.imagePrompt || recipe.title);
-                    return {
-                        title: recipe.title,
-                        description: recipe.description,
-                        imageUrl: imageUrl,
-                        ingredients: recipe.ingredients.map((ing: { quantity: string; name: string; }) => `${ing.quantity} ${ing.name}`.trim()).filter(Boolean),
-                        instructions: recipe.instructions,
-                        tags: recipe.tags,
-                        servings: recipe.servings,
-                        prepTime: recipe.prepTime,
-                        cookTime: recipe.cookTime,
-                        status: 'active',
-                        nutrition: recipe.nutrition,
-                    };
-                })
-            );
-            return recipes;
+        if (response.generatedImages && response.generatedImages.length > 0) {
+            const base64ImageBytes = response.generatedImages[0].image.imageBytes;
+            return `data:image/jpeg;base64,${base64ImageBytes}`;
         } else {
-            throw new Error("Invalid response format from API. Expected a 'recipes' array.");
+            throw new Error("No image was generated.");
         }
     } catch (error) {
-        console.error("Error generating recipes:", error);
-        throw new Error("Failed to generate recipes. The model might be unable to create recipes with the provided ingredients, or there was a network issue.");
+        console.error("Error generating image with Gemini:", error);
+        throw new Error("Failed to generate image. Please check the prompt or API configuration.");
     }
 };
 
-export const generateImage = async (prompt: string): Promise<string> => {
+export const generateRecipeDetailsFromTitle = async (title: string): Promise<Omit<Recipe, 'id' | 'image'>> => {
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: {
-                parts: [{ text: prompt }],
-            },
-            config: {
-                responseModalities: [Modality.IMAGE],
-            },
-        });
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const prompt = `Generate a complete, high-quality recipe for "${title}". The recipe must be well-written, easy to follow, and appealing. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing.`;
 
-        for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) {
-                const base64ImageBytes: string = part.inlineData.data;
-                const mimeType = part.inlineData.mimeType || 'image/png';
-                return `data:${mimeType};base64,${base64ImageBytes}`;
-            }
-        }
-        
-        throw new Error("No image data found in the response.");
-
-    } catch (error) {
-        console.error("Error generating image with AI, falling back to placeholder:", error);
-        
-        let title = "Image Failed";
-        // Attempt to extract a meaningful title from various prompt structures for the fallback.
-        const patterns = [
-            /of (?:a |an )?([^,]+)/i,          // "image of spaghetti carbonara, ..."
-            /a delicious plate of ([^,]+)/i, // "a delicious plate of ..."
-            /A photorealistic image of ([^,]+)/i,
-            /prompt for (?:an image of )?([^.]+)/i, // "prompt for an image of chicken soup."
-            /^A\s(.+?),/i, // "A robot holding a red skateboard, ..."
-        ];
-
-        let extracted = false;
-        for (const pattern of patterns) {
-            const match = prompt.match(pattern);
-            if (match && match[1]) {
-                const potentialTitle = match[1].trim();
-                if (potentialTitle.length > 3 && potentialTitle.length < 40) {
-                    title = potentialTitle;
-                    extracted = true;
-                    break;
-                }
-            }
-        }
-        
-        if (!extracted && prompt.length < 40) {
-            // Fallback for short, direct prompts
-            title = prompt;
-        }
-
-        const formattedTitle = title.split(' ').join('\n');
-        const encodedTitle = encodeURIComponent(formattedTitle);
-        
-        return `https://placehold.co/800x450/EF4444/FFFFFF/png?text=Image+Failed\n${encodedTitle}&font=inter`;
-    }
-};
-
-
-export const extractIngredientsFromUrl = async (url: string): Promise<string[]> => {
-    const prompt = `
-        You are an expert recipe parsing assistant. Your task is to extract the list of ingredients from the provided URL.
-        Analyze the content of the webpage and identify the ingredients section.
-        Return only the list of ingredients. Do not include quantities, just the name of each ingredient.
-        For example, if you see "2 cups of all-purpose flour", you should return "all-purpose flour".
-
-        URL: ${url}
-
-        Please return the ingredients in a valid JSON format according to the provided schema.
-    `;
-
-    const urlSchema = {
-        type: Type.OBJECT,
-        properties: {
-            ingredients: {
-                type: Type.ARRAY,
-                description: "A list of ingredient names extracted from the URL.",
-                items: {
-                    type: Type.STRING
-                }
-            }
-        },
-        required: ["ingredients"]
-    };
-
-    try {
-         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: urlSchema,
-            },
-        });
-        
-        const jsonText = response.text.trim();
-        const parsedJson = JSON.parse(jsonText);
-
-        if (parsedJson.ingredients && Array.isArray(parsedJson.ingredients)) {
-            return parsedJson.ingredients as string[];
-        } else {
-            throw new Error("Invalid response format from API. Expected an 'ingredients' array.");
-        }
-
-    } catch (error) {
-        console.error("Error extracting ingredients from URL:", error);
-        throw new Error("Failed to extract ingredients from the URL. Please check if the URL is a valid recipe page.");
-    }
-};
-
-export const importRecipeFromUrl = async (url: string): Promise<Recipe> => {
-    const prompt = `
-        You are an expert recipe parsing assistant. Your task is to extract a full recipe from the content of the provided URL.
-        You must extract the following information:
-        1.  **title**: The name of the recipe.
-        2.  **description**: A short, enticing description of the dish.
-        3.  **tags**: A list of relevant tags (e.g., 'Vegan', 'Dinner', 'Italian').
-        4.  **ingredients**: A list of all ingredients. For each ingredient, specify the name, quantity, and ensure the quantity is in METRIC units (grams, ml, etc.). Mark 'isAvailable' as false since we don't know the user's pantry.
-        5.  **instructions**: The step-by-step cooking instructions.
-        6.  **prepTime**, **cookTime**, **servings**: Extract these if available.
-        7.  **nutrition**: Extract nutritional info (calories, protein, carbs, fat) if available.
-        8.  **imagePrompt**: Based on the title and description, create a detailed, descriptive prompt for a text-to-image model to generate a photorealistic and appetizing image of the final dish.
-
-        URL: ${url}
-
-        Please return the result as a single, valid JSON object that conforms to the provided schema.
-    `;
-
-    try {
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
-                responseSchema: singleRecipeSchema as any,
-            },
-        });
-
-        const jsonText = response.text.trim();
-        const importedData = JSON.parse(jsonText);
-
-        const imageUrl = await generateImage(importedData.imagePrompt || importedData.title);
-
-        return {
-            title: importedData.title,
-            description: importedData.description,
-            imageUrl: imageUrl,
-            ingredients: importedData.ingredients.map((ing: { quantity: string; name: string; }) => `${ing.quantity} ${ing.name}`.trim()).filter(Boolean),
-            instructions: importedData.instructions,
-            tags: importedData.tags,
-            servings: importedData.servings,
-            prepTime: importedData.prepTime,
-            cookTime: importedData.cookTime,
-            status: 'active',
-            nutrition: importedData.nutrition,
-        };
-    } catch (error) {
-        console.error("Error importing recipe from URL:", error);
-        throw new Error("Failed to import the recipe from the URL. Please ensure it is a valid recipe page.");
-    }
-};
-
-export const identifyIngredientsFromImage = async (base64ImageData: string): Promise<string[]> => {
-    const prompt = "Identify all the food ingredients in this image. Only return the names of the ingredients, not quantities. For example, 'tomato', 'lettuce', 'cheese'.";
-
-    const imagePart = {
-        inlineData: {
-            mimeType: 'image/jpeg',
-            data: base64ImageData,
-        },
-    };
-
-    const ingredientsSchema = {
-        type: Type.OBJECT,
-        properties: {
-            ingredients: {
-                type: Type.ARRAY,
-                description: "A list of food ingredient names identified from the image.",
-                items: { type: Type.STRING }
-            }
-        },
-        required: ["ingredients"]
-    };
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: { parts: [imagePart, { text: prompt }] },
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: ingredientsSchema,
-            },
-        });
-
-        const jsonText = response.text.trim();
-        const parsedJson = JSON.parse(jsonText);
-
-        if (parsedJson.ingredients && Array.isArray(parsedJson.ingredients)) {
-            return parsedJson.ingredients as string[];
-        } else {
-            throw new Error("Invalid response format from API. Expected an 'ingredients' array.");
-        }
-
-    } catch (error) {
-        console.error("Error identifying ingredients from image:", error);
-        throw new Error("Failed to identify ingredients from the image. Please try again with a clearer picture.");
-    }
-};
-
-export const generateNewImagePrompt = async (recipeTitle: string, recipeDescription: string): Promise<string> => {
-    const prompt = `
-        The text-to-image model failed to generate an image for a recipe with the initial prompt. 
-        Your task is to create a new, highly detailed, and creative prompt for the text-to-image model.
-        The prompt should describe a photorealistic and appetizing image of the final dish. 
-        Focus on the food's texture, plating, lighting, and background to ensure a successful image generation.
-        Do not just repeat the recipe title.
-
-        Recipe Title: ${recipeTitle}
-        Recipe Description: ${recipeDescription}
-
-        Generate a new prompt. Return it as a JSON object with a single key "newPrompt".
-    `;
-
-    const newPromptSchema = {
-        type: Type.OBJECT,
-        properties: {
-            newPrompt: {
-                type: Type.STRING,
-                description: "A new, detailed, descriptive prompt for a text-to-image model."
-            }
-        },
-        required: ["newPrompt"]
-    };
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: newPromptSchema,
-            },
-        });
-
-        const jsonText = response.text.trim();
-        const parsedJson = JSON.parse(jsonText);
-        
-        if (parsedJson.newPrompt && typeof parsedJson.newPrompt === 'string') {
-            return parsedJson.newPrompt;
-        } else {
-            throw new Error("Invalid response format for new prompt generation.");
-        }
-    } catch (error) {
-        console.error("Error generating new image prompt:", error);
-        // Fallback to a simple prompt if generation fails
-        return `A delicious plate of ${recipeTitle}, professionally photographed.`;
-    }
-};
-
-export const fixRecipeImage = async (recipe: Recipe): Promise<string> => {
-    try {
-        console.log(`Fixing image for: ${recipe.title}`);
-        const newPrompt = await generateNewImagePrompt(recipe.title, recipe.description);
-        console.log(`Generated new prompt: ${newPrompt}`);
-        const newImageUrl = await generateImage(newPrompt);
-        console.log(`Generated new image URL for ${recipe.title}`);
-        return newImageUrl;
-    } catch (error) {
-        console.error(`Failed to fix image for ${recipe.title}:`, error);
-        throw new Error("Failed to generate a new image for the recipe.");
-    }
-};
-
-export const generateRecipeFromPrompt = async (promptText: string): Promise<Recipe> => {
-    const prompt = `
-        You are an expert chef and recipe creator. A user wants a new recipe based on their description.
-        Your task is to generate a single, complete recipe based on the user's request.
-        You must generate the following information:
-        1.  **title**: A creative and fitting name for the recipe.
-        2.  **description**: A short, enticing description of the dish.
-        3.  **tags**: A list of relevant tags (e.g., 'Vegan', 'Dinner', 'Italian').
-        4.  **ingredients**: A list of all ingredients. For each ingredient, specify the name and quantity in METRIC units (grams, ml, etc.). Mark 'isAvailable' as false.
-        5.  **instructions**: The step-by-step cooking instructions.
-        6.  **prepTime**, **cookTime**, **servings**: Provide realistic estimates.
-        7.  **nutrition**: Provide estimated nutritional info (calories, protein, carbs, fat).
-        8.  **imagePrompt**: Create a detailed, descriptive prompt for a text-to-image model to generate a photorealistic and appetizing image of the final dish.
-
-        User's Recipe Request: "${promptText}"
-
-        Please return the result as a single, valid JSON object that conforms to the provided schema.
-    `;
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: singleRecipeSchema as any,
-            },
-        });
-
-        const jsonText = response.text.trim();
-        const generatedData = JSON.parse(jsonText);
-
-        const imageUrl = await generateImage(generatedData.imagePrompt || generatedData.title);
-        
-        return {
-            title: generatedData.title,
-            description: generatedData.description,
-            imageUrl: imageUrl,
-            ingredients: generatedData.ingredients.map((ing: { quantity: string; name: string; }) => `${ing.quantity} ${ing.name}`.trim()).filter(Boolean),
-            instructions: generatedData.instructions,
-            tags: generatedData.tags,
-            servings: generatedData.servings,
-            prepTime: generatedData.prepTime,
-            cookTime: generatedData.cookTime,
-            status: 'active',
-            nutrition: generatedData.nutrition,
-        };
-    } catch (error) {
-        console.error("Error generating recipe from prompt:", error);
-        throw new Error("Failed to generate the recipe from the prompt. The model may have been unable to fulfill the request.");
-    }
-};
-
-export const generateRecipeVariation = async (originalRecipe: Recipe, variationRequest: string, availableIngredients: string[]): Promise<Recipe> => {
-    const prompt = `
-        You are a creative chef. A user wants a variation of an existing recipe.
-        Your task is to modify the original recipe based on the user's request.
-        Generate a completely new version of the recipe that incorporates the requested changes. 
-        You must update the recipe title, description, tags, ingredients, instructions, and nutrition info.
-        For the ingredients, you must still mark which ones are available from the user's original list.
-        Ensure the new, modified recipe uses metric units for all ingredients (e.g., grams, ml).
-        Create a new, detailed image prompt for the new version of the dish.
-
-        Original Recipe:
-        - Title: ${originalRecipe.title}
-        - Description: ${originalRecipe.description}
-        - Tags: ${originalRecipe.tags.join(', ')}
-        - Ingredients: ${originalRecipe.ingredients.join(', ')}
-        - Instructions: ${originalRecipe.instructions.join(' ')}
-
-        User's Variation Request: "${variationRequest}"
-
-        List of available ingredients provided by the user: ${availableIngredients.join(', ')}
-
-        Please return the new, modified recipe as a single JSON object that conforms to the provided schema.
-    `;
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: singleRecipeSchema as any,
-            },
-        });
-
-        const jsonText = response.text.trim();
-        const newRecipe = JSON.parse(jsonText);
-        
-        const imageUrl = await generateImage(newRecipe.imagePrompt || newRecipe.title);
-
-        return {
-            title: newRecipe.title,
-            description: newRecipe.description,
-            imageUrl: imageUrl,
-            ingredients: newRecipe.ingredients.map((ing: { quantity: string; name: string; }) => `${ing.quantity} ${ing.name}`.trim()).filter(Boolean),
-            instructions: newRecipe.instructions,
-            tags: newRecipe.tags,
-            servings: newRecipe.servings,
-            prepTime: newRecipe.prepTime,
-            cookTime: newRecipe.cookTime,
-            status: 'active',
-            nutrition: newRecipe.nutrition,
-        };
-
-    } catch (error) {
-        console.error("Error generating recipe variation:", error);
-        throw new Error("Failed to generate a variation for the recipe. The model may have been unable to fulfill the request.");
-    }
-};
-
-export const generateShoppingList = async (ingredients: string[]): Promise<ShoppingList> => {
-    const prompt = `
-        You are an expert shopping list assistant. Your task is to take a list of recipe ingredients and create a clean, categorized shopping list.
-        1. Analyze the list of ingredients.
-        2. Combine quantities for any identical ingredients. For example, if "100g flour" and "25g flour" appear, combine them into "125g flour". If units are different, like "1 cup chicken broth" and "250ml chicken broth", combine them into a single metric unit like "500ml chicken broth", assuming 1 cup is approx 250ml.
-        3. Group the combined ingredients into logical grocery store categories (e.g., "Produce", "Meat & Poultry", "Dairy & Eggs", "Pantry", "Bakery", "Spices & Seasonings").
-        4. Do not include common items like "water", "salt", or "pepper" unless a specific, non-standard quantity or type is mentioned (e.g., 'coarse sea salt').
-        5. Return the result as a valid JSON object according to the provided schema. Each item in the list should be an object with a 'name' and a 'quantity'.
-
-        Ingredient list:
-        ${ingredients.join('\n')}
-    `;
-
-    const shoppingListSchema = {
-        type: Type.OBJECT,
-        properties: {
-            shoppingList: {
-                type: Type.ARRAY,
-                description: "A categorized shopping list. Each element is an object with a category and a list of item objects.",
-                items: {
+                responseSchema: {
                     type: Type.OBJECT,
                     properties: {
-                        category: {
-                            type: Type.STRING,
-                            description: "The name of the grocery store category (e.g., 'Produce')."
-                        },
-                        items: {
+                        title: { type: Type.STRING, description: "The final, polished title of the recipe." },
+                        description: { type: Type.STRING, description: "A brief, enticing description of the dish." },
+                        cookTime: { type: Type.STRING, description: "e.g., '45 minutes'" },
+                        servings: { type: Type.STRING, description: "e.g., '4 servings' or '4-6'" },
+                        ingredients: {
                             type: Type.ARRAY,
-                            description: "The list of ingredients for this category.",
                             items: {
                                 type: Type.OBJECT,
                                 properties: {
-                                    name: { type: Type.STRING, description: "The name of the ingredient (e.g., 'all-purpose flour')." },
-                                    quantity: { type: Type.STRING, description: "The combined quantity (e.g., '250g' or '2 cups')." }
+                                    name: { type: Type.STRING },
+                                    metric: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            quantity: { type: Type.STRING },
+                                            unit: { type: Type.STRING }
+                                        },
+                                        required: ['quantity', 'unit']
+                                    },
+                                    us: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            quantity: { type: Type.STRING },
+                                            unit: { type: Type.STRING }
+                                        },
+                                        required: ['quantity', 'unit']
+                                    }
                                 },
-                                required: ["name", "quantity"]
+                                required: ['name', 'metric', 'us']
+                            }
+                        },
+                        instructions: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        },
+                        tags: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        },
+                        winePairing: {
+                            type: Type.OBJECT,
+                            properties: {
+                                suggestion: { type: Type.STRING },
+                                description: { type: Type.STRING }
+                            },
+                        }
+                    },
+                    required: ['title', 'description', 'cookTime', 'servings', 'ingredients', 'instructions', 'tags']
+                }
+            }
+        });
+        
+        const jsonText = response.text;
+        const recipeData = JSON.parse(jsonText);
+
+        // Ensure all required fields are present and have correct types
+        if (
+            !recipeData.title || typeof recipeData.title !== 'string' ||
+            !recipeData.description || typeof recipeData.description !== 'string' ||
+            !recipeData.cookTime || typeof recipeData.cookTime !== 'string' ||
+            !recipeData.servings || typeof recipeData.servings !== 'string' ||
+            !Array.isArray(recipeData.ingredients) ||
+            !Array.isArray(recipeData.instructions) ||
+            !Array.isArray(recipeData.tags)
+        ) {
+            throw new Error("Generated recipe data is missing required fields or has incorrect types.");
+        }
+
+        return recipeData;
+
+    } catch (error) {
+        console.error("Error generating recipe details with Gemini:", error);
+        throw new Error("Failed to generate recipe details. Please try again.");
+    }
+};
+
+export const generateRecipeFromUrl = async (url: string): Promise<Omit<Recipe, 'id' | 'image'>> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const prompt = `Analyze the following URL and generate a complete, high-quality recipe based on its title and content theme. The URL is: "${url}". The recipe must be well-written, easy to follow, and appealing. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing.`;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING, description: "The final, polished title of the recipe." },
+                        description: { type: Type.STRING, description: "A brief, enticing description of the dish." },
+                        cookTime: { type: Type.STRING, description: "e.g., '45 minutes'" },
+                        servings: { type: Type.STRING, description: "e.g., '4 servings' or '4-6'" },
+                        ingredients: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    name: { type: Type.STRING },
+                                    metric: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            quantity: { type: Type.STRING },
+                                            unit: { type: Type.STRING }
+                                        },
+                                        required: ['quantity', 'unit']
+                                    },
+                                    us: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            quantity: { type: Type.STRING },
+                                            unit: { type: Type.STRING }
+                                        },
+                                        required: ['quantity', 'unit']
+                                    }
+                                },
+                                required: ['name', 'metric', 'us']
+                            }
+                        },
+                        instructions: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        },
+                        tags: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        },
+                        winePairing: {
+                            type: Type.OBJECT,
+                            properties: {
+                                suggestion: { type: Type.STRING },
+                                description: { type: Type.STRING }
+                            },
+                        }
+                    },
+                    required: ['title', 'description', 'cookTime', 'servings', 'ingredients', 'instructions', 'tags']
+                }
+            }
+        });
+        
+        const jsonText = response.text;
+        const recipeData = JSON.parse(jsonText);
+
+        // Ensure all required fields are present and have correct types
+        if (
+            !recipeData.title || typeof recipeData.title !== 'string' ||
+            !recipeData.description || typeof recipeData.description !== 'string' ||
+            !recipeData.cookTime || typeof recipeData.cookTime !== 'string' ||
+            !recipeData.servings || typeof recipeData.servings !== 'string' ||
+            !Array.isArray(recipeData.ingredients) ||
+            !Array.isArray(recipeData.instructions) ||
+            !Array.isArray(recipeData.tags)
+        ) {
+            throw new Error("Generated recipe data is missing required fields or has incorrect types.");
+        }
+
+        return recipeData;
+
+    } catch (error) {
+        console.error("Error generating recipe from URL with Gemini:", error);
+        throw new Error("Failed to extract recipe from URL. The AI could not understand this link. Please try a different one.");
+    }
+};
+
+export const generateCocktailRecipe = async (prompt: string): Promise<CocktailRecipe> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const fullPrompt = `Act as an expert mixologist. A user wants a cocktail recipe. Their request is: "${prompt}". Generate a suitable cocktail recipe. Provide a unique, appealing title, a short description, details on glassware and garnish, a list of ingredients with measurements, and step-by-step instructions. Also provide a short, descriptive prompt that can be used to generate a realistic, high-quality photograph of the final drink.`;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: fullPrompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING },
+                        description: { type: Type.STRING },
+                        imagePrompt: { type: Type.STRING, description: "A short, descriptive prompt for an AI image generator to create a realistic photo of the cocktail." },
+                        glassware: { type: Type.STRING },
+                        garnish: { type: Type.STRING },
+                        ingredients: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        instructions: { type: Type.ARRAY, items: { type: Type.STRING } }
+                    },
+                    required: ['title', 'description', 'imagePrompt', 'glassware', 'garnish', 'ingredients', 'instructions']
+                }
+            }
+        });
+
+        const jsonText = response.text;
+        const recipeData = JSON.parse(jsonText);
+
+        return recipeData;
+
+    } catch (error) {
+        console.error("Error generating cocktail recipe with Gemini:", error);
+        throw new Error("Failed to generate a drink recipe. The AI might be stumped! Please try a different description.");
+    }
+};
+
+export const generateRecipeVariations = async (recipe: Recipe): Promise<RecipeVariation[]> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const prompt = `Given the following recipe for "${recipe.title}", generate 3 creative variations. For each variation, provide a unique title and a short description of the key changes. For example, "Spicy Version", "Kid-Friendly Option", or "Vegan Alternative". Keep the descriptions concise and focused on the variation. The original recipe is: "${recipe.description}".`;
+        
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        variations: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    title: { type: Type.STRING },
+                                    description: { type: Type.STRING }
+                                },
+                                required: ['title', 'description']
                             }
                         }
                     },
-                    required: ["category", "items"]
+                    required: ['variations']
                 }
             }
-        },
-        required: ["shoppingList"]
-    };
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: shoppingListSchema,
-            },
         });
-
-        const jsonText = response.text.trim();
-        const parsedJson = JSON.parse(jsonText);
-
-        if (parsedJson.shoppingList && Array.isArray(parsedJson.shoppingList)) {
-            // Add the 'checked' property to each item
-            const listWithChecked: ShoppingList = parsedJson.shoppingList.map((category: { category: string; items: { name: string; quantity: string; }[]; }) => ({
-                ...category,
-                items: category.items.map((item: {name: string, quantity: string}) => ({ ...item, checked: false }))
-            }));
-            return listWithChecked;
-        } else {
-            throw new Error("Invalid response format from API. Expected a 'shoppingList' array.");
-        }
-    } catch (error) {
-        console.error("Error generating shopping list:", error);
-        throw new Error("Failed to generate a shopping list. The model may have been unable to process the ingredients.");
-    }
-};
-
-export const parseShoppingListItem = async (itemString: string): Promise<{ quantity: string; name: string; }> => {
-    const prompt = `
-        You are a shopping list parsing assistant. Your task is to take a single shopping list item string and separate it into its quantity and its name.
-        - If there is no quantity, the quantity should be an empty string.
-        - The name should be the clean name of the item.
-        - For example, if the input is "2 cups all-purpose flour", the output should be { "quantity": "2 cups", "name": "all-purpose flour" }.
-        - If the input is "salt", the output should be { "quantity": "", "name": "salt" }.
-
-        Item to parse: "${itemString}"
-
-        Please return the result as a single JSON object with two keys: "quantity" and "name".
-    `;
-
-    const itemSchema = {
-        type: Type.OBJECT,
-        properties: {
-            quantity: { type: Type.STRING, description: "The quantity of the item, or an empty string if none." },
-            name: { type: Type.STRING, description: "The name of the item." }
-        },
-        required: ["quantity", "name"]
-    };
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: itemSchema,
-            },
-        });
-
-        const jsonText = response.text.trim();
-        const parsedJson = JSON.parse(jsonText);
-
-        if (parsedJson.quantity !== undefined && parsedJson.name) {
-            return parsedJson;
-        } else {
-            throw new Error("Invalid response format from API.");
-        }
-    } catch (error) {
-        console.error("Error parsing shopping list item:", error);
-        // Fallback for failed parsing
-        return { quantity: '', name: itemString };
-    }
-};
-
-const drinkRecipeSchema = {
-    type: Type.OBJECT,
-    properties: {
-        name: {
-            type: Type.STRING,
-            description: "The name of the cocktail."
-        },
-        description: {
-            type: Type.STRING,
-            description: "A short, enticing description of the drink."
-        },
-        glassware: {
-            type: Type.STRING,
-            description: "The recommended type of glass for serving the drink (e.g., 'Coupe glass', 'Highball glass')."
-        },
-        ingredients: {
-            type: Type.ARRAY,
-            description: "A list of ingredients with quantities. Quantities should be in metric units (ml) but can also be 'dashes' or 'parts' where appropriate.",
-            items: {
-                type: Type.STRING,
-                description: "e.g., '60ml Gin' or '2 dashes Angostura bitters'"
-            }
-        },
-        instructions: {
-            type: Type.ARRAY,
-            description: "Step-by-step instructions for making the drink.",
-            items: {
-                type: Type.STRING
-            }
-        },
-        garnish: {
-            type: Type.STRING,
-            description: "The suggested garnish for the drink (e.g., 'Lemon twist', 'Olive')."
-        },
-        imagePrompt: {
-            type: Type.STRING,
-            description: "A detailed, descriptive prompt for a text-to-image model to generate a photorealistic and appealing image of the final cocktail. Describe the drink, the glass, the garnish, and the background."
-        },
-    },
-    required: ["name", "description", "glassware", "ingredients", "instructions", "garnish", "imagePrompt"]
-};
-
-export const generateDrinkRecipe = async (drinkPrompt: string): Promise<DrinkRecipe> => {
-    const prompt = `
-      You are an expert mixologist and bartender. A user wants to make a drink. Based on their request, create a unique and delicious cocktail recipe.
-      Provide a creative name for the drink, a short description, the proper glassware, all necessary ingredients with metric quantities (ml), step-by-step instructions, and a suitable garnish.
-      Also, create a detailed, descriptive prompt for a text-to-image model to generate a photorealistic and appealing photo of the final cocktail. The image prompt should describe the drink, the glass, the garnish, the lighting, and the background setting (e.g., a cozy bar, a bright patio).
-
-      User's request: "${drinkPrompt}"
-
-      Please return the cocktail recipe in a valid JSON format according to the provided schema.
-    `;
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: drinkRecipeSchema,
-            },
-        });
-
-        const jsonText = response.text.trim();
-        const parsedJson = JSON.parse(jsonText);
-
-        const imageUrl = await generateImage(parsedJson.imagePrompt || parsedJson.name);
-
-        return {
-            name: parsedJson.name,
-            description: parsedJson.description,
-            imageUrl: imageUrl,
-            glassware: parsedJson.glassware,
-            ingredients: parsedJson.ingredients,
-            instructions: parsedJson.instructions,
-            garnish: parsedJson.garnish,
-        };
-
-    } catch (error) {
-        console.error("Error generating drink recipe:", error);
-        throw new Error("Failed to generate a drink recipe. The model might have been unable to fulfill the request, or there was a network issue.");
-    }
-};
-
-export const generateRecipeContentFromPrompt = async (promptText: string): Promise<{recipeData: Partial<Recipe>, imagePrompt: string}> => {
-    const prompt = `
-        You are an expert chef and recipe creator. A user wants a new recipe based on their description.
-        Your task is to generate a single, complete recipe based on the user's request.
-        You must generate the following information:
-        1.  **title**: A creative and fitting name for the recipe.
-        2.  **description**: A short, enticing description of the dish.
-        3.  **tags**: A list of relevant tags (e.g., 'Vegan', 'Dinner', 'Italian').
-        4.  **ingredients**: A list of all ingredients. For each ingredient, specify the name and quantity in METRIC units (grams, ml, etc.). Mark 'isAvailable' as false.
-        5.  **instructions**: The step-by-step cooking instructions.
-        6.  **prepTime**, **cookTime**, **servings**: Provide realistic estimates.
-        7.  **nutrition**: Provide estimated nutritional info (calories, protein, carbs, fat).
-        8.  **imagePrompt**: Create a detailed, descriptive prompt for a text-to-image model to generate a photorealistic and appetizing image of the final dish.
-
-        User's Recipe Request: "${promptText}"
-
-        Please return the result as a single, valid JSON object that conforms to the provided schema.
-    `;
-    
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: singleRecipeSchema as any,
-            },
-        });
-
-        const jsonText = response.text.trim();
-        const generatedData = JSON.parse(jsonText);
-
-        const recipeData: Partial<Recipe> = {
-            title: generatedData.title,
-            description: generatedData.description,
-            ingredients: generatedData.ingredients.map((ing: { quantity: string; name: string; }) => `${ing.quantity} ${ing.name}`.trim()).filter(Boolean),
-            instructions: generatedData.instructions,
-            tags: generatedData.tags,
-            servings: generatedData.servings,
-            prepTime: generatedData.prepTime,
-            cookTime: generatedData.cookTime,
-            status: 'active',
-            nutrition: generatedData.nutrition,
-        };
         
-        return { recipeData, imagePrompt: generatedData.imagePrompt };
+        const jsonText = response.text;
+        const result = JSON.parse(jsonText);
+
+        if (!result.variations || !Array.isArray(result.variations)) {
+            throw new Error("Invalid response format from AI.");
+        }
+
+        return result.variations;
 
     } catch (error) {
-        console.error("Error generating recipe content from prompt:", error);
-        throw new Error("Failed to generate recipe content from the prompt. The model may have been unable to fulfill the request.");
+        console.error("Error generating recipe variations with Gemini:", error);
+        throw new Error("Failed to generate recipe variations. The AI might be busy! Please try again in a moment.");
     }
 };
 
-export const categorizeShoppingListItem = async (itemName: string): Promise<string> => {
-    const prompt = `
-        You are a shopping list assistant. Your task is to categorize a single grocery item into a standard grocery store category.
-        The categories should be general, like "Produce", "Meat & Poultry", "Dairy & Eggs", "Pantry", "Bakery", "Spices & Seasonings", "Beverages", "Frozen Foods", "Household Goods", "Uncategorized".
-
-        Item to categorize: "${itemName}"
-
-        Please return the category as a single JSON object with one key, "category".
-    `;
-
-    const categorySchema = {
-        type: Type.OBJECT,
-        properties: {
-            category: {
-                type: Type.STRING,
-                description: "The grocery store category for the item."
-            }
-        },
-        required: ["category"]
-    };
-
+export const analyzeProduct = async (productName: string): Promise<ProductAnalysis> => {
     try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const prompt = `Act as a food product analyzer, similar to the Yuka app. Based on the product name "${productName}", provide a concise health analysis. Infer common ingredients and nutritional information for a generic version of this product. Provide a health score from 1 (poor) to 10 (excellent). Give a brief summary (2-3 sentences), 2 positive points (pros), and 2 negative points (cons). Also, list up to 3 notable additives or ingredients to be aware of if applicable. Your tone should be informative and neutral.`;
+
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
-                responseSchema: categorySchema,
-            },
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        score: { type: Type.NUMBER, description: "A health score from 1 (poor) to 10 (excellent)." },
+                        summary: { type: Type.STRING, description: "A brief, neutral summary of the product's health profile." },
+                        pros: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A list of 2 positive points." },
+                        cons: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A list of 2 negative points." },
+                        additives: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A list of up to 3 notable additives or ingredients." }
+                    },
+                    required: ['score', 'summary', 'pros', 'cons', 'additives']
+                }
+            }
         });
 
-        const jsonText = response.text.trim();
-        const parsedJson = JSON.parse(jsonText);
+        const jsonText = response.text;
+        const analysisData = JSON.parse(jsonText);
+        return analysisData;
 
-        if (parsedJson.category && typeof parsedJson.category === 'string') {
-            return parsedJson.category;
-        } else {
-            throw new Error("Invalid response format from API. Expected a 'category' string.");
-        }
     } catch (error) {
-        console.error("Error categorizing shopping list item:", error);
-        return "Uncategorized"; // Fallback category
+        console.error("Error analyzing product with Gemini:", error);
+        throw new Error("Failed to analyze product. The AI may be unable to assess this item. Please try another.");
     }
 };
 
-export const findRecipeVideo = async (recipeTitle: string): Promise<string | null> => {
-    const prompt = `
-        Find a short, high-quality recipe video on a major, embeddable video platform (like YouTube) for "${recipeTitle}".
-        Return ONLY the direct, embeddable URL of the video. The URL should be clean and suitable for embedding in an iframe.
-        If no suitable video is found, return the text "null".
-    `;
-
+export const generateProductFromPrompt = async (prompt: string): Promise<Omit<Product, 'id' | 'imageUrl' | 'affiliateUrl'> & { imagePrompt: string }> => {
     try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const fullPrompt = `Act as an e-commerce specialist creating a product listing for a recipe website's marketplace. Based on the user's prompt "${prompt}", generate details for a plausible affiliate product. Provide a product name, a fictional but realistic brand name, a compelling description (2-3 sentences), and a relevant category (e.g., Cookware, Appliances, Pantry Staples). Also, create a descriptive prompt for an AI image generator to create a professional, clean product photo on a white background.`;
+
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: prompt,
+            contents: fullPrompt,
             config: {
-                tools: [{ googleSearch: {} }],
-            },
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        name: { type: Type.STRING, description: "The name of the product." },
+                        brand: { type: Type.STRING, description: "A fictional but realistic brand name." },
+                        description: { type: Type.STRING, description: "A compelling product description (2-3 sentences)." },
+                        category: { type: Type.STRING, description: "A relevant category for the product." },
+                        imagePrompt: { type: Type.STRING, description: "A descriptive prompt for an AI image generator for a professional product photo on a white background." }
+                    },
+                    required: ['name', 'brand', 'description', 'category', 'imagePrompt']
+                }
+            }
         });
 
-        const text = response.text.trim();
+        const jsonText = response.text;
+        const productData = JSON.parse(jsonText);
         
-        if (text.toLowerCase() === 'null') {
-            return null;
-        }
+        return productData;
 
-        // Regex to find the first URL in the response text
-        const urlRegex = /(https?:\/\/[^\s]+)/;
-        const match = text.match(urlRegex);
-
-        if (match && match[0]) {
-            let url = match[0];
-            // Convert YouTube watch URL to embed URL
-            if (url.includes("youtube.com/watch?v=")) {
-                const videoId = url.split('v=')[1].split('&')[0];
-                return `https://www.youtube.com/embed/${videoId}`;
-            }
-            return url;
-        }
-
-        return null;
     } catch (error) {
-        console.error("Error finding recipe video:", error);
-        return null;
-    }
-};
-
-const videoDetailsSchema = {
-    type: Type.OBJECT,
-    properties: {
-        title: {
-            type: Type.STRING,
-            description: "A concise, engaging title for the video tutorial."
-        },
-        description: {
-            type: Type.STRING,
-            description: "A short, informative description of what the video teaches."
-        },
-        thumbnailImagePrompt: {
-            type: Type.STRING,
-            description: "A detailed, descriptive prompt for a text-to-image model to generate a high-quality, relevant thumbnail image for the video."
-        }
-    },
-    required: ["title", "description", "thumbnailImagePrompt"]
-};
-
-export const generateVideoDetails = async (promptText: string): Promise<{ title: string; description: string; thumbnailImagePrompt: string; }> => {
-    const prompt = `
-        You are a content creator for a cooking website. A user wants to create a short video tutorial.
-        Based on the user's request, generate the necessary details for the video.
-        You must generate:
-        1. A concise, engaging title.
-        2. A short, informative description.
-        3. A detailed, descriptive prompt for a text-to-image model to generate a high-quality, relevant thumbnail. The prompt should describe an appealing visual related to the video's content.
-
-        User's Video Request: "${promptText}"
-
-        Please return the result as a single, valid JSON object that conforms to the provided schema.
-    `;
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: videoDetailsSchema,
-            },
-        });
-
-        const jsonText = response.text.trim();
-        const generatedData = JSON.parse(jsonText);
-        return generatedData;
-    } catch (error) {
-        console.error("Error generating video details from prompt:", error);
-        throw new Error("Failed to generate video details from the prompt.");
-    }
-};
-
-export const generateWinePairing = async (recipeTitle: string, recipeDescription: string): Promise<{ pairing: string; explanation: string; }> => {
-    const prompt = `
-        You are an expert sommelier. For the following recipe, suggest a specific wine pairing (e.g., "a crisp Sauvignon Blanc from the Loire Valley" or "a bold Cabernet Sauvignon from Napa Valley").
-        Also, provide a brief, one-sentence explanation for why it's a good pairing.
-        Do not suggest anything other than wine.
-
-        Recipe Title: ${recipeTitle}
-        Recipe Description: ${recipeDescription}
-
-        Please return the result as a single JSON object with two keys: "pairing" and "explanation".
-    `;
-
-    const pairingSchema = {
-        type: Type.OBJECT,
-        properties: {
-            pairing: {
-                type: Type.STRING,
-                description: "The name and type of the suggested wine."
-            },
-            explanation: {
-                type: Type.STRING,
-                description: "A brief explanation for the wine pairing choice."
-            }
-        },
-        required: ["pairing", "explanation"]
-    };
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: pairingSchema,
-            },
-        });
-
-        const jsonText = response.text.trim();
-        const parsedJson = JSON.parse(jsonText);
-
-        if (parsedJson.pairing && parsedJson.explanation) {
-            return parsedJson;
-        } else {
-            throw new Error("Invalid response format from API.");
-        }
-    } catch (error) {
-        console.error("Error generating wine pairing:", error);
-        throw new Error("Failed to generate a wine pairing for this recipe.");
-    }
-};
-
-export const generateNewsletterContent = async (topic: string): Promise<{ subject: string; body: string; }> => {
-    const prompt = `
-        You are an expert marketing copywriter for a cooking website called "Recipe Extracter".
-        Your task is to write an engaging newsletter based on a given topic.
-        The newsletter should have a catchy subject line and a body written in a friendly, enthusiastic tone.
-        The body should be formatted with paragraphs. You can use markdown for simple formatting like bolding.
-
-        Topic for the newsletter: "${topic}"
-
-        Please return the result as a single, valid JSON object that conforms to the provided schema.
-    `;
-
-    const newsletterSchema = {
-        type: Type.OBJECT,
-        properties: {
-            subject: {
-                type: Type.STRING,
-                description: "A catchy and engaging subject line for the newsletter email."
-            },
-            body: {
-                type: Type.STRING,
-                description: "The full body content of the newsletter. Use paragraphs for readability."
-            }
-        },
-        required: ["subject", "body"]
-    };
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: newsletterSchema,
-            },
-        });
-
-        const jsonText = response.text.trim();
-        const parsedJson = JSON.parse(jsonText);
-
-        if (parsedJson.subject && parsedJson.body) {
-            return parsedJson;
-        } else {
-            throw new Error("Invalid response format from API. Expected 'subject' and 'body'.");
-        }
-    } catch (error) {
-        console.error("Error generating newsletter content:", error);
-        throw new Error("Failed to generate newsletter content. The model may have been unable to fulfill the request.");
-    }
-};
-
-export const generateMealPlanFromPrompt = async (userPrompt: string): Promise<{ title: string; description: string; plan: Recipe[] }> => {
-    const prompt = `
-        You are an expert meal planner and chef. A user wants a meal plan based on their request.
-        Your task is to generate a complete 5-day meal plan. For each day, generate a complete recipe object that fits the user's criteria.
-        Each recipe must include: title, description, tags, ingredients (with metric quantities and isAvailable set to false), step-by-step instructions, prep time, cook time, servings, estimated nutrition, and a detailed image prompt.
-        You must also provide an overall title and description for the entire meal plan.
-
-        User's Meal Plan Request: "${userPrompt}"
-
-        Return the result as a single, valid JSON object that conforms to the provided schema.
-    `;
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-pro",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: mealPlanSchema,
-            },
-        });
-
-        const jsonText = response.text.trim();
-        const mealPlanData = JSON.parse(jsonText);
-
-        if (mealPlanData.plan && Array.isArray(mealPlanData.plan)) {
-            const recipes: Recipe[] = await Promise.all(
-                mealPlanData.plan.map(async (recipe: any) => {
-                    const imageUrl = await generateImage(recipe.imagePrompt || recipe.title);
-                    return {
-                        title: recipe.title,
-                        description: recipe.description,
-                        imageUrl: imageUrl,
-                        ingredients: recipe.ingredients.map((ing: { quantity: string; name:string; }) => `${ing.quantity} ${ing.name}`.trim()).filter(Boolean),
-                        instructions: recipe.instructions,
-                        tags: recipe.tags,
-                        servings: recipe.servings,
-                        prepTime: recipe.prepTime,
-                        cookTime: recipe.cookTime,
-                        status: 'active',
-                        nutrition: recipe.nutrition,
-                    };
-                })
-            );
-
-            return {
-                title: mealPlanData.title,
-                description: mealPlanData.description,
-                plan: recipes
-            };
-        } else {
-            throw new Error("Invalid response format from API. Expected a 'plan' array.");
-        }
-    } catch (error) {
-        console.error("Error generating meal plan from prompt:", error);
-        throw new Error("Failed to generate the meal plan. The model may have been unable to fulfill the request.");
-    }
-};
-
-export const generateProductsFromPrompt = async (prompt: string): Promise<Product[]> => {
-    const generationPrompt = `
-      You are an e-commerce specialist for a high-end kitchen supply store. A user is searching for products.
-      Based on their search query, generate a list of 5-10 fictional but realistic and appealing products.
-      For each product, provide a name, a short description, a realistic price in USD, and a detailed image prompt suitable for a text-to-image model.
-      The products should be relevant to cooking, kitchenware, or gourmet ingredients.
-
-      User's search query: "${prompt}"
-
-      Return the products in a valid JSON format according to the provided schema.
-    `;
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: generationPrompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: productSchema,
-            },
-        });
-
-        const jsonText = response.text.trim();
-        const parsedJson = JSON.parse(jsonText);
-
-        if (parsedJson.products && Array.isArray(parsedJson.products)) {
-            const products: Product[] = await Promise.all(
-                parsedJson.products.map(async (p: any) => {
-                    const imageUrl = await generateImage(p.imagePrompt || p.name);
-                    return {
-                        name: p.name,
-                        description: p.description,
-                        price: p.price,
-                        imageUrl: imageUrl,
-                        imagePrompt: p.imagePrompt,
-                    };
-                })
-            );
-            return products;
-        } else {
-            throw new Error("Invalid response format from API. Expected a 'products' array.");
-        }
-    } catch (error) {
-        console.error("Error generating products:", error);
-        throw new Error("Failed to generate products. The model may have been unable to fulfill the request.");
+        console.error("Error generating product from prompt with Gemini:", error);
+        throw new Error("Failed to generate product details. The AI may be unable to process this request. Please try a different prompt.");
     }
 };

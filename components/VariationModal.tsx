@@ -1,93 +1,59 @@
-import React, { useState } from 'react';
-import { Recipe } from '../types';
-import XIcon from './icons/XIcon';
+import React from 'react';
+import { RecipeVariation } from '../types';
 import SparklesIcon from './icons/SparklesIcon';
+import XIcon from './icons/XIcon';
 
 interface VariationModalProps {
-    recipe: Recipe;
-    onClose: () => void;
-    onGenerate: (originalRecipe: Recipe, variationRequest: string) => void;
-    isLoading: boolean;
-    error?: string | null;
+  isOpen: boolean;
+  onClose: () => void;
+  variations: RecipeVariation[];
+  originalTitle: string;
 }
 
-const VariationModal: React.FC<VariationModalProps> = ({ recipe, onClose, onGenerate, isLoading, error }) => {
-    const [variationRequest, setVariationRequest] = useState('');
+const VariationModal: React.FC<VariationModalProps> = ({ isOpen, onClose, variations, originalTitle }) => {
+  if (!isOpen) return null;
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (variationRequest.trim()) {
-            onGenerate(recipe, variationRequest);
-        }
-    };
-
-    return (
-        <div 
-            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 transition-opacity"
-            role="dialog" 
-            aria-modal="true"
-            aria-labelledby="variation-modal-title"
-        >
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg overflow-hidden relative transform transition-all">
-                <div className="p-6">
-                     <button 
-                        onClick={onClose} 
-                        className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 z-10" 
-                        aria-label="Close variation modal"
-                        disabled={isLoading}
-                    >
-                        <XIcon className="h-6 w-6" />
-                    </button>
-                    <h2 id="variation-modal-title" className="text-2xl font-bold text-text-primary mb-2">
-                        Create a Variation
-                    </h2>
-                    <p className="text-text-secondary mb-4">
-                        How would you like to change <strong className="text-primary">{recipe.title}</strong>?
-                    </p>
-
-                    <form onSubmit={handleSubmit}>
-                        <label htmlFor="variation-request" className="block text-sm font-medium text-text-secondary mb-1">
-                            Your Request
-                        </label>
-                        <textarea
-                            id="variation-request"
-                            value={variationRequest}
-                            onChange={(e) => setVariationRequest(e.target.value)}
-                            placeholder="e.g., Make this vegetarian, add more spice, make it low-carb..."
-                            className="w-full p-2 border border-border-color rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                            rows={3}
-                            required
-                            disabled={isLoading}
-                        />
-
-                        {error && (
-                            <p className="mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</p>
-                        )}
-
-                        <div className="mt-6 flex justify-end">
-                            <button
-                                type="submit"
-                                disabled={isLoading || !variationRequest.trim()}
-                                className="w-full md:w-auto px-6 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2"
-                            >
-                                {isLoading ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                                        <span>Generating...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <SparklesIcon className="h-5 w-5" />
-                                        <span>Generate Variation</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 animate-fade-in"
+      onClick={onClose}
+      aria-modal="true"
+      role="dialog"
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-11/12 md:max-w-2xl max-h-[90vh] flex flex-col p-6 md:p-8 relative"
+        onClick={e => e.stopPropagation()}
+      >
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 z-10 transition-colors" aria-label="Close modal">
+          <XIcon className="w-6 h-6" />
+        </button>
+        
+        <div className="text-center mb-6">
+          <SparklesIcon className="w-10 h-10 text-teal-500 mx-auto" />
+          <h2 className="text-2xl font-bold text-gray-800 mt-3">Recipe Variations</h2>
+          <p className="text-gray-600 mt-1">Creative twists on "{originalTitle}"</p>
         </div>
-    );
+        
+        <div className="flex-grow overflow-y-auto pr-2 space-y-4">
+          {variations.map((variation, index) => (
+            <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="font-bold text-teal-700">{variation.title}</h3>
+              <p className="text-sm text-gray-600 mt-1">{variation.description}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 text-center">
+            <button
+                onClick={onClose}
+                className="w-full sm:w-auto px-8 py-2.5 bg-gray-800 text-white font-bold rounded-lg shadow-md hover:bg-gray-900 transition-colors text-base"
+            >
+                Close
+            </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default VariationModal;

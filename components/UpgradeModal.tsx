@@ -1,121 +1,74 @@
-import React, { useState } from 'react';
+import React from 'react';
 import XIcon from './icons/XIcon';
-import SparklesIcon from './icons/SparklesIcon';
-import CheckCircleIcon from './icons/CheckCircleIcon';
+import CrownIcon from './icons/CrownIcon';
+import CheckIcon from './icons/CheckIcon';
 
 interface UpgradeModalProps {
-    onClose: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onUpgrade: () => void;
 }
 
-const premiumFeatures = [
-    "Exclusive 'New This Month' Recipes",
-    "Advanced Cooking Classes",
-    "Ask an Expert Q&A",
-];
-
-const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose }) => {
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const handleUpgradeClick = async () => {
-        setIsLoading(true);
-        setError(null);
+const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, onUpgrade }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 animate-fade-in"
+      onClick={onClose}
+      aria-modal="true"
+      role="dialog"
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-11/12 md:max-w-md p-8 relative overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 z-10 transition-colors" aria-label="Close modal">
+          <XIcon className="w-6 h-6" />
+        </button>
         
-        if (!process.env.STRIPE_PUBLISHABLE_KEY || !process.env.STRIPE_PRICE_ID) {
-            setError("Stripe is not configured correctly. Please contact support.");
-            setIsLoading(false);
-            return;
-        }
-
-        try {
-            const stripe = window.Stripe(process.env.STRIPE_PUBLISHABLE_KEY);
-            const { error } = await stripe.redirectToCheckout({
-                lineItems: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
-                mode: 'subscription',
-                successUrl: `${window.location.origin}${window.location.pathname}?checkout=success`,
-                cancelUrl: `${window.location.origin}${window.location.pathname}?checkout=cancel`,
-            });
-
-            if (error) {
-                throw new Error(error.message);
-            }
-        } catch (err) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError("An unknown error occurred during checkout.");
-            }
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <div 
-            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 animate-fade-in"
-            role="dialog" 
-            aria-modal="true"
-            aria-labelledby="upgrade-modal-title"
-            onClick={onClose}
-        >
-            <div 
-                className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden transform transition-all"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="p-6 text-center">
-                    <button 
-                        onClick={onClose} 
-                        className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 z-10" 
-                        aria-label="Close upgrade modal"
-                    >
-                        <XIcon className="h-6 w-6" />
-                    </button>
-                    <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
-                        <SparklesIcon className="h-6 w-6 text-yellow-600" aria-hidden="true" />
-                    </div>
-                    <h2 id="upgrade-modal-title" className="text-2xl font-bold text-text-primary mt-4">
-                        Upgrade to Premium
-                    </h2>
-                    <p className="text-text-secondary mt-2">
-                        Unlock your full culinary potential with our exclusive features.
-                    </p>
-                </div>
-                <div className="bg-gray-50 px-6 py-4">
-                    <ul className="space-y-3">
-                        {premiumFeatures.map((feature, index) => (
-                            <li key={index} className="flex items-start">
-                                <CheckCircleIcon className="flex-shrink-0 h-5 w-5 text-primary mr-2 mt-0.5" />
-                                <span className="text-text-secondary">{feature}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-                <div className="p-6">
-                     {error && (
-                        <div className="mb-4 text-center bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-lg text-sm" role="alert">
-                           {error}
-                        </div>
-                    )}
-                    <button
-                        onClick={handleUpgradeClick}
-                        disabled={isLoading}
-                        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-lg shadow-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus disabled:bg-gray-400 disabled:cursor-wait transition-colors duration-200"
-                    >
-                        {isLoading ? (
-                            <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                                <span>Redirecting...</span>
-                            </>
-                        ) : (
-                            <span>Upgrade for $4.99 / month</span>
-                        )}
-                    </button>
-                    <p className="text-xs text-gray-400 mt-3 text-center">
-                        Secure payment processing by Stripe. You can cancel anytime.
-                    </p>
+        <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-amber-100 mb-5">
+                <div className="flex items-center justify-center h-16 w-16 rounded-full bg-amber-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
                 </div>
             </div>
+            <h2 className="text-3xl font-bold text-gray-900">Go Premium!</h2>
+            <p className="text-gray-600 mt-2">Unlock exclusive features and take your cooking to the next level.</p>
         </div>
-    );
+
+        <ul className="space-y-3 my-8 text-left">
+            <li className="flex items-start">
+                <CheckIcon className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" />
+                <span className="text-gray-700">Access to <span className="font-semibold text-gray-800">new, exclusive recipes</span> added every month.</span>
+            </li>
+            <li className="flex items-start">
+                <CheckIcon className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" />
+                <span className="text-gray-700">Watch <span className="font-semibold text-gray-800">Advanced Cooking Classes</span> taught by professional chefs.</span>
+            </li>
+             <li className="flex items-start">
+                <CheckIcon className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" />
+                <span className="text-gray-700"><span className="font-semibold text-gray-800">Ad-free browsing experience</span> for uninterrupted cooking.</span>
+            </li>
+             <li className="flex items-start">
+                <CheckIcon className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" />
+                <span className="text-gray-700"><span className="font-semibold text-gray-800">Early access</span> to new features and video tutorials.</span>
+            </li>
+        </ul>
+
+        <div className="mt-6">
+            <button
+              onClick={onUpgrade}
+              className="w-full px-4 py-4 bg-amber-400 border border-transparent rounded-lg shadow-sm text-base font-bold text-gray-900 hover:bg-amber-500 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
+            >
+              Upgrade Now
+            </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default UpgradeModal;

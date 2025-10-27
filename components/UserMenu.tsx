@@ -1,89 +1,115 @@
 import React, { useState, useRef, useEffect } from 'react';
-import UserCircleIcon from './icons/UserCircleIcon';
 import LogoutIcon from './icons/LogoutIcon';
-import LayoutDashboardIcon from './icons/LayoutDashboardIcon';
+import ChevronDownIcon from './icons/ChevronDownIcon';
+import HeartIcon from './icons/HeartIcon';
+import UserIcon from './icons/UserIcon';
 import { User } from '../types';
+import ListIcon from './icons/ListIcon';
+import LayoutDashboardIcon from './icons/LayoutDashboardIcon';
 
 interface UserMenuProps {
-    user: User;
-    onLogout: () => void;
-    onShowDashboard: () => void;
+  user: User;
+  onLogout: () => void;
+  onShowFavorites: () => void;
+  onOpenProfile: () => void;
+  onOpenLists: () => void;
+  onOpenAdmin: () => void;
 }
 
-const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout, onShowDashboard }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
+const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout, onShowFavorites, onOpenProfile, onOpenLists, onOpenAdmin }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-        if (event.key === 'Escape') {
-            setIsOpen(false);
-        }
-    };
-
-    const handleShowDashboard = () => {
-        onShowDashboard();
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+      }
     };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-            document.addEventListener('keydown', handleKeyDown);
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [isOpen]);
-
-    return (
-        <div className="relative" ref={menuRef}>
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 text-sm font-semibold text-text-primary p-1 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                aria-haspopup="true"
-                aria-expanded={isOpen}
-            >
-                <UserCircleIcon className="h-7 w-7 text-gray-500" />
-                <span className="hidden md:inline">{user.email}</span>
-            </button>
-            
-            {isOpen && (
-                <div 
-                    className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-border-color z-20"
-                    role="menu"
-                    aria-orientation="vertical"
-                    aria-labelledby="user-menu-button"
-                >
-                    {user.isAdmin && (
-                         <button
-                            onClick={handleShowDashboard}
-                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-gray-100"
-                            role="menuitem"
-                        >
-                            <LayoutDashboardIcon className="h-5 w-5" />
-                            <span>Admin Dashboard</span>
-                        </button>
-                    )}
-                    <button
-                        onClick={onLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                        role="menuitem"
-                    >
-                        <LogoutIcon className="h-5 w-5" />
-                        <span>Logout</span>
-                    </button>
-                </div>
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label="Open user menu"
+        className="flex items-center gap-2 px-2 py-1.5 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+            {user.profileImage ? (
+                <img src={user.profileImage} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+                <UserIcon className="w-6 h-6 text-gray-500" />
             )}
         </div>
-    );
+        <span>Hello, {user.name}</span>
+        <ChevronDownIcon className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-50 animate-fade-in ring-1 ring-black ring-opacity-5">
+          <div className="px-4 py-3 border-b">
+            <p className="text-sm text-gray-700">Signed in as</p>
+            <p className="text-sm font-semibold text-gray-900 truncate">{user.email}</p>
+          </div>
+           <button
+            onClick={() => {
+              onOpenProfile();
+              setIsOpen(false);
+            }}
+            className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            <UserIcon className="w-5 h-5" />
+            My Profile
+          </button>
+          <button
+            onClick={() => {
+              onShowFavorites();
+              setIsOpen(false);
+            }}
+            className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            <HeartIcon className="w-5 h-5 text-red-500" isFilled={true} />
+            My Favorite Recipes
+          </button>
+           <button
+            onClick={() => {
+              onOpenLists();
+              setIsOpen(false);
+            }}
+            className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            <ListIcon className="w-5 h-5" />
+            My Shopping Lists
+          </button>
+          {user.isAdmin && (
+            <button
+              onClick={() => {
+                onOpenAdmin();
+                setIsOpen(false);
+              }}
+              className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              <LayoutDashboardIcon className="w-5 h-5" />
+              Admin Dashboard
+            </button>
+          )}
+          <div className="border-t my-1"></div>
+          <button
+            onClick={() => {
+              onLogout();
+              setIsOpen(false);
+            }}
+            className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            <LogoutIcon className="w-5 h-5" />
+            Logout
+          </button>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default UserMenu;

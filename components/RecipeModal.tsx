@@ -1,318 +1,244 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Recipe } from '../types';
-import XIcon from './icons/XIcon';
-import HeartIcon from './icons/HeartIcon';
-import ShoppingCartIcon from './icons/ShoppingCartIcon';
+import { Recipe, RecipeVariation } from '../types';
+import ShareIcon from './icons/ShareIcon';
+import PrintIcon from './icons/PrintIcon';
+import { formatIngredient, formatInstruction, adjustIngredient } from '../utils/recipeUtils';
 import ChefHatIcon from './icons/ChefHatIcon';
-import { parseIngredient, parseServings, convertToAmerican } from '../utils/recipeUtils';
-import ClockIcon from './icons/ClockIcon';
-import UsersIcon from './icons/UsersIcon';
-import FireIcon from './icons/FireIcon';
-import * as ratingService from '../services/ratingService';
-import Rating from './Rating';
-import { findRecipeVideo, generateWinePairing } from '../services/geminiService';
-import FilmIcon from './icons/FilmIcon';
-import SparklesIcon from './icons/SparklesIcon';
 import WineIcon from './icons/WineIcon';
+import StarIcon from './icons/StarIcon';
+import UsersIcon from './icons/UsersIcon';
+import ClockIcon from './icons/ClockIcon';
+import PlusIcon from './icons/PlusIcon';
+import MinusIcon from './icons/MinusIcon';
+import SparklesIcon from './icons/SparklesIcon';
+import VariationModal from './VariationModal';
+import { generateRecipeVariations } from '../services/geminiService';
+import Spinner from './Spinner';
+import XIcon from './icons/XIcon';
 
 interface RecipeModalProps {
-    recipe: Recipe;
-    onClose: () => void;
-    isSaved: boolean;
-    onToggleSave: () => void;
-    onGenerateShoppingList: () => void;
-    isGeneratingList: boolean;
-    onStartCookMode: () => void;
-    onPlayVideo: (videoUrl: string) => void;
-    onStartVariation: () => void;
+  recipe: Recipe | null;
+  onClose: () => void;
+  measurementSystem: 'metric' | 'us';
+  onEnterCookMode: (recipe: Recipe) => void;
+  onAddRating: (recipeId: number, score: number) => void;
 }
 
-const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, isSaved, onToggleSave, onGenerateShoppingList, isGeneratingList, onStartCookMode, onPlayVideo, onStartVariation }) => {
-    
-    const originalServings = useMemo(() => parseServings(recipe.servings), [recipe.servings]);
-    const [targetServings, setTargetServings] = useState(originalServings);
-    const [ratings, setRatings] = useState(() => ratingService.getRatingsForRecipe(recipe.title));
-    const [videoUrl, setVideoUrl] = useState<string | null>(null);
-    const [isFindingVideo, setIsFindingVideo] = useState(true);
-    const [winePairing, setWinePairing] = useState<{ pairing: string; explanation: string; } | null>(null);
-    const [isFindingPairing, setIsFindingPairing] = useState(true);
+const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementSystem, onEnterCookMode, onAddRating }) => {
+  const [shareText, setShareText] = useState('Share');
+  
+  const originalServings = useMemo(() => recipe ? parseInt(recipe.servings.split('-')[0], 10) || 1 : 1, [recipe]);
+  const [currentServings, setCurrentServings] = useState(originalServings);
+  const [adjustedIngredients, setAdjustedIngredients] = useState(recipe?.ingredients || []);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [currentRating, setCurrentRating] = useState(Math.round(recipe?.rating?.score || 0));
+  const [isGeneratingVariations, setIsGeneratingVariations] = useState(false);
+  const [variations, setVariations] = useState<RecipeVariation[]>([]);
+  const [isVariationModalOpen, setIsVariationModalOpen] = useState(false);
+  const [variationError, setVariationError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchVideo = async () => {
-            setIsFindingVideo(true);
-            try {
-                const url = await findRecipeVideo(recipe.title);
-                setVideoUrl(url);
-            } catch (error) {
-                console.error("Error fetching video for recipe:", error);
-                setVideoUrl(null);
-            } finally {
-                setIsFindingVideo(false);
-            }
-        };
+  useEffect(() => {
+    if (recipe) {
+      const newOriginalServings = parseInt(recipe.servings.split('-')[0], 10) || 1;
+      setCurrentServings(newOriginalServings);
+      setAdjustedIngredients(recipe.ingredients);
+      setCurrentRating(Math.round(recipe.rating?.score || 0));
+      setVariations([]);
+      setIsVariationModalOpen(false);
+      setVariationError(null);
+    }
+  }, [recipe]);
 
-        fetchVideo();
-    }, [recipe.title]);
+  useEffect(() => {
+    if (recipe && originalServings > 0 && currentServings > 0) {
+      const newIngredients = recipe.ingredients.map(ing =>
+        adjustIngredient(ing, originalServings, currentServings)
+      );
+      setAdjustedIngredients(newIngredients);
+    }
+  }, [currentServings, originalServings, recipe]);
 
-    useEffect(() => {
-        const fetchPairing = async () => {
-            setIsFindingPairing(true);
-            setWinePairing(null);
-            try {
-                const pairingData = await generateWinePairing(recipe.title, recipe.description);
-                setWinePairing(pairingData);
-            } catch (error) {
-                console.error("Error fetching wine pairing:", error);
-                setWinePairing(null);
-            } finally {
-                setIsFindingPairing(false);
-            }
-        };
+  if (!recipe) return null;
 
-        fetchPairing();
-    }, [recipe.title, recipe.description]);
-
-
-    const averageRating = useMemo(() => {
-        return ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
-    }, [ratings]);
-
-    const handleRateRecipe = (newRating: number) => {
-        ratingService.saveRatingForRecipe(recipe.title, newRating);
-        setRatings(prev => [...prev, newRating]);
+  const handleShare = async () => {
+    const shareData = {
+      title: recipe.title,
+      text: `Check out this recipe for ${recipe.title}!`,
+      url: window.location.href,
     };
 
-    const handleServingChange = (change: number) => {
-        setTargetServings(prev => Math.max(1, prev + change));
-    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.error('Error sharing:', err);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareData.url);
+        setShareText('Copied!');
+        setTimeout(() => setShareText('Share'), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+        setShareText('Failed!');
+        setTimeout(() => setShareText('Share'), 2000);
+      }
+    }
+  };
 
-    const adjustedIngredients = useMemo(() => {
-        if (!originalServings || originalServings === 0 || !recipe.ingredients) {
-            return recipe.ingredients || [];
-        }
-        
-        const multiplier = targetServings / originalServings;
+  const handlePrint = () => window.print();
 
-        return recipe.ingredients.map(ingStr => {
-            const parsed = parseIngredient(ingStr);
+  const handleRatingSubmit = (score: number) => {
+    setCurrentRating(score);
+    onAddRating(recipe.id, score);
+  };
 
-            if (!parsed || parsed.quantity === 0) {
-                return ingStr; // Return original string if not parsable or no quantity
-            }
+  const handleGenerateVariations = async () => {
+    setIsGeneratingVariations(true);
+    setVariationError(null);
+    try {
+        const result = await generateRecipeVariations(recipe);
+        setVariations(result);
+        setIsVariationModalOpen(true);
+    } catch (e: any) {
+        setVariationError(e.message || 'Failed to generate variations.');
+    } finally {
+        setIsGeneratingVariations(false);
+    }
+  };
 
-            const newQuantity = parsed.quantity * multiplier;
-            
-            if (newQuantity === 0) return parsed.name;
-
-            const { newQuantityStr, newUnit } = convertToAmerican(newQuantity, parsed.unit);
-            
-            const formattedString = `${newQuantityStr} ${newUnit} ${parsed.name}`.replace(/\s+/g, ' ').trim();
-            // Handle pluralization for non-standard units
-            if (newQuantity > 1 && !newUnit.endsWith('s')) {
-                 if (parsed.unit && !convertToAmerican(1, parsed.unit).newUnit.endsWith('s')) {
-                    return `${newQuantityStr} ${newUnit}s ${parsed.name}`.replace(/\s+/g, ' ').trim();
-                 }
-            }
-
-            return formattedString;
-        });
-
-    }, [recipe.ingredients, originalServings, targetServings]);
-    
-    return (
+  return (
+    <>
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 animate-fade-in print:hidden"
+        onClick={onClose}
+        aria-modal="true"
+        role="dialog"
+      >
         <div
-            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 animate-fade-in"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="recipe-modal-title"
-            onClick={onClose}
+          className="bg-white rounded-2xl shadow-2xl w-11/12 md:max-w-4xl max-h-[90vh] overflow-y-auto p-6 md:p-8 relative print:shadow-none print:rounded-none print:max-h-full print:w-full print:overflow-visible scrollbar-hide"
+          onClick={(e) => e.stopPropagation()}
         >
-            <div
-                className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row"
-                onClick={(e) => e.stopPropagation()} // Prevent closing modal when clicking inside
-            >
-                <div className="w-full md:w-1/2 h-64 md:h-auto relative">
-                    <img
-                        src={recipe.imageUrl}
-                        alt={recipe.title}
-                        className="absolute inset-0 w-full h-full object-cover"
-                    />
-                    <button
-                        onClick={onClose}
-                        className="absolute top-3 right-3 bg-black/50 p-1.5 rounded-full text-white hover:bg-black/75 z-10 transition-colors"
-                        aria-label="Close recipe modal"
-                    >
-                        <XIcon className="h-6 w-6" />
-                    </button>
+          <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors print:hidden z-10" aria-label="Close recipe modal">
+            <XIcon className="h-6 w-6" />
+          </button>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column: Image & Meta */}
+            <div>
+                <h2 className="text-3xl font-bold mb-4 text-gray-800 lg:pr-8">{recipe.title}</h2>
+                <img src={recipe.image} alt={recipe.title} className="w-full h-64 object-cover rounded-lg mb-6" />
+                <p className="text-gray-600 mb-6">{recipe.description}</p>
+                 <div className="flex flex-wrap items-center justify-between text-gray-600 mb-6 border-y py-3 gap-4">
+                    <div className="flex items-center space-x-6">
+                        <div className="flex items-center space-x-2">
+                            <ClockIcon className="h-5 w-5" />
+                            <span className="font-medium">{recipe.cookTime}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <UsersIcon className="h-5 w-5" />
+                            <span className="font-medium">{recipe.servings}</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 print:hidden">
+                        <button onClick={handlePrint} className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors" aria-label="Print recipe"><PrintIcon className="w-5 h-5" /></button>
+                        <button onClick={handleShare} className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors" aria-label={shareText}><ShareIcon className="w-5 h-5" /></button>
+                    </div>
                 </div>
-
-                <div className="w-full md:w-1/2 p-6 md:p-8 overflow-y-auto">
-                    <div className="flex justify-between items-start">
-                        <h2 id="recipe-modal-title" className="text-3xl font-bold text-text-primary mb-2 flex-1 pr-4">
-                            {recipe.title}
-                        </h2>
-                        
-                    </div>
-
-                    <div className="mb-4 flex flex-wrap gap-2">
-                        {recipe.tags.map(tag => (
-                            <span key={tag} className="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full">{tag}</span>
-                        ))}
-                    </div>
-                    <p className="text-text-secondary mb-6">{recipe.description}</p>
-                    
-                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-6 border-y border-border-color py-4">
-                        <div>
-                            <ClockIcon className="w-6 h-6 mx-auto text-primary mb-1" />
-                            <p className="text-xs text-text-secondary font-bold uppercase tracking-wider">Prep Time</p>
-                            <p className="font-semibold text-text-primary">{recipe.prepTime}</p>
-                        </div>
-                        <div>
-                            <ClockIcon className="w-6 h-6 mx-auto text-primary mb-1" />
-                            <p className="text-xs text-text-secondary font-bold uppercase tracking-wider">Cook Time</p>
-                            <p className="font-semibold text-text-primary">{recipe.cookTime}</p>
-                        </div>
-                        <div>
-                            <UsersIcon className="w-6 h-6 mx-auto text-primary mb-1" />
-                            <p className="text-xs text-text-secondary font-bold uppercase tracking-wider">Servings</p>
-                            <p className="font-semibold text-text-primary">{parseServings(recipe.servings)}</p>
-                        </div>
-                        <div>
-                            <FireIcon className="w-6 h-6 mx-auto text-primary mb-1" />
-                            <p className="text-xs text-text-secondary font-bold uppercase tracking-wider">Calories</p>
-                            <p className="font-semibold text-text-primary">{recipe.nutrition.calories}</p>
+                
+                 <div className="space-y-4">
+                    {/* RATING */}
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                        <h4 className="font-semibold text-gray-800 mb-2 text-center">Rate this recipe</h4>
+                        <div className="flex justify-center items-center" onMouseLeave={() => setHoverRating(0)}>
+                            {[...Array(5)].map((_, i) => {
+                                const ratingValue = i + 1;
+                                return (
+                                    <button
+                                        key={i}
+                                        onClick={() => handleRatingSubmit(ratingValue)}
+                                        onMouseEnter={() => setHoverRating(ratingValue)}
+                                        className="p-1"
+                                        aria-label={`Rate ${ratingValue} out of 5 stars`}
+                                    >
+                                        <StarIcon className="w-8 h-8 transition-colors" fill={ratingValue <= (hoverRating || currentRating) ? '#fbbf24' : 'none'} stroke={ratingValue <= (hoverRating || currentRating) ? '#fbbf24' : 'currentColor'} />
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
-                    <div className="my-6 p-4 bg-gray-50 rounded-lg border border-border-color">
-                        <h4 className="text-md font-semibold text-text-primary mb-2 text-center">Rate this recipe</h4>
-                        <div className="flex justify-center">
-                            <Rating
-                                averageRating={averageRating}
-                                ratingCount={ratings.length}
-                                onRate={handleRateRecipe}
-                                size="lg"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="my-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
-                        <h4 className="text-md font-semibold text-purple-800 mb-2 flex items-center gap-2">
-                            <WineIcon className="w-5 h-5" />
-                            AI Wine Pairing
-                        </h4>
-                        {isFindingPairing ? (
-                            <div className="flex items-center gap-2 text-sm text-purple-700">
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
-                                <span>Finding the perfect wine...</span>
-                            </div>
-                        ) : winePairing ? (
-                            <div>
-                                <p className="font-bold text-purple-900">{winePairing.pairing}</p>
-                                <p className="text-sm text-purple-700 mt-1 italic">{winePairing.explanation}</p>
-                            </div>
-                        ) : (
-                            <p className="text-sm text-purple-600">Could not find a wine pairing suggestion at this time.</p>
-                        )}
-                    </div>
-
-                     <div className="grid grid-cols-2 gap-3 mb-6">
-                        <button
-                            onClick={onToggleSave}
-                            className={`flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-lg font-semibold transition-colors duration-200 ${isSaved ? 'border-red-500 bg-red-50 text-red-600' : 'border-border-color bg-white text-text-secondary hover:bg-gray-100'}`}
-                        >
-                            <HeartIcon isFilled={isSaved} className="w-5 h-5" />
-                            <span>{isSaved ? 'Saved' : 'Save'}</span>
-                        </button>
-                         <button
-                            onClick={onGenerateShoppingList}
-                            disabled={isGeneratingList}
-                            className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-primary/50 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg font-semibold transition-colors duration-200 disabled:bg-gray-200 disabled:cursor-not-allowed disabled:text-gray-500"
-                        >
-                            {isGeneratingList ? (
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
-                            ) : (
-                                <ShoppingCartIcon className="w-5 h-5" />
-                            )}
-                            <span>{isGeneratingList ? 'Generating...' : 'Shopping List'}</span>
-                        </button>
-                        <button
-                            onClick={onStartCookMode}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-semibold shadow-sm hover:bg-primary-focus transition-colors duration-200"
-                        >
-                            <ChefHatIcon className="w-5 h-5" />
-                            <span>Cook Mode</span>
-                        </button>
-                        <button
-                            onClick={onStartVariation}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold shadow-sm hover:bg-indigo-700 transition-colors duration-200"
-                        >
-                            <SparklesIcon className="w-5 h-5" />
-                            <span>Variation AI</span>
-                        </button>
-
-                        <div className="col-span-2">
-                            {isFindingVideo ? (
-                                 <div className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 bg-gray-50 text-gray-400 rounded-lg font-semibold">
-                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400"></div>
-                                    <span>Finding Video...</span>
+                    {recipe.winePairing && (
+                        <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-200">
+                            <div className="flex items-start gap-3">
+                                <WineIcon className="w-6 h-6 text-amber-600 flex-shrink-0 mt-1" />
+                                <div>
+                                    <h4 className="font-semibold text-amber-800">Wine Pairing Suggestion</h4>
+                                    <p className="font-bold text-gray-800 mt-1">{recipe.winePairing.suggestion}</p>
+                                    <p className="text-sm text-gray-600 mt-1">{recipe.winePairing.description}</p>
                                 </div>
-                            ) : videoUrl ? (
-                                 <button
-                                    onClick={() => onPlayVideo(videoUrl)}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold shadow-sm hover:bg-blue-600 transition-colors duration-200"
-                                >
-                                    <FilmIcon className="w-5 h-5" />
-                                    <span>Watch Video</span>
-                                </button>
-                            ) : null}
-                        </div>
-                    </div>
-
-
-                    <div className="mb-6">
-                        <h3 className="text-xl font-semibold text-primary mb-3 border-b-2 border-primary/20 pb-1">Ingredients</h3>
-                         {/* Servings Adjuster */}
-                        <div className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg my-4 border border-border-color">
-                            <span className="font-semibold text-text-secondary">Servings:</span>
-                            <div className="flex items-center gap-2">
-                                <button 
-                                    onClick={() => handleServingChange(-1)}
-                                    disabled={targetServings <= 1}
-                                    className="p-1 w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full text-lg font-bold text-text-secondary hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    aria-label="Decrease servings"
-                                >
-                                    -
-                                </button>
-                                <span className="text-lg font-bold text-text-primary w-10 text-center" aria-live="polite">{targetServings}</span>
-                                <button 
-                                    onClick={() => handleServingChange(1)}
-                                    className="p-1 w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full text-lg font-bold text-text-secondary hover:bg-gray-300"
-                                    aria-label="Increase servings"
-                                >
-                                    +
-                                </button>
                             </div>
                         </div>
-                        <ul className="list-disc list-inside space-y-1.5 text-text-secondary pl-2">
-                            {adjustedIngredients.map((ingredient, index) => (
-                                <li key={index}>{ingredient}</li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h3 className="text-xl font-semibold text-primary mb-3 border-b-2 border-primary/20 pb-1">Instructions</h3>
-                        <ol className="list-decimal list-inside space-y-4 text-text-secondary pl-2">
-                            {recipe.instructions.map((step, index) => (
-                                <li key={index} className="pl-1">{step}</li>
-                            ))}
-                        </ol>
-                    </div>
-                </div>
+                    )}
+                 </div>
             </div>
+
+            {/* Right Column: Ingredients & Instructions */}
+            <div>
+                 <div className="mb-6">
+                    <h3 className="font-semibold text-xl mb-2 text-gray-700">Ingredients</h3>
+                    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border">
+                        <p className="font-medium text-gray-700">Servings:</p>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setCurrentServings(s => Math.max(1, s - 1))} className="p-1.5 rounded-full bg-gray-200 hover:bg-gray-300" aria-label="Decrease servings"><MinusIcon className="w-5 h-5" /></button>
+                            <span className="font-bold text-lg w-10 text-center">{currentServings}</span>
+                            <button onClick={() => setCurrentServings(s => s + 1)} className="p-1.5 rounded-full bg-gray-200 hover:bg-gray-300" aria-label="Increase servings"><PlusIcon className="w-5 h-5" /></button>
+                        </div>
+                    </div>
+                    <ul className="list-disc list-inside space-y-1 text-gray-600 mt-4">
+                        {adjustedIngredients.map((ing, i) => <li key={i}>{formatIngredient({ ...ing }, measurementSystem)}</li>)}
+                    </ul>
+                </div>
+                
+                 <div>
+                    <h3 className="font-semibold text-xl mb-3 text-gray-700">Instructions</h3>
+                    <ol className="list-decimal list-inside space-y-3 text-gray-600">
+                        {recipe.instructions.map((inst, i) => <li key={i} className="pl-2">{formatInstruction(inst, measurementSystem)}</li>)}
+                    </ol>
+                </div>
+
+                 <div className="mt-8 border-t pt-6 space-y-4">
+                     <button
+                        onClick={() => onEnterCookMode(recipe)}
+                        className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors font-bold"
+                        aria-label="Enter cook mode"
+                     >
+                        <ChefHatIcon className="w-6 h-6" />
+                        <span>Enter Cook Mode</span>
+                    </button>
+                    <button
+                        onClick={handleGenerateVariations}
+                        disabled={isGeneratingVariations}
+                        className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-colors font-bold disabled:bg-teal-300 disabled:cursor-wait"
+                    >
+                        {isGeneratingVariations ? <Spinner /> : <SparklesIcon className="w-6 h-6" />}
+                        <span>{isGeneratingVariations ? "Thinking..." : "Suggest Variations"}</span>
+                    </button>
+                    {variationError && <p className="text-red-500 text-sm text-center">{variationError}</p>}
+                </div>
+
+            </div>
+          </div>
         </div>
-    );
+      </div>
+      <VariationModal 
+        isOpen={isVariationModalOpen}
+        onClose={() => setIsVariationModalOpen(false)}
+        variations={variations}
+        originalTitle={recipe.title}
+      />
+    </>
+  );
 };
 
 export default RecipeModal;

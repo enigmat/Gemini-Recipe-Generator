@@ -1,42 +1,30 @@
 import React from 'react';
 import { Product } from '../types';
-import ShoppingCartIcon from './icons/ShoppingCartIcon';
+import ExternalLinkIcon from './icons/ExternalLinkIcon';
 
 interface ProductCardProps {
     product: Product;
-    onAddToCart: () => void;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     return (
-        <div className="group bg-white rounded-xl overflow-hidden shadow-md border border-border-color flex flex-col">
-            <div className="relative aspect-square overflow-hidden">
-                <img
-                    alt={product.name}
-                    src={product.imageUrl}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                />
+        <div className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col group border">
+            <div className="relative">
+                <img src={product.imageUrl} alt={product.name} className="w-full h-48 object-cover" />
             </div>
             <div className="p-4 flex flex-col flex-grow">
-                <h3 className="text-md font-bold text-text-primary leading-tight h-12 line-clamp-2" title={product.name}>
-                    {product.name}
-                </h3>
-                <p className="mt-1 text-sm text-text-secondary line-clamp-3 flex-grow">
-                    {product.description}
-                </p>
-                <div className="mt-4 pt-4 border-t border-border-color flex justify-between items-center">
-                    <p className="text-lg font-bold text-primary">
-                        ${product.price.toFixed(2)}
-                    </p>
-                    <button
-                        onClick={onAddToCart}
-                        className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
-                        aria-label={`Add ${product.name} to cart`}
-                    >
-                        <ShoppingCartIcon className="w-5 h-5" />
-                    </button>
-                </div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{product.brand}</p>
+                <h3 className="text-lg font-semibold text-gray-800 truncate mt-1">{product.name}</h3>
+                <p className="text-sm text-gray-600 mt-2 line-clamp-3 flex-grow">{product.description}</p>
+                <a
+                    href={product.affiliateUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 text-white font-bold rounded-lg shadow-md hover:bg-gray-900 transition-colors text-sm"
+                >
+                    <span>Shop Now</span>
+                    <ExternalLinkIcon className="w-4 h-4" />
+                </a>
             </div>
         </div>
     );

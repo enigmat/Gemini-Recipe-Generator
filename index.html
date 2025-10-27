@@ -5,70 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Recipe Extracter</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              'primary': '#10B981',
-              'primary-focus': '#059669',
-              'secondary': '#F9FAFB',
-              'text-primary': '#1F2937',
-              'text-secondary': '#4B5563',
-              'background': '#FFFFFF',
-              'border-color': '#E5E7EB',
-            },
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
-            animation: {
-              shimmer: 'shimmer 1.5s infinite',
-            },
-            keyframes: {
-              shimmer: {
-                '0%': { transform: 'translateX(-100%)' },
-                '100%': { transform: 'translateX(100%)' },
-              },
-            },
-          },
-        },
-      }
-    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-      /* Global override to fix input fields appearing black in some browsers/modes */
-      input[type="text"],
-      input[type="url"],
-      input[type="email"],
-      input[type="password"],
-      textarea {
-        background-color: #FFFFFF !important;
-        color: #1F2937 !important;
+      body {
+        font-family: 'Inter', sans-serif;
       }
-      /* Ensure placeholder text is also visible */
-      input::placeholder,
-      textarea::placeholder {
-        color: #9CA3AF !important; /* A light gray, similar to Tailwind's gray-400 */
-        opacity: 1 !important; /* Firefox needs this */
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-out forwards;
+      }
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      /* Hide scrollbar for IE, Edge and Firefox */
+      .scrollbar-hide {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
       }
     </style>
-    <script src="https://js.stripe.com/v3/"></script>
   <script type="importmap">
 {
   "imports": {
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
     "react/": "https://aistudiocdn.com/react@^19.1.1/",
     "react": "https://aistudiocdn.com/react@^19.1.1",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
-    "jspdf": "https://aistudiocdn.com/jspdf@^2.5.1",
-    "html2canvas": "https://aistudiocdn.com/html2canvas@^1.4.1"
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0"
   }
 }
 </script>
 </head>
-  <body class="bg-secondary font-sans">
+  <body class="bg-gray-50 text-gray-800">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
