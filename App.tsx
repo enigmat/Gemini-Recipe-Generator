@@ -3,7 +3,7 @@ import { recipes as initialRecipes } from './data/recipes';
 import RecipeCard from './components/RecipeCard';
 import RecipeModal from './components/RecipeModal';
 import TagFilter from './components/TagFilter';
-import { Recipe, User, ShoppingList, MealPlan, Video, CookingClass, Newsletter, Lead, Product, AboutUsContent, CocktailRecipe, SavedCocktail, ExpertQuestion } from './types';
+import { Recipe, User, ShoppingList, MealPlan, Video, CookingClass, Newsletter, Lead, Product, CocktailRecipe, SavedCocktail, ExpertQuestion } from './types';
 import * as favoritesService from './services/favoritesService';
 import EmptyState from './components/EmptyState';
 import BookOpenIcon from './components/icons/BookOpenIcon';
@@ -60,8 +60,6 @@ import AskAnExpert from './components/AskAnExpert';
 import * as ratingService from './services/ratingService';
 import Marketplace from './components/Marketplace';
 import * as marketplaceService from './services/marketplaceService';
-import * as aboutUsService from './services/aboutUsService';
-import AboutUsModal from './components/AboutUsModal';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import * as cocktailService from './services/cocktailService';
 import MyBar from './components/MyBar';
@@ -69,6 +67,7 @@ import AdvancedClasses from './components/AdvancedClasses';
 import ExpertQAPremiumOffer from './components/ExpertQAPremiumOffer';
 import { initialExpertQuestions } from './data/expertQuestions';
 import PantryChef from './components/PantryChef';
+import AboutUsPage from './components/AboutUsPage';
 
 const RECIPES_PER_PAGE = 12;
 
@@ -126,6 +125,7 @@ const App: React.FC = () => {
     const [allUsers, setAllUsers] = useState<User[]>([]);
     const [sentNewsletters, setSentNewsletters] = useState<Newsletter[]>([]);
     const [collectedLeads, setCollectedLeads] = useState<Lead[]>([]);
+    const [isUpdatingAllImages, setIsUpdatingAllImages] = useState(false);
 
     // Extractor state
     const [isExtracting, setIsExtracting] = useState(false);
@@ -138,8 +138,6 @@ const App: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
     
     // Static Pages State
-    const [aboutUsContent, setAboutUsContent] = useState<AboutUsContent | null>(null);
-    const [isAboutUsOpen, setIsAboutUsOpen] = useState(false);
     const [isPrivacyPolicyOpen, setIsPrivacyPolicyOpen] = useState(false);
     
     // My Bar state
@@ -163,7 +161,6 @@ const App: React.FC = () => {
         setCollectedLeads(leadService.getLeads());
         ratingService.loadRatings();
         setProducts(marketplaceService.getProducts());
-        setAboutUsContent(aboutUsService.getAboutUsContent());
     }, []);
 
     useEffect(() => {
@@ -421,17 +418,67 @@ const App: React.FC = () => {
     };
 
     const handleUpdateRecipeWithAI = async (recipeId: number, title: string) => {
+        // These are async and don't depend on state, so they are fine here.
         const recipeDetails = await generateRecipeDetailsFromTitle(title);
         const image = await generateImageFromPrompt(recipeDetails.title);
-
-        const updatedRecipe: Recipe = {
-            id: recipeId,
-            image,
-            ...recipeDetails
+    
+        const updateFunction = (prevRecipes: Recipe[]): Recipe[] => {
+            const index = prevRecipes.findIndex(r => r.id === recipeId);
+            if (index === -1) {
+                return prevRecipes; // Not in this list, do nothing.
+            }
+    
+            const originalRecipe = prevRecipes[index];
+            const updatedRecipe: Recipe = {
+                ...originalRecipe, // Preserves ID and any other properties like rating
+                ...recipeDetails,
+                image,
+            };
+            
+            const newRecipes = [...prevRecipes];
+            newRecipes[index] = updatedRecipe;
+            return newRecipes;
         };
+        
+        setAllRecipes(updateFunction);
+        setNewThisMonthRecipes(updateFunction);
+    };
 
-        setAllRecipes(prev => prev.map(r => r.id === recipeId ? updatedRecipe : r));
-        setNewThisMonthRecipes(prev => prev.map(r => r.id === recipeId ? updatedRecipe : r));
+    const handleUpdateAllRecipeImages = async (): Promise<void> => {
+        setIsUpdatingAllImages(true);
+        try {
+            const imageUpdatePromises = allRecipes.map(recipe => 
+                generateImageFromPrompt(recipe.title)
+            );
+            
+            const results = await Promise.allSettled(imageUpdatePromises);
+            
+            const newImageMap = new Map<number, string>();
+            results.forEach((result, index) => {
+                if (result.status === 'fulfilled') {
+                    const recipeId = allRecipes[index].id;
+                    newImageMap.set(recipeId, result.value);
+                } else {
+                    console.error(`Failed to generate image for recipe ${allRecipes[index].title}:`, result.reason);
+                }
+            });
+    
+            const updateRecipes = (recipes: Recipe[]) => recipes.map(recipe => {
+                if (newImageMap.has(recipe.id)) {
+                    return { ...recipe, image: newImageMap.get(recipe.id)! };
+                }
+                return recipe;
+            });
+    
+            setAllRecipes(prev => updateRecipes(prev));
+            setNewThisMonthRecipes(prev => updateRecipes(prev));
+            
+        } catch (error) {
+            console.error("A critical error occurred during bulk image update:", error);
+            alert("A critical error occurred. Check the console for details.");
+        } finally {
+            setIsUpdatingAllImages(false);
+        }
     };
 
     const handleDeleteUser = (userEmail: string) => {
@@ -543,6 +590,8 @@ const App: React.FC = () => {
                 onAddRecipe={handleAddNewRecipe}
                 onDeleteRecipe={handleDeleteRecipe}
                 onUpdateRecipeWithAI={handleUpdateRecipeWithAI}
+                onUpdateAllRecipeImages={handleUpdateAllRecipeImages}
+                isUpdatingAllImages={isUpdatingAllImages}
                 onUpdateUserRoles={handleUpdateUser}
                 onDeleteUser={handleDeleteUser}
                 onSendNewsletter={handleSendNewsletter}
@@ -577,14 +626,20 @@ const App: React.FC = () => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <EmptyState icon={<HeartIcon />} title="Your Cookbook is Empty" message="Add your favorite recipes by clicking the heart icon." />
+                                    <EmptyState
+                                        icon={<HeartIcon />}
+                                        title="Your Cookbook is Empty"
+                                        message="Add your favorite recipes by clicking the heart icon."
+                                        actionText="Browse Recipes"
+                                        onActionClick={() => handleSelectTab('All Recipes')}
+                                    />
                                 )}
                             </div>
                         </div>
                     </div>
                 );
             case 'My Bar':
-                return <MyBar savedCocktails={savedCocktails} onDelete={handleDeleteCocktail} />;
+                return <MyBar savedCocktails={savedCocktails} onDelete={handleDeleteCocktail} onGoToBartender={() => handleSelectTab('Bartender Helper')} />;
             case 'Meal Plans':
                  return (
                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -627,14 +682,16 @@ const App: React.FC = () => {
                 return <AskAnExpert questions={expertQuestions} onAskQuestion={handleAddExpertQuestion} />;
             case 'Marketplace':
                 return <Marketplace allProducts={products} />;
+            case 'About Us':
+                return <AboutUsPage />;
             case 'All Recipes':
             default:
                 return (
                     <div className="space-y-12">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-white p-8 rounded-lg shadow-sm">
                             <div>
-                                <h1 className="text-4xl font-bold text-gray-800">Recipe Extractor</h1>
-                                <p className="mt-4 text-gray-600">Have a recipe link you love? Paste it here, and our AI will extract, format, and save it for you.</p>
+                                <h1 className="text-4xl font-bold text-slate-800">Recipe Extracter</h1>
+                                <p className="mt-4 text-slate-600">Extract recipes from any URL and save them to your digital cookbook.</p>
                             </div>
                             <UrlInput onExtract={handleExtractFromUrl} isExtracting={isExtracting} error={extractError} />
                         </div>
@@ -651,7 +708,17 @@ const App: React.FC = () => {
                                     "Early access to trending dishes",
                                     "Premium ingredient recommendations",
                                 ]}
-                            />
+                            >
+                              <RecipeCarousel
+                                  title=""
+                                  recipes={newThisMonthRecipes}
+                                  favorites={favorites}
+                                  selectedRecipeIds={selectedRecipeIds}
+                                  onCardClick={handleCardClick}
+                                  onToggleFavorite={handleToggleFavorite}
+                                  onToggleSelect={handleToggleSelect}
+                              />
+                            </PremiumContent>
                         )}
 
                         {currentUser?.isPremium && (
@@ -668,8 +735,8 @@ const App: React.FC = () => {
     
                         <div>
                              <div className="text-center mb-8">
-                                <h2 className="text-3xl font-bold text-gray-800 tracking-tight">Discover Our Recipes</h2>
-                                <p className="mt-2 text-lg text-gray-500">
+                                <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Discover Our Recipes</h2>
+                                <p className="mt-2 text-lg text-slate-500">
                                     Discover from <span className="font-bold text-green-600">{allRecipes.length.toLocaleString()}</span> authentic recipes
                                 </p>
                             </div>
@@ -690,12 +757,18 @@ const App: React.FC = () => {
                             </div>
                             
                             {filteredRecipes.length === 0 && (
-                                <EmptyState icon={<SearchIcon />} title="No Recipes Found" message="Try adjusting your search or filters." />
+                                <EmptyState
+                                    icon={<SearchIcon />}
+                                    title="No Recipes Found"
+                                    message="Try adjusting your search or filters."
+                                    actionText="Clear Filter"
+                                    onActionClick={() => handleSelectTag('All')}
+                                />
                             )}
                             
                             {visibleRecipeCount < filteredRecipes.length && (
                                 <div className="text-center mt-12">
-                                    <button onClick={() => setVisibleRecipeCount(c => c + RECIPES_PER_PAGE)} className="px-6 py-3 bg-white border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                                    <button onClick={() => setVisibleRecipeCount(c => c + RECIPES_PER_PAGE)} className="px-6 py-3 bg-white border-2 border-slate-300 rounded-lg font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
                                         Load More Recipes
                                     </button>
                                 </div>
@@ -707,13 +780,13 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="bg-gray-50 min-h-screen font-sans">
+        <div className="bg-slate-50 min-h-screen font-sans">
              <header className="bg-white shadow-sm sticky top-0 z-40 print:hidden">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-20">
                         <button onClick={() => handleSelectTab('All Recipes')} className="flex items-center gap-3">
                             <ChefHatIcon className="w-10 h-10 text-amber-500" />
-                            <span className="text-2xl font-bold text-gray-800 tracking-tight">Recipe Extracter</span>
+                            <span className="text-2xl font-bold text-slate-800 tracking-tight">Recipe Extracter</span>
                         </button>
                         <div className="flex items-center gap-4">
                             {currentUser ? (
@@ -728,7 +801,7 @@ const App: React.FC = () => {
                             ) : (
                                 <button
                                     onClick={() => setIsLoginModalOpen(true)}
-                                    className="px-5 py-2.5 text-sm font-semibold text-white bg-gray-800 rounded-lg hover:bg-gray-900 transition-colors"
+                                    className="px-5 py-2.5 text-sm font-semibold text-white bg-teal-500 rounded-lg hover:bg-teal-600 transition-colors"
                                 >
                                     Login / Sign Up
                                 </button>
@@ -769,10 +842,9 @@ const App: React.FC = () => {
                     }}
                 />
             )}
-            {isAboutUsOpen && <AboutUsModal isOpen={isAboutUsOpen} onClose={() => setIsAboutUsOpen(false)} content={aboutUsContent} />}
             {isPrivacyPolicyOpen && <PrivacyPolicy isOpen={isPrivacyPolicyOpen} onClose={() => setIsPrivacyPolicyOpen(false)} />}
     
-            <Footer onAboutClick={() => setIsAboutUsOpen(true)} onPrivacyClick={() => setIsPrivacyPolicyOpen(true)} />
+            <Footer onAboutClick={() => handleSelectTab('About Us')} onPrivacyClick={() => setIsPrivacyPolicyOpen(true)} />
     
             {selectedRecipeIds.length > 0 && (
                 <div className="fixed bottom-6 right-6 z-30">

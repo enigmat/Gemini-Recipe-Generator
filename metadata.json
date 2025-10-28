@@ -1,5 +1,5 @@
 {
-  "name": "Recipe Extracter",
+  "name": "recipe-extracter",
   "description": "The starting point for a brand new recipe application.",
   "requestFramePermissions": [
     "camera"

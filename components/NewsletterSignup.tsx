@@ -48,7 +48,7 @@ const NewsletterSignup: React.FC<NewsletterSignupProps> = ({ onSubscribe, curren
             value={currentUser?.email || email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your.email@example.com"
-            className="flex-grow px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow shadow-sm w-full disabled:bg-gray-100"
+            className="flex-grow px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-shadow shadow-sm w-full text-base text-gray-900 placeholder-gray-500 disabled:bg-gray-100"
             aria-label="Email address"
             required
             disabled={!!currentUser}

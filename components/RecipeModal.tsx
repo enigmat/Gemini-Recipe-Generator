@@ -11,7 +11,6 @@ import ClockIcon from './icons/ClockIcon';
 import PlusIcon from './icons/PlusIcon';
 import MinusIcon from './icons/MinusIcon';
 import SparklesIcon from './icons/SparklesIcon';
-import VariationModal from './VariationModal';
 import { generateRecipeVariations } from '../services/geminiService';
 import Spinner from './Spinner';
 import XIcon from './icons/XIcon';
@@ -32,10 +31,10 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementS
   const [adjustedIngredients, setAdjustedIngredients] = useState(recipe?.ingredients || []);
   const [hoverRating, setHoverRating] = useState(0);
   const [currentRating, setCurrentRating] = useState(Math.round(recipe?.rating?.score || 0));
-  const [isGeneratingVariations, setIsGeneratingVariations] = useState(false);
+  
   const [variations, setVariations] = useState<RecipeVariation[]>([]);
-  const [isVariationModalOpen, setIsVariationModalOpen] = useState(false);
-  const [variationError, setVariationError] = useState<string | null>(null);
+  const [variationsLoading, setVariationsLoading] = useState(false);
+  const [variationsError, setVariationsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (recipe) {
@@ -43,9 +42,22 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementS
       setCurrentServings(newOriginalServings);
       setAdjustedIngredients(recipe.ingredients);
       setCurrentRating(Math.round(recipe.rating?.score || 0));
-      setVariations([]);
-      setIsVariationModalOpen(false);
-      setVariationError(null);
+      
+      const fetchVariations = async () => {
+        setVariationsLoading(true);
+        setVariationsError(null);
+        setVariations([]);
+        try {
+            const result = await generateRecipeVariations(recipe);
+            setVariations(result);
+        } catch (e: any) {
+            setVariationsError(e.message || 'Failed to generate variations.');
+        } finally {
+            setVariationsLoading(false);
+        }
+      };
+
+      fetchVariations();
     }
   }, [recipe]);
 
@@ -93,20 +105,6 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementS
     onAddRating(recipe.id, score);
   };
 
-  const handleGenerateVariations = async () => {
-    setIsGeneratingVariations(true);
-    setVariationError(null);
-    try {
-        const result = await generateRecipeVariations(recipe);
-        setVariations(result);
-        setIsVariationModalOpen(true);
-    } catch (e: any) {
-        setVariationError(e.message || 'Failed to generate variations.');
-    } finally {
-        setIsGeneratingVariations(false);
-    }
-  };
-
   return (
     <>
       <div
@@ -119,17 +117,17 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementS
           className="bg-white rounded-2xl shadow-2xl w-11/12 md:max-w-4xl max-h-[90vh] overflow-y-auto p-6 md:p-8 relative print:shadow-none print:rounded-none print:max-h-full print:w-full print:overflow-visible scrollbar-hide"
           onClick={(e) => e.stopPropagation()}
         >
-          <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors print:hidden z-10" aria-label="Close recipe modal">
+          <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-slate-800 transition-colors print:hidden z-10" aria-label="Close recipe modal">
             <XIcon className="h-6 w-6" />
           </button>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left Column: Image & Meta */}
             <div>
-                <h2 className="text-3xl font-bold mb-4 text-gray-800 lg:pr-8">{recipe.title}</h2>
+                <h2 className="text-3xl font-bold mb-4 text-slate-800 lg:pr-8">{recipe.title}</h2>
                 <img src={recipe.image} alt={recipe.title} className="w-full h-64 object-cover rounded-lg mb-6" />
-                <p className="text-gray-600 mb-6">{recipe.description}</p>
-                 <div className="flex flex-wrap items-center justify-between text-gray-600 mb-6 border-y py-3 gap-4">
+                <p className="text-slate-600 mb-6">{recipe.description}</p>
+                 <div className="flex flex-wrap items-center justify-between text-slate-600 mb-6 border-y py-3 gap-4">
                     <div className="flex items-center space-x-6">
                         <div className="flex items-center space-x-2">
                             <ClockIcon className="h-5 w-5" />
@@ -141,15 +139,15 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementS
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5 print:hidden">
-                        <button onClick={handlePrint} className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors" aria-label="Print recipe"><PrintIcon className="w-5 h-5" /></button>
-                        <button onClick={handleShare} className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors" aria-label={shareText}><ShareIcon className="w-5 h-5" /></button>
+                        <button onClick={handlePrint} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full transition-colors" aria-label="Print recipe"><PrintIcon className="w-5 h-5" /></button>
+                        <button onClick={handleShare} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full transition-colors" aria-label={shareText}><ShareIcon className="w-5 h-5" /></button>
                     </div>
                 </div>
                 
                  <div className="space-y-4">
                     {/* RATING */}
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-semibold text-gray-800 mb-2 text-center">Rate this recipe</h4>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                        <h4 className="font-semibold text-slate-800 mb-2 text-center">Rate this recipe</h4>
                         <div className="flex justify-center items-center" onMouseLeave={() => setHoverRating(0)}>
                             {[...Array(5)].map((_, i) => {
                                 const ratingValue = i + 1;
@@ -174,8 +172,8 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementS
                                 <WineIcon className="w-6 h-6 text-amber-600 flex-shrink-0 mt-1" />
                                 <div>
                                     <h4 className="font-semibold text-amber-800">Wine Pairing Suggestion</h4>
-                                    <p className="font-bold text-gray-800 mt-1">{recipe.winePairing.suggestion}</p>
-                                    <p className="text-sm text-gray-600 mt-1">{recipe.winePairing.description}</p>
+                                    <p className="font-bold text-slate-800 mt-1">{recipe.winePairing.suggestion}</p>
+                                    <p className="text-sm text-slate-600 mt-1">{recipe.winePairing.description}</p>
                                 </div>
                             </div>
                         </div>
@@ -186,28 +184,28 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementS
             {/* Right Column: Ingredients & Instructions */}
             <div>
                  <div className="mb-6">
-                    <h3 className="font-semibold text-xl mb-2 text-gray-700">Ingredients</h3>
-                    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border">
-                        <p className="font-medium text-gray-700">Servings:</p>
+                    <h3 className="font-semibold text-xl mb-2 text-slate-700">Ingredients</h3>
+                    <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border">
+                        <p className="font-medium text-slate-700">Servings:</p>
                         <div className="flex items-center gap-2">
-                            <button onClick={() => setCurrentServings(s => Math.max(1, s - 1))} className="p-1.5 rounded-full bg-gray-200 hover:bg-gray-300" aria-label="Decrease servings"><MinusIcon className="w-5 h-5" /></button>
+                            <button onClick={() => setCurrentServings(s => Math.max(1, s - 1))} className="p-1.5 rounded-full bg-slate-200 hover:bg-slate-300" aria-label="Decrease servings"><MinusIcon className="w-5 h-5" /></button>
                             <span className="font-bold text-lg w-10 text-center">{currentServings}</span>
-                            <button onClick={() => setCurrentServings(s => s + 1)} className="p-1.5 rounded-full bg-gray-200 hover:bg-gray-300" aria-label="Increase servings"><PlusIcon className="w-5 h-5" /></button>
+                            <button onClick={() => setCurrentServings(s => s + 1)} className="p-1.5 rounded-full bg-slate-200 hover:bg-slate-300" aria-label="Increase servings"><PlusIcon className="w-5 h-5" /></button>
                         </div>
                     </div>
-                    <ul className="list-disc list-inside space-y-1 text-gray-600 mt-4">
+                    <ul className="list-disc list-inside space-y-1 text-slate-600 mt-4">
                         {adjustedIngredients.map((ing, i) => <li key={i}>{formatIngredient({ ...ing }, measurementSystem)}</li>)}
                     </ul>
                 </div>
                 
                  <div>
-                    <h3 className="font-semibold text-xl mb-3 text-gray-700">Instructions</h3>
-                    <ol className="list-decimal list-inside space-y-3 text-gray-600">
+                    <h3 className="font-semibold text-xl mb-3 text-slate-700">Instructions</h3>
+                    <ol className="list-decimal list-inside space-y-3 text-slate-600">
                         {recipe.instructions.map((inst, i) => <li key={i} className="pl-2">{formatInstruction(inst, measurementSystem)}</li>)}
                     </ol>
                 </div>
 
-                 <div className="mt-8 border-t pt-6 space-y-4">
+                 <div className="mt-8 border-t pt-6">
                      <button
                         onClick={() => onEnterCookMode(recipe)}
                         className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors font-bold"
@@ -216,27 +214,42 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementS
                         <ChefHatIcon className="w-6 h-6" />
                         <span>Enter Cook Mode</span>
                     </button>
-                    <button
-                        onClick={handleGenerateVariations}
-                        disabled={isGeneratingVariations}
-                        className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-colors font-bold disabled:bg-teal-300 disabled:cursor-wait"
-                    >
-                        {isGeneratingVariations ? <Spinner /> : <SparklesIcon className="w-6 h-6" />}
-                        <span>{isGeneratingVariations ? "Thinking..." : "Suggest Variations"}</span>
-                    </button>
-                    {variationError && <p className="text-red-500 text-sm text-center">{variationError}</p>}
+                </div>
+
+                <div className="mt-8 border-t pt-6">
+                    <h3 className="font-semibold text-xl mb-3 text-slate-700 flex items-center gap-2">
+                        <SparklesIcon className="w-6 h-6 text-teal-500" />
+                        Creative Variations
+                    </h3>
+                    {variationsLoading ? (
+                        <div className="flex items-center justify-center gap-2 p-4 bg-slate-50 rounded-lg">
+                            <Spinner />
+                            <span className="text-slate-600">Generating creative variations...</span>
+                        </div>
+                    ) : variationsError ? (
+                        <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
+                            <p><strong>Oops!</strong> {variationsError}</p>
+                        </div>
+                    ) : variations.length > 0 ? (
+                        <div className="space-y-3">
+                            {variations.map((variation, index) => (
+                                <div key={index} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                    <h4 className="font-bold text-teal-700">{variation.title}</h4>
+                                    <p className="text-sm text-slate-600 mt-1">{variation.description}</p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                            <p className="text-sm text-slate-600 text-center">No variations could be generated for this recipe.</p>
+                        </div>
+                    )}
                 </div>
 
             </div>
           </div>
         </div>
       </div>
-      <VariationModal 
-        isOpen={isVariationModalOpen}
-        onClose={() => setIsVariationModalOpen(false)}
-        variations={variations}
-        originalTitle={recipe.title}
-      />
     </>
   );
 };

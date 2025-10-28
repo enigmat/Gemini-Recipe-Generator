@@ -49,22 +49,22 @@ const AdminApiKeyManagement: React.FC = () => {
     return (
         <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md max-w-3xl mx-auto">
             <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <KeyIcon className="w-7 h-7 text-gray-500" />
+                <div className="flex-shrink-0 w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
+                    <KeyIcon className="w-7 h-7 text-slate-500" />
                 </div>
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800">API Key Management</h2>
-                    <p className="text-gray-600 mt-2">
+                    <h2 className="text-2xl font-bold text-slate-800">API Key Management</h2>
+                    <p className="text-slate-600 mt-2">
                         Your Google AI API key is required for all generative AI features to work. This key is managed securely by the platform and is never stored within the application itself.
                     </p>
                 </div>
             </div>
 
             <div className="mt-6 border-t pt-6">
-                <h3 className="text-lg font-semibold text-gray-700 mb-4">Current Status</h3>
+                <h3 className="text-lg font-semibold text-slate-700 mb-4">Current Status</h3>
                 
                 {isLoading ? (
-                    <div className="p-4 rounded-md bg-gray-100 text-center text-gray-500">
+                    <div className="p-4 rounded-md bg-slate-100 text-center text-slate-500">
                         Checking API key status...
                     </div>
                 ) : (
@@ -84,7 +84,7 @@ const AdminApiKeyManagement: React.FC = () => {
             <div className="mt-6">
                 <button
                     onClick={handleSetKey}
-                    className="w-full sm:w-auto px-6 py-3 bg-gray-800 text-white font-bold rounded-lg shadow-md hover:bg-gray-900 transition-colors text-base"
+                    className="w-full sm:w-auto px-6 py-3 bg-teal-500 text-white font-bold rounded-lg shadow-md hover:bg-teal-600 transition-colors text-base"
                 >
                     {isKeySet ? 'Update API Key' : 'Set API Key'}
                 </button>

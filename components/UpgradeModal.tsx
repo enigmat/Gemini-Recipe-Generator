@@ -43,13 +43,13 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, onUpgrade,
         const card = elements.create('card', {
             style: {
                 base: {
-                    iconColor: '#6b7280',
-                    color: '#111827',
+                    iconColor: '#64748b',
+                    color: '#1e293b',
                     fontWeight: '500',
                     fontFamily: 'Inter, sans-serif',
                     fontSize: '16px',
                     fontSmoothing: 'antialiased',
-                    '::placeholder': { color: '#9ca3af' },
+                    '::placeholder': { color: '#94a3b8' },
                 },
                 invalid: {
                     iconColor: '#ef4444',
@@ -128,8 +128,8 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, onUpgrade,
     <form onSubmit={handleSubmit} className="mt-8">
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Card details</label>
-          <div id="card-element" className="p-3 border border-gray-300 rounded-md shadow-sm bg-white">
+          <label className="block text-sm font-medium text-slate-700 mb-2">Card details</label>
+          <div id="card-element" className="p-3 border border-slate-300 rounded-md shadow-sm bg-white">
             {/* Stripe's CardElement will be mounted here */}
           </div>
         </div>
@@ -139,20 +139,20 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, onUpgrade,
         <button
           type="submit"
           disabled={isProcessing || !stripe}
-          className="w-full flex justify-center items-center px-4 py-3 bg-amber-500 border border-transparent rounded-lg shadow-sm text-base font-bold text-gray-900 hover:bg-amber-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:bg-amber-300"
+          className="w-full flex justify-center items-center px-4 py-3 bg-amber-500 border border-transparent rounded-lg shadow-sm text-base font-bold text-slate-900 hover:bg-amber-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:bg-amber-300"
         >
           {isProcessing ? <Spinner /> : 'Pay $4.99/month'}
         </button>
       </div>
-       <p className="text-center text-xs text-gray-400 mt-4">Secure payments powered by Stripe</p>
+       <p className="text-center text-xs text-slate-400 mt-4">Secure payments powered by Stripe</p>
     </form>
   );
 
   const renderSuccessView = () => (
     <div className="mt-8 text-center animate-fade-in">
         <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto" />
-        <h3 className="text-2xl font-bold text-gray-800 mt-4">Payment Successful!</h3>
-        <p className="text-gray-600 mt-2">Welcome to Premium! You now have access to all exclusive features.</p>
+        <h3 className="text-2xl font-bold text-slate-800 mt-4">Payment Successful!</h3>
+        <p className="text-slate-600 mt-2">Welcome to Premium! You now have access to all exclusive features.</p>
     </div>
   );
 
@@ -167,7 +167,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, onUpgrade,
         className="bg-white rounded-2xl shadow-2xl w-11/12 md:max-w-md p-8 relative overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 z-10 transition-colors" aria-label="Close modal">
+        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 z-10 transition-colors" aria-label="Close modal">
           <XIcon className="w-6 h-6" />
         </button>
         
@@ -177,15 +177,15 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, onUpgrade,
                     <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-amber-100 mb-4">
                         <CrownIcon className="h-8 w-8 text-amber-500" />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900">Go Premium!</h2>
-                    <p className="text-gray-600 mt-2 text-sm">Unlock exclusive recipes, classes, and an ad-free experience.</p>
+                    <h2 className="text-2xl font-bold text-slate-900">Go Premium!</h2>
+                    <p className="text-slate-600 mt-2 text-sm">Unlock exclusive recipes, classes, and an ad-free experience.</p>
                 </div>
 
                 <ul className="space-y-2 my-6 text-sm">
-                    <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-gray-700">Exclusive monthly recipes</span></li>
-                    <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-gray-700">Advanced cooking classes</span></li>
-                    <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-gray-700">Ad-free browsing</span></li>
-                    <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-gray-700">Ask a professional chef</span></li>
+                    <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-slate-700">Exclusive monthly recipes</span></li>
+                    <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-slate-700">Advanced cooking classes</span></li>
+                    <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-slate-700">Ad-free browsing</span></li>
+                    <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-slate-700">Ask a professional chef</span></li>
                 </ul>
             </>
         )}

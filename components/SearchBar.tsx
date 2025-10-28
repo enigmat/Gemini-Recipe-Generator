@@ -14,7 +14,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, placeholder = 'S
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
         aria-label="Search recipes"
       />
     </div>

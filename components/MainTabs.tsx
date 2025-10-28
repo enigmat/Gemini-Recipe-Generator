@@ -11,6 +11,7 @@ import SparklesIcon from './icons/SparklesIcon';
 import { User } from '../types';
 import CrownIcon from './icons/CrownIcon';
 import RefrigeratorIcon from './icons/RefrigeratorIcon';
+import InformationCircleIcon from './icons/InformationCircleIcon';
 
 interface MainTabsProps {
   activeTab: string;
@@ -31,6 +32,7 @@ const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser
     { id: 'Cooking Classes', name: 'Cooking Classes', icon: <MortarPestleIcon className="w-5 h-5" /> },
     { id: 'Bartender Helper', name: 'Bartender Helper', icon: <SparklesIcon className="w-5 h-5" /> },
     { id: 'Ask an Expert', name: 'Ask an Expert', icon: <QuestionMarkCircleIcon className="w-5 h-5" /> },
+    { id: 'About Us', name: 'About Us', icon: <InformationCircleIcon className="w-5 h-5" /> },
   ];
 
   const premiumTabs = ['Cooking Classes', 'Ask an Expert'];

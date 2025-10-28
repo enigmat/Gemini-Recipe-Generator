@@ -78,20 +78,20 @@ const CookMode: React.FC<CookModeProps> = ({ recipe, onExit, measurementSystem }
 
   const goToPrevStep = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStep(currentStep + 1);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-100 z-50 flex flex-col p-4 sm:p-6 lg:p-8 animate-fade-in">
+    <div className="fixed inset-0 bg-slate-100 z-50 flex flex-col p-4 sm:p-6 lg:p-8 animate-fade-in">
       {/* Header */}
       <header className="flex-shrink-0 flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-amber-600 truncate">{recipe.title}</h1>
           <p className="text-amber-600 font-medium">Step {currentStep + 1} of {recipe.instructions.length}</p>
         </div>
-        <button onClick={onExit} className="p-2 rounded-full bg-white shadow-md hover:bg-gray-200 transition-colors" aria-label="Exit Cook Mode">
-          <XIcon className="w-6 h-6 text-gray-700" />
+        <button onClick={onExit} className="p-2 rounded-full bg-white shadow-md hover:bg-slate-200 transition-colors" aria-label="Exit Cook Mode">
+          <XIcon className="w-6 h-6 text-slate-700" />
         </button>
       </header>
       
@@ -100,7 +100,7 @@ const CookMode: React.FC<CookModeProps> = ({ recipe, onExit, measurementSystem }
         {/* Ingredients Panel (visible on medium screens and up) */}
         <aside className="hidden md:block md:w-1/3 lg:w-1/4 flex-shrink-0 bg-white p-4 rounded-lg shadow-sm overflow-y-auto">
           <h2 className="text-lg font-bold mb-3 text-amber-600">Ingredients</h2>
-          <ul className="list-disc list-inside space-y-2 text-gray-600">
+          <ul className="list-disc list-inside space-y-2 text-slate-600">
             {recipe.ingredients.map((ing, i) => (
               <li key={i}>{formatIngredient(ing, measurementSystem)}</li>
             ))}
@@ -109,7 +109,7 @@ const CookMode: React.FC<CookModeProps> = ({ recipe, onExit, measurementSystem }
 
         {/* Instruction Panel */}
         <section className="flex-grow flex flex-col justify-center items-center text-center bg-white p-6 rounded-lg shadow-sm">
-           <p className="text-2xl md:text-3xl lg:text-4xl font-medium text-gray-800 leading-relaxed">
+           <p className="text-2xl md:text-3xl lg:text-4xl font-medium text-slate-800 leading-relaxed">
              {formatInstruction(recipe.instructions[currentStep], measurementSystem)}
            </p>
         </section>
@@ -120,7 +120,7 @@ const CookMode: React.FC<CookModeProps> = ({ recipe, onExit, measurementSystem }
         <button 
             onClick={goToPrevStep} 
             disabled={currentStep === 0}
-            className="flex items-center gap-2 px-6 py-3 bg-white text-gray-800 font-bold rounded-lg shadow-md hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-3 bg-white text-slate-800 font-bold rounded-lg shadow-md hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ChevronLeftIcon className="w-6 h-6"/>
           <span>Previous</span>

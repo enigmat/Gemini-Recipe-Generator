@@ -122,14 +122,6 @@ export interface Lead {
   dateCollected: string;
 }
 
-export interface AboutUsContent {
-  companyName: string;
-  missionStatement: string;
-  companyHistory: string;
-  contactEmail: string;
-  address: string;
-}
-
 export interface Product {
   id: string;
   name: string;
@@ -159,4 +151,13 @@ export interface ExpertQuestion {
     answeredDate: string;
     text: string;
   };
+}
+
+// FIX: Added missing AboutUsContent interface
+export interface AboutUsContent {
+  companyName: string;
+  missionStatement: string;
+  companyHistory: string;
+  contactEmail: string;
+  address: string;
 }

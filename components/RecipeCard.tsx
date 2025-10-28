@@ -56,7 +56,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
           <button
             onClick={handleSelectClick}
             className={`absolute top-2 left-2 p-1.5 rounded-full transition-all duration-200 
-                        ${isSelected ? 'bg-green-500 text-white' : 'bg-white/70 text-gray-700 backdrop-blur-sm hover:bg-white'}`}
+                        ${isSelected ? 'bg-green-500 text-white' : 'bg-white/70 text-slate-700 backdrop-blur-sm hover:bg-white'}`}
             aria-label={isSelected ? 'Remove from shopping list' : 'Add to shopping list'}
           >
             {isSelected ? <CheckIcon className="w-5 h-5" /> : <ShoppingCartIcon className="w-5 h-5" />}
@@ -65,7 +65,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
         <button
           onClick={handleFavoriteClick}
           className={`absolute top-2 right-2 p-1.5 rounded-full transition-all duration-200 
-                      ${isFavorite ? 'text-red-500 bg-white/80' : 'bg-white/70 text-gray-700'} backdrop-blur-sm hover:bg-white`}
+                      ${isFavorite ? 'text-red-500 bg-white/80' : 'bg-white/70 text-slate-700'} backdrop-blur-sm hover:bg-white`}
           aria-label={isFavorite ? 'Remove from cookbook' : 'Add to cookbook'}
         >
           <HeartIcon isFilled={isFavorite} className="w-5 h-5" />
@@ -79,10 +79,10 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
             ))}
           </div>
         )}
-        <h3 className="text-lg font-semibold text-gray-800 truncate mb-1">{recipe.title}</h3>
+        <h3 className="text-lg font-semibold text-slate-800 truncate mb-1">{recipe.title}</h3>
         
         {variant === 'default' && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2 flex-grow">{recipe.description}</p>
+          <p className="text-sm text-slate-600 mb-3 line-clamp-2 flex-grow">{recipe.description}</p>
         )}
         
         {recipe.rating && (
@@ -92,13 +92,13 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
                         <StarIcon key={i} className="w-4 h-4 text-amber-400" fill={i < Math.round(recipe.rating?.score || 0) ? 'currentColor' : 'none'} />
                     ))}
                 </div>
-                <span className="text-xs text-gray-500 font-medium">
+                <span className="text-xs text-slate-500 font-medium">
                     {recipe.rating.score.toFixed(1)} ({recipe.rating.count})
                 </span>
             </div>
         )}
 
-        <div className={`flex items-center text-gray-500 mt-auto border-t pt-3 ${variant === 'default' ? 'justify-between text-xs' : 'text-sm'}`}>
+        <div className={`flex items-center text-slate-500 mt-auto border-t pt-3 ${variant === 'default' ? 'justify-between text-xs' : 'text-sm'}`}>
           <div className="flex items-center space-x-2">
             <ClockIcon className="w-4 h-4" />
             <span>{recipe.cookTime}</span>

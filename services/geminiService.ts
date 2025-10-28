@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { Recipe, CocktailRecipe, RecipeVariation, ProductAnalysis, Product } from "../types";
 
 export const generateImageFromPrompt = async (prompt: string): Promise<string> => {
@@ -6,22 +6,28 @@ export const generateImageFromPrompt = async (prompt: string): Promise<string> =
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const descriptivePrompt = `A high-quality, professional food photograph of ${prompt}, beautifully plated and ready to eat. Bright, natural lighting.`;
 
-        const response = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt: descriptivePrompt,
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: {
+                parts: [
+                    { text: descriptivePrompt },
+                ],
+            },
             config: {
-                numberOfImages: 1,
-                outputMimeType: 'image/jpeg',
-                aspectRatio: '1:1',
+                responseModalities: [Modality.IMAGE],
             },
         });
 
-        if (response.generatedImages && response.generatedImages.length > 0) {
-            const base64ImageBytes = response.generatedImages[0].image.imageBytes;
-            return `data:image/jpeg;base64,${base64ImageBytes}`;
-        } else {
-            throw new Error("No image was generated.");
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                const base64ImageBytes: string = part.inlineData.data;
+                const mimeType = part.inlineData.mimeType || 'image/jpeg';
+                return `data:${mimeType};base64,${base64ImageBytes}`;
+            }
         }
+        
+        throw new Error("No image data found in the AI response.");
+
     } catch (error) {
         console.error("Error generating image with Gemini:", error);
         throw new Error("Failed to generate image. Please check the prompt or API configuration.");
@@ -283,6 +289,28 @@ export const generateRecipeVariations = async (recipe: Recipe): Promise<RecipeVa
     } catch (error) {
         console.error("Error generating recipe variations with Gemini:", error);
         throw new Error("Failed to generate recipe variations. The AI might be busy! Please try again in a moment.");
+    }
+};
+
+export const generateNewsletterMessage = async (subject: string, recipeTitles: string[]): Promise<string> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const prompt = `Act as a newsletter editor for a recipe website. The newsletter subject is "${subject}". The featured recipes are: ${recipeTitles.join(', ')}. Write a short, engaging, and friendly message for the newsletter body. Encourage readers to check out the new recipes. Keep it concise, around 2-3 sentences.`;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+        });
+        
+        const messageText = response.text;
+        if (!messageText) {
+            throw new Error("AI failed to generate a message.");
+        }
+        return messageText.trim();
+
+    } catch (error) {
+        console.error("Error generating newsletter message with Gemini:", error);
+        throw new Error("Failed to generate newsletter message. Please try again.");
     }
 };
 

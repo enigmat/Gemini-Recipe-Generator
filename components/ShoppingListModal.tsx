@@ -117,12 +117,12 @@ const ShoppingListModal: React.FC<ShoppingListModalProps> = ({ list, onClose, al
         className="bg-white rounded-2xl shadow-2xl w-11/12 md:max-w-lg max-h-[90vh] flex flex-col p-6 relative"
         onClick={e => e.stopPropagation()}
       >
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800" aria-label="Close modal">
+        <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-slate-800" aria-label="Close modal">
           <XIcon className="w-6 h-6" />
         </button>
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">{list.name}</h2>
+        <h2 className="text-2xl font-bold text-slate-800 mb-4">{list.name}</h2>
         <div className="flex-grow overflow-y-auto pr-2">
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-slate-500 mb-4">
             Generated from {selectedRecipes.length} recipe{selectedRecipes.length > 1 && 's'}.
           </p>
           <ul className="space-y-3">
@@ -133,11 +133,11 @@ const ShoppingListModal: React.FC<ShoppingListModalProps> = ({ list, onClose, al
                   id={`ing-${i}`}
                   checked={checkedItems.includes(ing.name)}
                   onChange={() => handleToggleCheck(ing.name)}
-                  className="h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                  className="h-5 w-5 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer"
                 />
                 <label
                   htmlFor={`ing-${i}`}
-                  className={`ml-3 text-gray-700 cursor-pointer ${checkedItems.includes(ing.name) ? 'line-through text-gray-400' : ''}`}
+                  className={`ml-3 text-slate-700 cursor-pointer ${checkedItems.includes(ing.name) ? 'line-through text-slate-400' : ''}`}
                 >
                   {formatIngredient(ing)}
                 </label>
@@ -155,21 +155,21 @@ const ShoppingListModal: React.FC<ShoppingListModalProps> = ({ list, onClose, al
             </button>
             <button 
                 onClick={handlePrint}
-                className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
+                className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors text-sm font-medium"
             >
                 <PrintIcon className="w-5 h-5" />
                 <span>Print</span>
             </button>
             <button 
                 onClick={handleShare}
-                className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
+                className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors text-sm font-medium"
             >
                 <ShareIcon className="w-5 h-5" />
                 <span>{shareText}</span>
             </button>
              <button 
                 onClick={handleClearChecked}
-                className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium ml-auto"
+                className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors text-sm font-medium ml-auto"
             >
                 <TrashIcon className="w-5 h-5" />
                 <span>Clear Checked</span>

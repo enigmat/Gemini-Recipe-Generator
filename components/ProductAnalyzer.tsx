@@ -55,7 +55,7 @@ const ProductAnalyzer: React.FC = () => {
                      <button
                         type="button"
                         onClick={handleScan}
-                        className="p-3 bg-gray-600 text-white font-semibold rounded-md hover:bg-gray-700 transition-colors flex items-center justify-center aspect-square"
+                        className="p-3 bg-teal-500 text-white font-semibold rounded-md hover:bg-teal-600 transition-colors flex items-center justify-center aspect-square"
                         aria-label="Scan product barcode"
                         title="Scan product barcode (coming soon)"
                     >

@@ -23,7 +23,7 @@ const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ video, onClose }) =
       >
         <button
           onClick={onClose}
-          className="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors"
+          className="absolute -top-10 right-0 text-white hover:text-slate-300 transition-colors"
           aria-label="Close video player"
         >
           <XIcon className="w-8 h-8" />

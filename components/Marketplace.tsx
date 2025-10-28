@@ -45,8 +45,8 @@ const Marketplace: React.FC<MarketplaceProps> = ({ allProducts }) => {
                             onClick={() => setSelectedCategory(category)}
                             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${
                                 selectedCategory === category
-                                ? 'bg-gray-800 text-white shadow-sm'
-                                : 'bg-white text-gray-700 hover:bg-gray-100 shadow-sm border border-gray-200'
+                                ? 'bg-teal-500 text-white shadow-sm'
+                                : 'bg-white text-gray-700 hover:bg-teal-100 shadow-sm border border-gray-200'
                             }`}
                         >
                             {category}

@@ -8,9 +8,10 @@ import CocktailIcon from './icons/CocktailIcon';
 interface MyBarProps {
   savedCocktails: SavedCocktail[];
   onDelete: (cocktailId: string) => void;
+  onGoToBartender: () => void;
 }
 
-const MyBar: React.FC<MyBarProps> = ({ savedCocktails, onDelete }) => {
+const MyBar: React.FC<MyBarProps> = ({ savedCocktails, onDelete, onGoToBartender }) => {
   const [viewingCocktail, setViewingCocktail] = useState<SavedCocktail | null>(null);
 
   if (savedCocktails.length === 0) {
@@ -19,6 +20,8 @@ const MyBar: React.FC<MyBarProps> = ({ savedCocktails, onDelete }) => {
         icon={<CocktailIcon />}
         title="Your Bar is Empty"
         message="Use the Bartender Helper to create and save your favorite cocktail recipes."
+        actionText="Create a Cocktail"
+        onActionClick={onGoToBartender}
       />
     );
   }

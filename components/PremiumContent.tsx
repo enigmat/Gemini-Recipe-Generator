@@ -36,11 +36,11 @@ const PremiumContent: React.FC<PremiumContentProps> = ({
 
         <div className="flex items-center gap-2">
             <SparklesIcon className="w-5 h-5 text-amber-500" />
-            <h3 className="text-xl font-bold text-gray-800">{featureTitle}</h3>
+            <h3 className="text-xl font-bold text-slate-800">{featureTitle}</h3>
         </div>
 
         {featureDescription && (
-            <p className="mt-2 text-gray-600 max-w-lg">
+            <p className="mt-2 text-slate-600 max-w-lg">
                 {featureDescription}
             </p>
         )}
@@ -48,7 +48,7 @@ const PremiumContent: React.FC<PremiumContentProps> = ({
         {featureNodes}
 
         {features && features.length > 0 && (
-            <div className="my-6 text-gray-700 text-left inline-block">
+            <div className="my-6 text-slate-700 text-left inline-block">
                 <p className="font-semibold mb-2 text-center">Premium Features Include:</p>
                 <ul className="list-disc list-inside space-y-1">
                     {features.map((feature, index) => (
@@ -62,7 +62,7 @@ const PremiumContent: React.FC<PremiumContentProps> = ({
 
         <button
           onClick={onUpgradeClick}
-          className="mt-4 flex items-center gap-2 px-8 py-3 bg-gradient-to-b from-amber-400 to-amber-500 text-gray-900 font-bold rounded-lg shadow-md hover:from-amber-500 hover:to-amber-600 transition-all transform hover:scale-105"
+          className="mt-4 flex items-center gap-2 px-8 py-3 bg-gradient-to-b from-amber-400 to-amber-500 text-slate-900 font-bold rounded-lg shadow-md hover:from-amber-500 hover:to-amber-600 transition-all transform hover:scale-105"
         >
           <CrownIcon className="w-5 h-5" />
           Upgrade to Premium

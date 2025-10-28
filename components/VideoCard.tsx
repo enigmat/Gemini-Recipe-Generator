@@ -24,8 +24,8 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onPlay }) => {
         </div>
       </div>
       <div className="p-4">
-        <h3 className="text-md font-semibold text-gray-800 truncate">{video.title}</h3>
-        <p className="text-sm text-gray-600 line-clamp-2">{video.description}</p>
+        <h3 className="text-md font-semibold text-slate-800 truncate">{video.title}</h3>
+        <p className="text-sm text-slate-600 line-clamp-2">{video.description}</p>
       </div>
     </div>
   );

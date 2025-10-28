@@ -26,13 +26,13 @@ const UrlInput: React.FC<UrlInputProps> = ({ onExtract, isExtracting, error }) =
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="Paste a recipe URL..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow text-sm"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-shadow text-base text-slate-900 placeholder-slate-500"
                 aria-label="Recipe URL"
                 disabled={isExtracting}
             />
             <button
               type="submit"
-              className="p-3 bg-teal-500 text-white font-semibold rounded-md hover:bg-teal-600 transition-colors flex items-center justify-center disabled:bg-teal-300 disabled:cursor-wait aspect-square"
+              className="p-3 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition-colors flex items-center justify-center disabled:bg-teal-300 disabled:cursor-wait aspect-square"
               disabled={!url.trim() || isExtracting}
               aria-label="Fetch recipe from URL"
             >

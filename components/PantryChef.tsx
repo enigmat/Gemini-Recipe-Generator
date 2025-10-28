@@ -58,7 +58,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ onRecipeGenerated }) => {
                             value={dietaryNotes}
                             onChange={(e) => setDietaryNotes(e.target.value)}
                             placeholder="e.g., vegetarian, gluten-free, make it spicy"
-                            className="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow text-base"
+                            className="w-full pl-4 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-shadow text-base text-gray-900 placeholder-gray-500"
                             disabled={isLoading}
                         />
                     </div>

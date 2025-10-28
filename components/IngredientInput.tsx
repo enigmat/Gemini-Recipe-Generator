@@ -38,7 +38,7 @@ const IngredientInput: React.FC<IngredientInputProps> = ({ ingredients, onChange
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="e.g., chicken breast, tomatoes, rice"
-                className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow text-base"
+                className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-shadow text-base text-gray-900 placeholder-gray-500"
                 aria-label="Add an ingredient"
             />
             <button

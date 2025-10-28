@@ -20,7 +20,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                     href={product.affiliateUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 text-white font-bold rounded-lg shadow-md hover:bg-gray-900 transition-colors text-sm"
+                    className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 bg-teal-500 text-white font-bold rounded-lg shadow-md hover:bg-teal-600 transition-colors text-sm"
                 >
                     <span>Shop Now</span>
                     <ExternalLinkIcon className="w-4 h-4" />

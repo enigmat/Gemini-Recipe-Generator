@@ -19,34 +19,34 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
 
     return (
         <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">User Management</h2>
+            <h2 className="text-2xl font-bold text-slate-800 mb-6">User Management</h2>
             <div className="overflow-x-auto">
                 <table className="min-w-full">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-slate-50">
                         <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Premium Status</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan End Date</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Premium Status</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Plan End Date</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y divide-slate-200">
                         {users.map((user) => (
                             <tr key={user.email}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{user.name}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.email}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                                     {user.isPremium ? (
                                         <span className="font-semibold text-green-600">Active</span>
                                     ) : (
-                                        <span className="text-gray-500">Inactive</span>
+                                        <span className="text-slate-500">Inactive</span>
                                     )}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.planEndDate || 'N/A'}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.planEndDate || 'N/A'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div className="flex items-center gap-4">
-                                        <button onClick={() => onEditUser(user)} className="text-gray-500 hover:text-gray-800" aria-label={`Edit ${user.name}`}>
+                                        <button onClick={() => onEditUser(user)} className="text-slate-500 hover:text-slate-800" aria-label={`Edit ${user.name}`}>
                                             <PencilIcon className="w-5 h-5" />
                                         </button>
                                         <button onClick={() => handleDelete(user)} className="text-red-500 hover:text-red-700" aria-label={`Delete ${user.name}`}>

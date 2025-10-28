@@ -22,6 +22,8 @@ interface AdminDashboardProps {
     onAddRecipe: (title: string, addToNew: boolean) => Promise<void>;
     onDeleteRecipe: (recipeId: number) => void;
     onUpdateRecipeWithAI: (recipeId: number, title: string) => Promise<void>;
+    onUpdateAllRecipeImages: () => Promise<void>;
+    isUpdatingAllImages: boolean;
     onUpdateUserRoles: (user: User) => void;
     onDeleteUser: (userEmail: string) => void;
     onSendNewsletter: (newsletter: Omit<Newsletter, 'id' | 'sentDate'>) => void;
@@ -30,8 +32,8 @@ interface AdminDashboardProps {
 
 const PlaceholderPanel: React.FC<{ title: string }> = ({ title }) => (
     <div className="bg-white p-8 rounded-lg shadow-md text-center">
-        <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
-        <p className="mt-4 text-gray-500">This feature is coming soon.</p>
+        <h2 className="text-2xl font-bold text-slate-800">{title}</h2>
+        <p className="mt-4 text-slate-500">This feature is coming soon.</p>
     </div>
 );
 
@@ -64,6 +66,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                         recipes={props.allRecipes}
                         onDeleteRecipe={props.onDeleteRecipe}
                         onUpdateRecipeWithAI={props.onUpdateRecipeWithAI}
+                        onUpdateAllRecipeImages={props.onUpdateAllRecipeImages}
+                        isUpdatingAllImages={props.isUpdatingAllImages}
                     />
                 );
             case 'Add Recipe':
@@ -91,12 +95,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
     }
 
     return (
-        <div className="bg-gray-50 min-h-screen p-4 sm:p-6 lg:p-8">
+        <div className="bg-slate-50 min-h-screen p-4 sm:p-6 lg:p-8">
             <header className="container mx-auto flex items-center justify-between mb-8">
-                <h1 className="text-4xl font-bold text-gray-800">Admin Dashboard</h1>
+                <h1 className="text-4xl font-bold text-slate-800">Admin Dashboard</h1>
                 <button 
                     onClick={props.onExit}
-                    className="flex items-center gap-1 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition-colors"
+                    className="flex items-center gap-1 px-4 py-2 bg-teal-500 text-white font-semibold rounded-lg shadow-md hover:bg-teal-600 transition-colors"
                 >
                     <ChevronLeftIcon className="w-5 h-5" />
                     <span>Back to App</span>
@@ -104,7 +108,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
             </header>
 
             <main className="container mx-auto">
-                <div className="border-b border-gray-200 mb-6">
+                <div className="border-b border-slate-200 mb-6">
                     <nav className="-mb-px flex space-x-6 overflow-x-auto scrollbar-hide" aria-label="Admin Panels">
                         {menuItems.map(item => (
                             <button
@@ -112,8 +116,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                                 onClick={() => setActivePanel(item)}
                                 className={`flex-shrink-0 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none ${
                                     activePanel === item 
-                                        ? 'border-green-500 text-green-600' 
-                                        : 'border-transparent text-gray-500 hover:text-green-600 hover:border-green-400'
+                                        ? 'border-teal-500 text-teal-600' 
+                                        : 'border-transparent text-slate-500 hover:text-teal-600 hover:border-teal-400'
                                 }`}
                                 aria-current={activePanel === item ? 'page' : undefined}
                             >

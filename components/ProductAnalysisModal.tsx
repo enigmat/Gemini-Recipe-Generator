@@ -96,7 +96,7 @@ const ProductAnalysisModal: React.FC<ProductAnalysisModalProps> = ({ isOpen, onC
         <div className="mt-6 text-center">
             <button
                 onClick={onClose}
-                className="w-full sm:w-auto px-8 py-2.5 bg-gray-800 text-white font-bold rounded-lg shadow-md hover:bg-gray-900 transition-colors text-base"
+                className="w-full sm:w-auto px-8 py-2.5 bg-teal-500 text-white font-bold rounded-lg shadow-md hover:bg-teal-600 transition-colors text-base"
             >
                 Close
             </button>

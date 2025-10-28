@@ -89,10 +89,10 @@ const AdminVideoManagement: React.FC = () => {
     return (
         <div className="space-y-8">
             <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold text-gray-800">Video Management</h2>
+                <h2 className="text-3xl font-bold text-slate-800">Video Management</h2>
                 <button
                     onClick={handleAddCategory}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-white font-semibold rounded-lg shadow-md hover:bg-teal-600 transition-colors"
                 >
                     <PlusIcon className="w-5 h-5" />
                     <span>Add New Category</span>
@@ -101,7 +101,7 @@ const AdminVideoManagement: React.FC = () => {
 
             {Object.keys(videosByCategory).length === 0 && (
                 <div className="bg-white p-8 rounded-lg shadow-md text-center">
-                    <p className="text-gray-500">No video categories found. Click "Add New Category" to get started.</p>
+                    <p className="text-slate-500">No video categories found. Click "Add New Category" to get started.</p>
                 </div>
             )}
             {/* FIX: Replaced `Object.entries` with `Object.keys` to prevent a potential type inference issue where the `videos` array was being incorrectly typed as `unknown`. This ensures that `videos` is correctly recognized as an array, allowing the `.map` method to be used without causing a type error. */}
@@ -110,7 +110,7 @@ const AdminVideoManagement: React.FC = () => {
                 return (
                 <div key={category} className="bg-white p-6 rounded-lg shadow-md space-y-6 animate-fade-in">
                     <div className="flex justify-between items-center">
-                        <h2 className="text-2xl font-bold text-gray-800">{category}</h2>
+                        <h2 className="text-2xl font-bold text-slate-800">{category}</h2>
                         <button onClick={() => handleDeleteCategory(category)} className="text-red-500 hover:text-red-700" aria-label={`Delete category ${category}`}>
                             <TrashIcon className="w-5 h-5" />
                         </button>
@@ -124,13 +124,13 @@ const AdminVideoManagement: React.FC = () => {
                                         type="text"
                                         value={video.title}
                                         onChange={(e) => handleVideoChange(category, video.id, 'title', e.target.value)}
-                                        className="w-full p-2 border border-gray-200 rounded-md text-sm"
+                                        className="w-full p-2 bg-white border border-slate-300 rounded-md text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                                         placeholder="Video Title"
                                     />
                                     <textarea
                                         value={video.description}
                                         onChange={(e) => handleVideoChange(category, video.id, 'description', e.target.value)}
-                                        className="w-full p-2 border border-gray-200 rounded-md text-sm h-20 resize-none"
+                                        className="w-full p-2 bg-white border border-slate-300 rounded-md text-sm h-20 resize-none text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                                         placeholder="Video Description"
                                     />
                                 </div>
@@ -139,7 +139,7 @@ const AdminVideoManagement: React.FC = () => {
                                         type="text"
                                         value={video.thumbnailUrl}
                                         onChange={(e) => handleVideoChange(category, video.id, 'thumbnailUrl', e.target.value)}
-                                        className="w-full p-2 border border-gray-200 rounded-md text-sm"
+                                        className="w-full p-2 bg-white border border-slate-300 rounded-md text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                                         placeholder="Thumbnail URL"
                                     />
                                     <div className="flex items-center gap-2">
@@ -147,7 +147,7 @@ const AdminVideoManagement: React.FC = () => {
                                             type="text"
                                             value={video.videoUrl}
                                             onChange={(e) => handleVideoChange(category, video.id, 'videoUrl', e.target.value)}
-                                            className="w-full p-2 border border-gray-200 rounded-md text-sm"
+                                            className="w-full p-2 bg-white border border-slate-300 rounded-md text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                                             placeholder="Video URL"
                                         />
                                         <button onClick={() => handleDeleteVideo(category, video.id)} className="text-red-500 hover:text-red-700" aria-label={`Delete video ${video.title}`}>
@@ -159,25 +159,25 @@ const AdminVideoManagement: React.FC = () => {
                         ))}
                     </div>
                     
-                    <div className="border-t-2 border-dashed border-gray-200 pt-6">
+                    <div className="border-t-2 border-dashed border-slate-200 pt-6">
                         <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
                                 <SparklesIcon className="w-5 h-5 text-blue-500" />
-                                <h4 className="font-semibold text-gray-700">Generate with AI</h4>
+                                <h4 className="font-semibold text-slate-700">Generate with AI</h4>
                             </div>
                             <input
                                 type="text"
                                 value={aiPrompts[category] || ''}
                                 onChange={(e) => handleAiPromptChange(category, e.target.value)}
                                 placeholder="e.g., A quick tutorial on making a simple vinaigrette"
-                                className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white"
+                                className="w-full p-2 border border-slate-300 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                             />
                             <div className="flex justify-end gap-2 mt-4">
-                                <button onClick={() => handleAddBlankVideo(category)} className="flex items-center justify-center gap-2 px-3 py-2 text-sm bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors">
+                                <button onClick={() => handleAddBlankVideo(category)} className="flex items-center justify-center gap-2 px-3 py-2 text-sm bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition-colors">
                                     <PlusIcon className="w-4 h-4" />
                                     <span>Add Blank</span>
                                 </button>
-                                <button onClick={() => handleGenerateAndAdd(category)} className="flex items-center justify-center gap-2 px-3 py-2 text-sm bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition-colors">
+                                <button onClick={() => handleGenerateAndAdd(category)} className="flex items-center justify-center gap-2 px-3 py-2 text-sm bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition-colors">
                                     <SparklesIcon className="w-4 h-4" />
                                     <span>Generate & Add</span>
                                 </button>

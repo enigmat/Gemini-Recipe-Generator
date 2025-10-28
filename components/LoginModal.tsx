@@ -41,12 +41,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLoginSuccess }) => {
         className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md m-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
+        <h2 className="text-2xl font-bold text-center text-slate-800 mb-6">
           {isLoginView ? 'Welcome Back' : 'Create an Account'}
         </h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+            <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="email">
               Email
             </label>
             <input
@@ -54,13 +54,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLoginSuccess }) => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full py-2 px-3 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-shadow text-slate-900 placeholder-slate-500"
               placeholder="you@example.com"
               required
             />
           </div>
           <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+            <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="password">
               Password
             </label>
             <input
@@ -68,7 +68,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLoginSuccess }) => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full py-2 px-3 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-shadow text-slate-900 placeholder-slate-500 mb-3"
               placeholder="******************"
               required
             />
@@ -83,7 +83,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLoginSuccess }) => {
             </button>
           </div>
         </form>
-        <p className="text-center text-gray-600 text-sm mt-6">
+        <p className="text-center text-slate-600 text-sm mt-6">
           {isLoginView ? "Don't have an account?" : 'Already have an account?'}
           <button
             onClick={() => {

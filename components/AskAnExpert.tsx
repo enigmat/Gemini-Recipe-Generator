@@ -29,32 +29,32 @@ const AskAnExpert: React.FC<AskAnExpertProps> = ({ questions, onAskQuestion }) =
             <div className="bg-white rounded-xl shadow-md p-8 md:p-12">
                 <div className="text-center">
                     <QuestionMarkCircleIcon className="w-10 h-10 text-green-500 mx-auto" />
-                    <h2 className="text-2xl font-bold text-gray-800 mt-3">Ask an Expert</h2>
-                    <p className="text-gray-600 mt-2 max-w-lg mx-auto">
+                    <h2 className="text-2xl font-bold text-slate-800 mt-3">Ask an Expert</h2>
+                    <p className="text-slate-600 mt-2 max-w-lg mx-auto">
                         Stuck on a recipe? Need a substitution, or wondering about a technique? Ask our professional chefs!
                     </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="mt-8 max-w-2xl mx-auto space-y-4">
                      <div>
-                        <label htmlFor="topic-select" className="block text-sm font-medium text-gray-700 mb-1">Topic</label>
+                        <label htmlFor="topic-select" className="block text-sm font-medium text-slate-700 mb-1">Topic</label>
                         <select
                             id="topic-select"
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow bg-white"
+                            className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow bg-white"
                         >
                             {topics.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label htmlFor="question-textarea" className="block text-sm font-medium text-gray-700 mb-1">Your Question</label>
+                        <label htmlFor="question-textarea" className="block text-sm font-medium text-slate-700 mb-1">Your Question</label>
                         <textarea
                             id="question-textarea"
                             value={question}
                             onChange={(e) => setQuestion(e.target.value)}
                             placeholder="e.g., How can I make my sauces thicker without using flour?"
-                            className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow resize-none"
+                            className="w-full h-32 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow resize-none"
                             aria-label="Your question"
                             required
                         />
@@ -72,10 +72,10 @@ const AskAnExpert: React.FC<AskAnExpertProps> = ({ questions, onAskQuestion }) =
             </div>
 
             <div className="bg-white rounded-xl shadow-md p-8 md:p-12">
-                <h3 className="text-xl font-bold text-gray-800 mb-6">Your Question History</h3>
+                <h3 className="text-xl font-bold text-slate-800 mb-6">Your Question History</h3>
                 <div className="space-y-4">
                     {questions.length === 0 ? (
-                        <p className="text-gray-500 text-center py-4">You haven't asked any questions yet.</p>
+                        <p className="text-slate-500 text-center py-4">You haven't asked any questions yet.</p>
                     ) : (
                         questions.map(q => (
                             <div key={q.id} className="border rounded-lg">
@@ -89,26 +89,26 @@ const AskAnExpert: React.FC<AskAnExpertProps> = ({ questions, onAskQuestion }) =
                                             <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${q.status === 'Answered' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                                                 {q.status}
                                             </span>
-                                            <p className="font-semibold text-gray-800 text-left">{q.question}</p>
+                                            <p className="font-semibold text-slate-800 text-left">{q.question}</p>
                                         </div>
-                                        <p className="text-xs text-gray-500 mt-1">
+                                        <p className="text-xs text-slate-500 mt-1">
                                             Topic: {q.topic} &bull; Submitted: {new Date(q.submittedDate).toLocaleDateString()}
                                         </p>
                                     </div>
-                                    <ChevronDownIcon className={`w-5 h-5 text-gray-500 transition-transform flex-shrink-0 ml-4 ${expandedId === q.id ? 'rotate-180' : ''}`} />
+                                    <ChevronDownIcon className={`w-5 h-5 text-slate-500 transition-transform flex-shrink-0 ml-4 ${expandedId === q.id ? 'rotate-180' : ''}`} />
                                 </button>
                                 {expandedId === q.id && (
-                                    <div className="p-4 border-t bg-gray-50/50 animate-fade-in text-left">
+                                    <div className="p-4 border-t bg-slate-50/50 animate-fade-in text-left">
                                         {q.status === 'Answered' && q.answer ? (
                                             <div className="space-y-2">
-                                                <p className="text-sm font-semibold text-gray-700">
+                                                <p className="text-sm font-semibold text-slate-700">
                                                     Answer from Chef {q.answer.chefName}
-                                                    <span className="text-xs font-normal text-gray-500 ml-2">({new Date(q.answer.answeredDate).toLocaleDateString()})</span>
+                                                    <span className="text-xs font-normal text-slate-500 ml-2">({new Date(q.answer.answeredDate).toLocaleDateString()})</span>
                                                 </p>
-                                                <p className="text-gray-600 text-sm whitespace-pre-wrap">{q.answer.text}</p>
+                                                <p className="text-slate-600 text-sm whitespace-pre-wrap">{q.answer.text}</p>
                                             </div>
                                         ) : (
-                                            <p className="text-gray-600 text-sm">Our chefs are reviewing your question. We'll get back to you shortly!</p>
+                                            <p className="text-slate-600 text-sm">Our chefs are reviewing your question. We'll get back to you shortly!</p>
                                         )}
                                     </div>
                                 )}

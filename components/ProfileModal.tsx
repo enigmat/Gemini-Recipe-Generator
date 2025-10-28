@@ -78,7 +78,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onSave }) =>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute bottom-0 right-0 bg-amber-500 text-white rounded-full p-1.5 hover:bg-amber-600"
+                className="absolute bottom-0 right-0 bg-amber-500 text-white rounded-full p-1.5 hover:bg-amber-600 z-10"
                 aria-label="Change profile picture"
               >
                 <CameraIcon className="w-4 h-4" />

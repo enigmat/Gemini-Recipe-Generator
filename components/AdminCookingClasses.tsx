@@ -81,10 +81,10 @@ const AdminCookingClasses: React.FC = () => {
     return (
         <div className="space-y-8">
             <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold text-gray-800">Cooking Class Management</h2>
+                <h2 className="text-3xl font-bold text-slate-800">Cooking Class Management</h2>
                 <button
                     onClick={handleAddClass}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-white font-semibold rounded-lg shadow-md hover:bg-teal-600 transition-colors"
                 >
                     <PlusIcon className="w-5 h-5" />
                     <span>Add New Class</span>
@@ -96,45 +96,45 @@ const AdminCookingClasses: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Class Details */}
                         <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-gray-700">Class Details</h3>
+                            <h3 className="text-lg font-semibold text-slate-700">Class Details</h3>
                             <div>
-                                <label htmlFor={`title-${cls.id}`} className="block text-sm font-medium text-gray-600">Title</label>
+                                <label htmlFor={`title-${cls.id}`} className="block text-sm font-medium text-slate-600">Title</label>
                                 <input
                                     type="text"
                                     id={`title-${cls.id}`}
                                     value={cls.title}
                                     onChange={(e) => handleClassChange(cls.id, 'title', e.target.value)}
-                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-800 focus:border-gray-800"
+                                    className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                                 />
                             </div>
                             <div>
-                                <label htmlFor={`chef-${cls.id}`} className="block text-sm font-medium text-gray-600">Chef</label>
+                                <label htmlFor={`chef-${cls.id}`} className="block text-sm font-medium text-slate-600">Chef</label>
                                 <input
                                     type="text"
                                     id={`chef-${cls.id}`}
                                     value={cls.chef}
                                     onChange={(e) => handleClassChange(cls.id, 'chef', e.target.value)}
-                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-800 focus:border-gray-800"
+                                    className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                                 />
                             </div>
                             <div>
-                                <label htmlFor={`description-${cls.id}`} className="block text-sm font-medium text-gray-600">Description</label>
+                                <label htmlFor={`description-${cls.id}`} className="block text-sm font-medium text-slate-600">Description</label>
                                 <textarea
                                     id={`description-${cls.id}`}
                                     value={cls.description}
                                     onChange={(e) => handleClassChange(cls.id, 'description', e.target.value)}
                                     rows={5}
-                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-800 focus:border-gray-800 resize-y"
+                                    className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-y"
                                 />
                             </div>
                         </div>
 
                         {/* Class Image */}
                         <div className="space-y-4">
-                             <h3 className="text-lg font-semibold text-gray-700">Class Image</h3>
+                             <h3 className="text-lg font-semibold text-slate-700">Class Image</h3>
                              <img src={cls.thumbnailUrl} alt={cls.title} className="w-full aspect-video object-cover rounded-md border" />
                              <div>
-                                <label htmlFor={`image-prompt-${cls.id}`} className="block text-sm font-medium text-gray-600">New Image Prompt</label>
+                                <label htmlFor={`image-prompt-${cls.id}`} className="block text-sm font-medium text-slate-600">New Image Prompt</label>
                                 <div className="mt-1 flex gap-2">
                                     <input
                                         type="text"
@@ -142,11 +142,11 @@ const AdminCookingClasses: React.FC = () => {
                                         value={imagePrompts[cls.id] || ''}
                                         onChange={(e) => handleImagePromptChange(cls.id, e.target.value)}
                                         placeholder="e.g., Rustic sourdough bread on a wooden board"
-                                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-800 focus:border-gray-800"
+                                        className="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                                     />
                                     <button
                                         onClick={() => handleGenerateImage(cls.id)}
-                                        className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 transition-colors"
+                                        className="px-4 py-2 bg-teal-500 text-white font-semibold rounded-md hover:bg-teal-600 transition-colors"
                                     >
                                         Gen
                                     </button>
@@ -157,15 +157,15 @@ const AdminCookingClasses: React.FC = () => {
                         {/* Lessons */}
                         <div className="space-y-4">
                              <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-semibold text-gray-700">Lessons</h3>
-                                <button onClick={() => handleAddLesson(cls.id)} className="text-sm font-medium text-green-600 hover:text-green-800 flex items-center gap-1">
+                                <h3 className="text-lg font-semibold text-slate-700">Lessons</h3>
+                                <button onClick={() => handleAddLesson(cls.id)} className="text-sm font-medium text-teal-600 hover:text-teal-800 flex items-center gap-1">
                                     <PlusIcon className="w-4 h-4" />
                                     Add
                                 </button>
                              </div>
                              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
                                 {cls.steps.map((step) => (
-                                    <div key={step.id} className="p-3 border rounded-md bg-gray-50/50 space-y-2">
+                                    <div key={step.id} className="p-3 border rounded-md bg-slate-50/50 space-y-2">
                                         <div className="flex justify-between items-start">
                                             <input
                                                 type="text"
@@ -183,14 +183,14 @@ const AdminCookingClasses: React.FC = () => {
                                             value={step.duration}
                                             onChange={(e) => handleLessonChange(cls.id, step.id, 'duration', e.target.value)}
                                             placeholder="Duration (e.g., 15:30)"
-                                            className="w-full text-sm bg-transparent border-none p-0 focus:ring-0 text-gray-500"
+                                            className="w-full text-sm bg-transparent border-none p-0 focus:ring-0 text-slate-500"
                                         />
                                          <input
                                             type="text"
                                             value={step.videoUrl}
                                             onChange={(e) => handleLessonChange(cls.id, step.id, 'videoUrl', e.target.value)}
                                             placeholder="Video URL"
-                                            className="w-full text-sm bg-transparent border-none p-0 focus:ring-0 text-gray-500"
+                                            className="w-full text-sm bg-transparent border-none p-0 focus:ring-0 text-slate-500"
                                         />
                                     </div>
                                 ))}

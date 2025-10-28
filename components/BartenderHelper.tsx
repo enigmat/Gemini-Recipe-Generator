@@ -117,7 +117,7 @@ const BartenderHelper: React.FC<BartenderHelperProps> = ({ currentUser, savedCoc
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="e.g., a refreshing gin cocktail with cucumber and elderflower"
-            className="w-full h-28 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow resize-none"
+            className="w-full h-28 p-4 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-shadow text-base text-gray-900 placeholder-gray-500 resize-none"
             aria-label="Describe your drink mood"
             disabled={isLoading}
           />

@@ -19,8 +19,8 @@ const CookbookTagFilter: React.FC<CookbookTagFilterProps> = ({ tags, selectedTag
             onClick={() => onSelectTag(tag)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200 border ${
               selectedTag === tag
-                ? 'bg-gray-800 text-white border-gray-800'
-                : 'bg-white text-gray-600 hover:bg-gray-100 border-gray-300'
+                ? 'bg-teal-500 text-white border-teal-500'
+                : 'bg-white text-gray-600 hover:bg-teal-100 border-gray-300'
             }`}
             aria-pressed={selectedTag === tag}
           >
