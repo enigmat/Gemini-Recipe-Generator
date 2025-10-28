@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { recipes as initialRecipes } from './data/recipes';
 import RecipeCard from './components/RecipeCard';
 import RecipeModal from './components/RecipeModal';
 import TagFilter from './components/TagFilter';
@@ -30,7 +29,6 @@ import { videos } from './data/videos';
 import VideoCard from './components/VideoCard';
 import VideoPlayerModal from './components/VideoPlayerModal';
 import FilmIcon from './components/icons/FilmIcon';
-import { newRecipes as initialNewRecipes } from './data/newRecipes';
 import PremiumContent from './components/PremiumContent';
 import UpgradeModal from './components/UpgradeModal';
 import LockClosedIcon from './components/icons/LockClosedIcon';
@@ -58,6 +56,7 @@ import UserCircleIcon from './components/icons/UserCircleIcon';
 import BartenderHelper from './components/BartenderHelper';
 import AskAnExpert from './components/AskAnExpert';
 import * as ratingService from './services/ratingService';
+import * as recipeService from './services/recipeService';
 import Marketplace from './components/Marketplace';
 import * as marketplaceService from './services/marketplaceService';
 import PrivacyPolicy from './components/PrivacyPolicy';
@@ -86,8 +85,8 @@ const applyRatings = (recipes: Recipe[]): Recipe[] => {
 };
 
 const App: React.FC = () => {
-    const [allRecipes, setAllRecipes] = useState<Recipe[]>(() => applyRatings(initialRecipes));
-    const [newThisMonthRecipes, setNewThisMonthRecipes] = useState<Recipe[]>(() => applyRatings(initialNewRecipes));
+    const [allRecipes, setAllRecipes] = useState<Recipe[]>(() => applyRatings(recipeService.getAllRecipes()));
+    const [newThisMonthRecipes, setNewThisMonthRecipes] = useState<Recipe[]>(() => applyRatings(recipeService.getNewRecipes()));
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [activeTab, setActiveTab] = useState<string>('All Recipes');
     const [selectedTag, setSelectedTag] = useState<string>('All');
@@ -169,6 +168,15 @@ const App: React.FC = () => {
         setShoppingLists(shoppingListManager.getLists(userEmail));
         setSavedCocktails(cocktailService.getSavedCocktails(userEmail));
     }, [currentUser]);
+
+    // Persist recipes to localStorage
+    useEffect(() => {
+        recipeService.saveAllRecipes(allRecipes);
+    }, [allRecipes]);
+
+    useEffect(() => {
+        recipeService.saveNewRecipes(newThisMonthRecipes);
+    }, [newThisMonthRecipes]);
 
     // Reset recipe pagination when filters change
     useEffect(() => {
