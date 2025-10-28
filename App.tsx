@@ -417,6 +417,10 @@ const App: React.FC = () => {
         setNewThisMonthRecipes(prev => prev.filter(r => r.id !== recipeId));
     };
 
+    const handleRemoveFromNew = (recipeId: number) => {
+        setNewThisMonthRecipes(prev => prev.filter(r => r.id !== recipeId));
+    };
+
     const handleUpdateRecipeWithAI = async (recipeId: number, title: string) => {
         // These are async and don't depend on state, so they are fine here.
         const recipeDetails = await generateRecipeDetailsFromTitle(title);
@@ -596,6 +600,7 @@ const App: React.FC = () => {
                 onDeleteUser={handleDeleteUser}
                 onSendNewsletter={handleSendNewsletter}
                 onExit={() => handleSelectTab('All Recipes')}
+                onRemoveFromNew={handleRemoveFromNew}
             />
         );
     }

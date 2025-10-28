@@ -12,6 +12,7 @@ import AdminAboutUs from './AdminAboutUs';
 import AdminMarketplace from './AdminMarketplace';
 import EditUserModal from './EditUserModal';
 import AdminApiKeyManagement from './AdminApiKeyManagement';
+import AdminNewRecipeManagement from './AdminNewRecipeManagement';
 
 interface AdminDashboardProps {
     allRecipes: Recipe[];
@@ -28,6 +29,7 @@ interface AdminDashboardProps {
     onDeleteUser: (userEmail: string) => void;
     onSendNewsletter: (newsletter: Omit<Newsletter, 'id' | 'sentDate'>) => void;
     onExit: () => void;
+    onRemoveFromNew: (recipeId: number) => void;
 }
 
 const PlaceholderPanel: React.FC<{ title: string }> = ({ title }) => (
@@ -62,13 +64,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                 return <AdminLeadsManagement leads={props.collectedLeads} />;
             case 'Recipe Management':
                  return (
-                    <AdminRecipeManagement
-                        recipes={props.allRecipes}
-                        onDeleteRecipe={props.onDeleteRecipe}
-                        onUpdateRecipeWithAI={props.onUpdateRecipeWithAI}
-                        onUpdateAllRecipeImages={props.onUpdateAllRecipeImages}
-                        isUpdatingAllImages={props.isUpdatingAllImages}
-                    />
+                    <div className="space-y-8">
+                        <AdminNewRecipeManagement
+                            recipes={props.newRecipes}
+                            onRemoveFromNew={props.onRemoveFromNew}
+                            onUpdateRecipeWithAI={props.onUpdateRecipeWithAI}
+                        />
+                        <AdminRecipeManagement
+                            recipes={props.allRecipes}
+                            onDeleteRecipe={props.onDeleteRecipe}
+                            onUpdateRecipeWithAI={props.onUpdateRecipeWithAI}
+                            onUpdateAllRecipeImages={props.onUpdateAllRecipeImages}
+                            isUpdatingAllImages={props.isUpdatingAllImages}
+                        />
+                    </div>
                 );
             case 'Add Recipe':
                  return <AdminAddRecipe onAddRecipe={props.onAddRecipe} />;
