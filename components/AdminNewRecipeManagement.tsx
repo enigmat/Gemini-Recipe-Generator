@@ -21,17 +21,15 @@ const AdminNewRecipeManagement: React.FC<AdminNewRecipeManagementProps> = ({ rec
     };
     
     const handleUpdate = async (recipeId: number, title: string) => {
-        if (window.confirm(`This will use AI to completely regenerate the image and info for "${title}". Are you sure?`)) {
-            setUpdatingId(recipeId);
-            setUpdateErrors(prev => ({ ...prev, [recipeId]: '' }));
-            try {
-                await onUpdateRecipeWithAI(recipeId, title);
-            } catch (error: any) {
-                console.error("Update failed:", error);
-                setUpdateErrors(prev => ({ ...prev, [recipeId]: error.message || "An error occurred." }));
-            } finally {
-                setUpdatingId(null);
-            }
+        setUpdatingId(recipeId);
+        setUpdateErrors(prev => ({ ...prev, [recipeId]: '' }));
+        try {
+            await onUpdateRecipeWithAI(recipeId, title);
+        } catch (error: any) {
+            console.error("Update failed:", error);
+            setUpdateErrors(prev => ({ ...prev, [recipeId]: error.message || "An error occurred." }));
+        } finally {
+            setUpdatingId(null);
         }
     };
 
