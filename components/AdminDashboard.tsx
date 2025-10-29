@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Recipe, User, Newsletter, Lead } from '../types';
+import { Recipe, User, Newsletter, Lead, Product } from '../types';
 import AdminRecipeManagement from './AdminRecipeManagement';
 import AdminUserManagement from './AdminUserManagement';
 import AdminNewsletter from './AdminNewsletter';
@@ -20,6 +20,7 @@ interface AdminDashboardProps {
     users: User[];
     sentNewsletters: Newsletter[];
     collectedLeads: Lead[];
+    products: Product[];
     onAddRecipe: (title: string, addToNew: boolean) => Promise<void>;
     onDeleteRecipe: (recipeId: number) => void;
     onUpdateRecipeWithAI: (recipeId: number, title: string) => Promise<void>;
@@ -28,8 +29,10 @@ interface AdminDashboardProps {
     onUpdateUserRoles: (user: User) => void;
     onDeleteUser: (userEmail: string) => void;
     onSendNewsletter: (newsletter: Omit<Newsletter, 'id' | 'sentDate'>) => void;
+    onUpdateProducts: (updatedProducts: Product[]) => void;
     onExit: () => void;
     onRemoveFromNew: (recipeId: number) => void;
+    onAddToNew: (recipeId: number) => void;
 }
 
 const PlaceholderPanel: React.FC<{ title: string }> = ({ title }) => (
@@ -72,10 +75,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                         />
                         <AdminRecipeManagement
                             recipes={props.allRecipes}
+                            newRecipeIds={props.newRecipes.map(r => r.id)}
                             onDeleteRecipe={props.onDeleteRecipe}
                             onUpdateRecipeWithAI={props.onUpdateRecipeWithAI}
                             onUpdateAllRecipeImages={props.onUpdateAllRecipeImages}
                             isUpdatingAllImages={props.isUpdatingAllImages}
+                            onAddToNew={props.onAddToNew}
                         />
                     </div>
                 );
@@ -95,7 +100,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
             case 'Video Management':
                 return <AdminVideoManagement />;
             case 'Marketplace Management':
-                return <AdminMarketplace />;
+                return <AdminMarketplace products={props.products} onUpdateProducts={props.onUpdateProducts} />;
             case 'About Us':
                 return <AdminAboutUs />;
             default:

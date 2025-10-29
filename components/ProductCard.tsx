@@ -1,6 +1,7 @@
 import React from 'react';
 import { Product } from '../types';
 import ExternalLinkIcon from './icons/ExternalLinkIcon';
+import StoredImage from './StoredImage';
 
 interface ProductCardProps {
     product: Product;
@@ -10,7 +11,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     return (
         <div className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col group border">
             <div className="relative">
-                <img src={product.imageUrl} alt={product.name} className="w-full h-48 object-cover" />
+                <StoredImage src={product.imageUrl} alt={product.name} className="w-full h-48 object-cover" />
             </div>
             <div className="p-4 flex flex-col flex-grow">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{product.brand}</p>

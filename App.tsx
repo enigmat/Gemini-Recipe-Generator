@@ -193,6 +193,10 @@ const App: React.FC = () => {
             setIsLoginModalOpen(true);
             return;
         }
+        if (!currentUser.isPremium) {
+            setIsUpgradeModalOpen(true);
+            return;
+        }
         const userEmail = currentUser.email;
         if (favorites.includes(recipeId)) {
             favoritesService.removeFavorite(recipeId, userEmail);
@@ -220,6 +224,14 @@ const App: React.FC = () => {
     };
 
     const handleToggleSelect = (recipeId: number) => {
+        if (!currentUser) {
+            setIsLoginModalOpen(true);
+            return;
+        }
+        if (!currentUser.isPremium) {
+            setIsUpgradeModalOpen(true);
+            return;
+        }
         setSelectedRecipeIds(prevSelected =>
             prevSelected.includes(recipeId)
                 ? prevSelected.filter(id => id !== recipeId)
@@ -269,6 +281,10 @@ const App: React.FC = () => {
     };
 
     const handleCardClick = (recipe: Recipe) => {
+        if (!currentUser?.isPremium) {
+            setIsUpgradeModalOpen(true);
+            return;
+        }
         setSelectedRecipe(recipe);
     };
 
@@ -291,15 +307,17 @@ const App: React.FC = () => {
                 setIsLoginModalOpen(true);
                 return;
             }
-            if (tab === 'Shopping List') {
-                setIsListsOverviewOpen(true);
-                return; 
+        }
+
+        if (tab === 'Shopping List') {
+            if (currentUser && !currentUser.isPremium) {
+                setIsUpgradeModalOpen(true);
+                return;
             }
+            setIsListsOverviewOpen(true);
+            return; 
         }
-        if (['Cooking Classes', 'Ask an Expert'].includes(tab) && !currentUser?.isPremium) {
-            setActiveTab(tab); // Allow navigation to see the upsell
-            return;
-        }
+
         setActiveTab(tab);
         setSearchQuery('');
         setPantryIngredients([]);
@@ -429,6 +447,14 @@ const App: React.FC = () => {
         setNewThisMonthRecipes(prev => prev.filter(r => r.id !== recipeId));
     };
 
+    const handleAddToNew = (recipeId: number) => {
+        const recipeToAdd = allRecipes.find(r => r.id === recipeId);
+        // Check if it exists and is not already in the new list
+        if (recipeToAdd && !newThisMonthRecipes.some(r => r.id === recipeId)) {
+            setNewThisMonthRecipes(prev => [recipeToAdd, ...prev]);
+        }
+    };
+
     const handleUpdateRecipeWithAI = async (recipeId: number, title: string) => {
         // These are async and don't depend on state, so they are fine here.
         const recipeDetails = await generateRecipeDetailsFromTitle(title);
@@ -503,8 +529,17 @@ const App: React.FC = () => {
         setSentNewsletters(prev => [newNewsletter, ...prev]);
     };
 
+    const handleUpdateProducts = (updatedProducts: Product[]) => {
+        setProducts(updatedProducts);
+        marketplaceService.saveProducts(updatedProducts);
+    };
+
     // --- Extractor functions ---
     const handleExtractFromUrl = async (url: string) => {
+        if (!currentUser?.isPremium) {
+            setIsUpgradeModalOpen(true);
+            return;
+        }
         setIsExtracting(true);
         setExtractError(null);
         try {
@@ -599,6 +634,7 @@ const App: React.FC = () => {
                 users={allUsers}
                 sentNewsletters={sentNewsletters}
                 collectedLeads={collectedLeads}
+                products={products}
                 onAddRecipe={handleAddNewRecipe}
                 onDeleteRecipe={handleDeleteRecipe}
                 onUpdateRecipeWithAI={handleUpdateRecipeWithAI}
@@ -607,8 +643,10 @@ const App: React.FC = () => {
                 onUpdateUserRoles={handleUpdateUser}
                 onDeleteUser={handleDeleteUser}
                 onSendNewsletter={handleSendNewsletter}
+                onUpdateProducts={handleUpdateProducts}
                 onExit={() => handleSelectTab('All Recipes')}
                 onRemoveFromNew={handleRemoveFromNew}
+                onAddToNew={handleAddToNew}
             />
         );
     }
@@ -616,8 +654,40 @@ const App: React.FC = () => {
     const renderContent = () => {
         switch(activeTab) {
             case 'Pantry Chef':
+                if (!currentUser?.isPremium) {
+                    return (
+                        <PremiumContent
+                            isPremium={false}
+                            onUpgradeClick={() => setIsUpgradeModalOpen(true)}
+                            featureTitle="Your Personal Pantry Chef"
+                            featureDescription="Don't know what to cook? Let our AI chef create a recipe from the ingredients you already have."
+                            features={[
+                                "Unlock unlimited AI-powered recipe generation",
+                                "Reduce food waste",
+                                "Discover new meal ideas",
+                                "Get creative with your pantry"
+                            ]}
+                        />
+                    );
+                }
                 return <PantryChef onRecipeGenerated={handleRecipeGenerated} />;
             case 'My Cookbook':
+                 if (!currentUser?.isPremium) {
+                    return (
+                         <PremiumContent
+                            isPremium={false}
+                            onUpgradeClick={() => setIsUpgradeModalOpen(true)}
+                            featureTitle="Your Digital Cookbook"
+                            featureDescription="Save all your favorite recipes in one place for easy access anytime."
+                            features={[
+                                "Save unlimited favorite recipes",
+                                "Organize with custom tags",
+                                "Access your cookbook on any device",
+                                "Never lose a recipe again"
+                            ]}
+                        />
+                    );
+                }
                 return (
                     <div className="space-y-8">
                         <div className="flex flex-col md:flex-row gap-8">
@@ -652,8 +722,40 @@ const App: React.FC = () => {
                     </div>
                 );
             case 'My Bar':
+                if (!currentUser?.isPremium) {
+                    return (
+                        <PremiumContent
+                            isPremium={false}
+                            onUpgradeClick={() => setIsUpgradeModalOpen(true)}
+                            featureTitle="My Bar: Your Personal Cocktail Collection"
+                            featureDescription="Save and organize all the unique cocktail recipes you create with our AI Bartender Helper."
+                            features={[
+                                "Save unlimited cocktail recipes",
+                                "Quickly access your favorite drinks",
+                                "Perfect for entertaining guests",
+                                "Build your personal mixology book"
+                            ]}
+                        />
+                    );
+                }
                 return <MyBar savedCocktails={savedCocktails} onDelete={handleDeleteCocktail} onGoToBartender={() => handleSelectTab('Bartender Helper')} />;
             case 'Meal Plans':
+                if (!currentUser?.isPremium) {
+                    return (
+                        <PremiumContent
+                            isPremium={false}
+                            onUpgradeClick={() => setIsUpgradeModalOpen(true)}
+                            featureTitle="Effortless Meal Planning"
+                            featureDescription="Take the stress out of meal prep with our curated weekly meal plans."
+                            features={[
+                                "Weekly themed meal plans",
+                                "Recipes for every occasion",
+                                "Simplify your grocery shopping",
+                                "Healthy and delicious options"
+                            ]}
+                        />
+                    );
+                }
                  return (
                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                         {mealPlans.map(plan => (
@@ -662,6 +764,22 @@ const App: React.FC = () => {
                     </div>
                 );
             case 'Video Tutorials':
+                 if (!currentUser?.isPremium) {
+                    return (
+                        <PremiumContent
+                            isPremium={false}
+                            onUpgradeClick={() => setIsUpgradeModalOpen(true)}
+                            featureTitle="Step-by-Step Video Tutorials"
+                            featureDescription="Master basic cooking skills and techniques with our short, easy-to-follow video guides."
+                            features={[
+                                "Learn essential knife skills",
+                                "Perfect core cooking techniques",
+                                "Visual, easy-to-understand lessons",
+                                "Build your confidence in the kitchen"
+                            ]}
+                        />
+                    );
+                }
                 return (
                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {videos.map(video => (
@@ -687,6 +805,22 @@ const App: React.FC = () => {
                     </>
                 );
             case 'Bartender Helper':
+                if (!currentUser?.isPremium) {
+                    return (
+                        <PremiumContent
+                            isPremium={false}
+                            onUpgradeClick={() => setIsUpgradeModalOpen(true)}
+                            featureTitle="AI-Powered Bartender Helper"
+                            featureDescription="Feeling creative? Describe any drink you can imagine, and our AI mixologist will invent a recipe for you on the spot."
+                            features={[
+                                "Generate unique cocktail recipes from a description",
+                                "Get AI-generated images of your creations",
+                                "Save your best drinks to 'My Bar'",
+                                "Impress your friends with custom drinks"
+                            ]}
+                        />
+                    );
+                }
                 return <BartenderHelper currentUser={currentUser} savedCocktails={savedCocktails} onSaveCocktail={handleSaveCocktail} />;
             case 'Ask an Expert':
                 if (!currentUser?.isPremium) {
@@ -694,6 +828,22 @@ const App: React.FC = () => {
                 }
                 return <AskAnExpert questions={expertQuestions} onAskQuestion={handleAddExpertQuestion} />;
             case 'Marketplace':
+                if (!currentUser?.isPremium) {
+                    return (
+                        <PremiumContent
+                            isPremium={false}
+                            onUpgradeClick={() => setIsUpgradeModalOpen(true)}
+                            featureTitle="Curated Marketplace & Product Analyzer"
+                            featureDescription="Shop our chef-approved kitchen tools and pantry staples, and get instant health analysis on any food product."
+                            features={[
+                                "Browse and shop affiliate products",
+                                "Use the AI Product Analyzer for health scores",
+                                "Find the best tools and ingredients",
+                                "Make informed choices about what you buy"
+                            ]}
+                        />
+                    );
+                }
                 return <Marketplace allProducts={products} />;
             case 'About Us':
                 return <AboutUsPage />;
@@ -704,7 +854,7 @@ const App: React.FC = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-white p-8 rounded-lg shadow-sm">
                             <div>
                                 <h1 className="text-4xl font-bold text-slate-800">Recipe Extracter</h1>
-                                <p className="mt-4 text-slate-600">Extract recipes from any URL and save them to your digital cookbook.</p>
+                                <p className="mt-4 text-slate-600">Extract recipes from any URL and save them to your digital cookbook. <span className="font-semibold text-amber-600">(Premium Feature)</span></p>
                             </div>
                             <UrlInput onExtract={handleExtractFromUrl} isExtracting={isExtracting} error={extractError} />
                         </div>
@@ -752,6 +902,13 @@ const App: React.FC = () => {
                                 <p className="mt-2 text-lg text-slate-500">
                                     Discover from <span className="font-bold text-green-600">{allRecipes.length.toLocaleString()}</span> authentic recipes
                                 </p>
+                            </div>
+                            <div className="max-w-2xl mx-auto mb-8">
+                                <SearchBar 
+                                    value={searchQuery} 
+                                    onChange={handleSearchChange} 
+                                    placeholder="Search by recipe name, description, etc..."
+                                />
                             </div>
                             <TagFilter tags={ALL_CATEGORY_TAGS} selectedTag={selectedTag} onSelectTag={handleSelectTag} />
                             
@@ -808,7 +965,7 @@ const App: React.FC = () => {
                                     onLogout={handleLogout}
                                     onShowFavorites={() => handleSelectTab('My Cookbook')}
                                     onOpenProfile={() => setIsProfileModalOpen(true)}
-                                    onOpenLists={() => setIsListsOverviewOpen(true)}
+                                    onOpenLists={() => handleSelectTab('Shopping List')}
                                     onOpenAdmin={() => handleSelectTab('Admin Dashboard')}
                                 />
                             ) : (

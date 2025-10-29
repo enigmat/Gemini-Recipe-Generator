@@ -58,6 +58,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
             className={`absolute top-2 left-2 p-1.5 rounded-full transition-all duration-200 
                         ${isSelected ? 'bg-green-500 text-white' : 'bg-white/70 text-slate-700 backdrop-blur-sm hover:bg-white'}`}
             aria-label={isSelected ? 'Remove from shopping list' : 'Add to shopping list'}
+            title="Add to shopping list (Premium Feature)"
           >
             {isSelected ? <CheckIcon className="w-5 h-5" /> : <ShoppingCartIcon className="w-5 h-5" />}
           </button>
@@ -67,6 +68,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
           className={`absolute top-2 right-2 p-1.5 rounded-full transition-all duration-200 
                       ${isFavorite ? 'text-red-500 bg-white/80' : 'bg-white/70 text-slate-700'} backdrop-blur-sm hover:bg-white`}
           aria-label={isFavorite ? 'Remove from cookbook' : 'Add to cookbook'}
+          title="Add to cookbook (Premium Feature)"
         >
           <HeartIcon isFilled={isFavorite} className="w-5 h-5" />
         </button>

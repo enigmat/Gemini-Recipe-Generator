@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Product } from '../types';
 import * as marketplaceService from '../services/marketplaceService';
-import { generateProductFromPrompt, generateImageFromPrompt } from '../services/geminiService';
+import { generateProductFromPrompt, generateImage } from '../services/geminiService';
+import * as imageStore from '../services/imageStore';
+import StoredImage from './StoredImage';
 import TrashIcon from './icons/TrashIcon';
 import PencilIcon from './icons/PencilIcon';
 import PlusIcon from './icons/PlusIcon';
@@ -9,8 +11,12 @@ import XIcon from './icons/XIcon';
 import SparklesIcon from './icons/SparklesIcon';
 import Spinner from './Spinner';
 
-const AdminMarketplace: React.FC = () => {
-    const [products, setProducts] = useState<Product[]>([]);
+interface AdminMarketplaceProps {
+    products: Product[];
+    onUpdateProducts: (updatedProducts: Product[]) => void;
+}
+
+const AdminMarketplace: React.FC<AdminMarketplaceProps> = ({ products, onUpdateProducts }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [formData, setFormData] = useState<Omit<Product, 'id'>>({
@@ -18,11 +24,8 @@ const AdminMarketplace: React.FC = () => {
     });
     const [aiPrompt, setAiPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [updatingImageId, setUpdatingImageId] = useState<string | null>(null);
     const [generateError, setGenerateError] = useState<string | null>(null);
-
-    useEffect(() => {
-        setProducts(marketplaceService.getProducts());
-    }, []);
 
     const handleOpenModal = (product: Product | null) => {
         setEditingProduct(product);
@@ -46,19 +49,26 @@ const AdminMarketplace: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        let updatedProducts: Product[];
         if (editingProduct) {
-            marketplaceService.updateProduct({ ...formData, id: editingProduct.id });
+            const finalProduct = { ...formData, id: editingProduct.id };
+            updatedProducts = products.map(p => p.id === editingProduct.id ? finalProduct : p);
         } else {
-            marketplaceService.addProduct(formData);
+            const newProduct = { ...formData, id: `prod${Date.now()}` };
+            updatedProducts = [newProduct, ...products];
         }
-        setProducts(marketplaceService.getProducts());
+        onUpdateProducts(updatedProducts);
         handleCloseModal();
     };
 
     const handleDelete = (productId: string) => {
         if (window.confirm("Are you sure you want to delete this product?")) {
-            marketplaceService.deleteProduct(productId);
-            setProducts(marketplaceService.getProducts());
+            const productToDelete = products.find(p => p.id === productId);
+            if (productToDelete && productToDelete.imageUrl.startsWith('indexeddb:')) {
+                imageStore.deleteImage(productId);
+            }
+            const updatedProducts = products.filter(p => p.id !== productId);
+            onUpdateProducts(updatedProducts);
         }
     };
 
@@ -69,17 +79,22 @@ const AdminMarketplace: React.FC = () => {
         setGenerateError(null);
         try {
             const { imagePrompt, ...productDetails } = await generateProductFromPrompt(aiPrompt);
-            const imageUrl = await generateImageFromPrompt(imagePrompt);
+            const imageUrl_base64 = await generateImage(imagePrompt);
 
-            const newProductData = {
+            const newProduct: Product = {
+                id: `prod${Date.now()}`,
                 ...productDetails,
-                imageUrl,
-                affiliateUrl: 'https://www.example.com/placeholder' // Placeholder URL
+                imageUrl: `indexeddb:${`prod${Date.now()}`}`,
+                affiliateUrl: 'https://www.example.com/placeholder'
             };
+            newProduct.imageUrl = `indexeddb:${newProduct.id}`;
 
-            marketplaceService.addProduct(newProductData);
-            setProducts(marketplaceService.getProducts());
-            setAiPrompt(''); // Clear prompt on success
+            await imageStore.setImage(newProduct.id, imageUrl_base64);
+
+            const updatedProducts = [newProduct, ...products];
+            onUpdateProducts(updatedProducts);
+            
+            setAiPrompt('');
         } catch (err: any) {
             setGenerateError(err.message || 'An error occurred during AI generation.');
         } finally {
@@ -87,6 +102,28 @@ const AdminMarketplace: React.FC = () => {
         }
     };
     
+    const handleUpdateImage = async (product: Product) => {
+        if (!window.confirm(`Are you sure you want to regenerate the image for "${product.name}" using AI?`)) {
+            return;
+        }
+        setUpdatingImageId(product.id);
+        try {
+            const prompt = `A professional, clean product photo of ${product.name} from the brand ${product.brand}, on a pure white background. Studio lighting.`;
+            const newImageUrl_base64 = await generateImage(prompt);
+
+            await imageStore.setImage(product.id, newImageUrl_base64);
+
+            const updatedProduct = { ...product, imageUrl: `indexeddb:${product.id}` };
+            const updatedProducts = products.map(p => p.id === product.id ? updatedProduct : p);
+            onUpdateProducts(updatedProducts);
+        } catch (error) {
+            console.error("Failed to update product image:", error);
+            alert("Failed to update product image. Please try again.");
+        } finally {
+            setUpdatingImageId(null);
+        }
+    };
+
     return (
         <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md">
             <div className="flex justify-between items-center mb-6">
@@ -143,7 +180,7 @@ const AdminMarketplace: React.FC = () => {
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
                                         <div className="flex-shrink-0 h-10 w-10">
-                                            <img className="h-10 w-10 rounded-md object-cover" src={product.imageUrl} alt={product.name} />
+                                            <StoredImage className="h-10 w-10 rounded-md object-cover" src={product.imageUrl} alt={product.name} />
                                         </div>
                                         <div className="ml-4">
                                             <div className="text-sm font-medium text-slate-900">{product.name}</div>
@@ -154,8 +191,20 @@ const AdminMarketplace: React.FC = () => {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{product.category}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div className="flex items-center gap-4">
-                                        <button onClick={() => handleOpenModal(product)} className="text-slate-600 hover:text-slate-900"><PencilIcon className="w-5 h-5" /></button>
-                                        <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-900"><TrashIcon className="w-5 h-5" /></button>
+                                        <button
+                                            onClick={() => handleUpdateImage(product)}
+                                            disabled={updatingImageId !== null}
+                                            className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            title={`Regenerate image for ${product.name}`}
+                                        >
+                                            {updatingImageId === product.id ? <Spinner size="w-5 h-5" /> : <SparklesIcon className="w-5 h-5" />}
+                                        </button>
+                                        <button onClick={() => handleOpenModal(product)} disabled={updatingImageId !== null} className="text-slate-600 hover:text-slate-900 disabled:opacity-50">
+                                            <PencilIcon className="w-5 h-5" />
+                                        </button>
+                                        <button onClick={() => handleDelete(product.id)} disabled={updatingImageId !== null} className="text-red-600 hover:text-red-900 disabled:opacity-50">
+                                            <TrashIcon className="w-5 h-5" />
+                                        </button>
                                     </div>
                                 </td>
                             </tr>

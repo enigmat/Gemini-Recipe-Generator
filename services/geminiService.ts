@@ -34,6 +34,39 @@ export const generateImageFromPrompt = async (prompt: string): Promise<string> =
     }
 };
 
+export const generateImage = async (prompt: string): Promise<string> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: {
+                parts: [
+                    { text: prompt },
+                ],
+            },
+            config: {
+                responseModalities: [Modality.IMAGE],
+            },
+        });
+
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                const base64ImageBytes: string = part.inlineData.data;
+                const mimeType = part.inlineData.mimeType || 'image/jpeg';
+                return `data:${mimeType};base64,${base64ImageBytes}`;
+            }
+        }
+        
+        throw new Error("No image data found in the AI response.");
+
+    } catch (error) {
+        console.error("Error generating image with Gemini:", error);
+        throw new Error("Failed to generate image. Please check the prompt or API configuration.");
+    }
+};
+
+
 export const generateRecipeDetailsFromTitle = async (title: string): Promise<Omit<Recipe, 'id' | 'image'>> => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });

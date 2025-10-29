@@ -1,5 +1,6 @@
 import { Product } from '../types';
 import { affiliateProducts as initialProducts } from '../data/affiliateProducts';
+import * as imageStore from './imageStore';
 
 const PRODUCTS_KEY = 'recipeAppMarketplaceProducts';
 
@@ -42,6 +43,12 @@ export const updateProduct = (updatedProduct: Product): Product => {
 
 export const deleteProduct = (productId: string): void => {
     const products = getProducts();
+    const productToDelete = products.find(p => p.id === productId);
     const updatedProducts = products.filter(p => p.id !== productId);
     saveProducts(updatedProducts);
+
+    // Also delete the image from IndexedDB if it's stored there
+    if (productToDelete && productToDelete.imageUrl.startsWith('indexeddb:')) {
+        imageStore.deleteImage(productId);
+    }
 };
