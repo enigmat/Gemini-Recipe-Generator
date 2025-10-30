@@ -67,15 +67,12 @@ import ExpertQAPremiumOffer from './components/ExpertQAPremiumOffer';
 import { initialExpertQuestions } from './data/expertQuestions';
 import PantryChef from './components/PantryChef';
 import AboutUsPage from './components/AboutUsPage';
+import * as imageStore from './services/imageStore';
+import MealPlanGenerator from './components/MealPlanGenerator';
+import RecipeOfTheDay from './components/RecipeOfTheDay';
+import * as recipeOfTheDayService from './services/recipeOfTheDayService';
 
 const RECIPES_PER_PAGE = 12;
-
-const ALL_CATEGORY_TAGS = [
-    'Appetizer', 'Asian', 'Baking', 'Breakfast', 'Caribbean', 'Chinese', 'Classic', 'Comfort Food', 'Curry',
-    'Dessert', 'Dinner', 'Family-Friendly', 'Gluten-Free', 'Grill', 'Healthy', 'Indian', 'Italian', 'Jamaican',
-    'Japanese', 'Lunch', 'Meal Prep', 'Mexican', 'One-Pan', 'Party Food', 'Pasta', 'Quick & Easy', 'Roast',
-    'Salad', 'Seafood', 'Soup', 'Spicy', 'Stir-fry', 'Vegan', 'Vegetarian'
-];
 
 const applyRatings = (recipes: Recipe[]): Recipe[] => {
     return recipes.map(recipe => {
@@ -88,6 +85,7 @@ const App: React.FC = () => {
     const [allRecipes, setAllRecipes] = useState<Recipe[]>(() => applyRatings(recipeService.getAllRecipes()));
     const [newThisMonthRecipes, setNewThisMonthRecipes] = useState<Recipe[]>(() => applyRatings(recipeService.getNewRecipes()));
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+    const [previewRecipe, setPreviewRecipe] = useState<Recipe | null>(null);
     const [activeTab, setActiveTab] = useState<string>('All Recipes');
     const [selectedTag, setSelectedTag] = useState<string>('All');
     const [searchQuery, setSearchQuery] = useState<string>('');
@@ -145,6 +143,19 @@ const App: React.FC = () => {
     // Expert Q&A state
     const [expertQuestions, setExpertQuestions] = useState<ExpertQuestion[]>(initialExpertQuestions);
 
+    // Recipe of the Day state
+    const [recipeOfTheDay, setRecipeOfTheDay] = useState<Recipe | null>(null);
+    const [isLoadingRecipeOfTheDay, setIsLoadingRecipeOfTheDay] = useState<boolean>(true);
+
+
+    const allCategoryTags = useMemo(() => {
+        const tags = new Set<string>();
+        allRecipes.forEach(recipe => {
+            recipe.tags?.forEach(tag => tags.add(tag.trim()));
+        });
+        return Array.from(tags).sort((a, b) => a.localeCompare(b));
+    }, [allRecipes]);
+
     useEffect(() => {
         const savedSystem = localStorage.getItem('recipeAppMeasurementSystem');
         if (savedSystem === 'us' || savedSystem === 'metric') {
@@ -160,6 +171,21 @@ const App: React.FC = () => {
         setCollectedLeads(leadService.getLeads());
         ratingService.loadRatings();
         setProducts(marketplaceService.getProducts());
+
+        const fetchRecipeOfTheDay = async () => {
+            setIsLoadingRecipeOfTheDay(true);
+            try {
+                const recipe = await recipeOfTheDayService.getRecipeOfTheDay();
+                setRecipeOfTheDay(recipe);
+            } catch (error) {
+                console.error("Failed to load Recipe of the Day", error);
+                setRecipeOfTheDay(null);
+            } finally {
+                setIsLoadingRecipeOfTheDay(false);
+            }
+        };
+
+        fetchRecipeOfTheDay();
     }, []);
 
     useEffect(() => {
@@ -168,15 +194,6 @@ const App: React.FC = () => {
         setShoppingLists(shoppingListManager.getLists(userEmail));
         setSavedCocktails(cocktailService.getSavedCocktails(userEmail));
     }, [currentUser]);
-
-    // Persist recipes to localStorage
-    useEffect(() => {
-        recipeService.saveAllRecipes(allRecipes);
-    }, [allRecipes]);
-
-    useEffect(() => {
-        recipeService.saveNewRecipes(newThisMonthRecipes);
-    }, [newThisMonthRecipes]);
 
     // Reset recipe pagination when filters change
     useEffect(() => {
@@ -281,6 +298,7 @@ const App: React.FC = () => {
     };
 
     const handleCardClick = (recipe: Recipe) => {
+        if (previewRecipe) return; // Don't open another recipe while one is in preview
         if (!currentUser?.isPremium) {
             setIsUpgradeModalOpen(true);
             return;
@@ -290,6 +308,7 @@ const App: React.FC = () => {
 
     const handleCloseModal = () => {
         setSelectedRecipe(null);
+        setPreviewRecipe(null);
     };
 
     const handleEnterCookMode = (recipe: Recipe) => {
@@ -302,7 +321,7 @@ const App: React.FC = () => {
     };
     
     const handleSelectTab = (tab: string) => {
-        if (['My Cookbook', 'Shopping List', 'My Bar'].includes(tab)) {
+        if (['My Cookbook', 'Shopping List', 'My Bar', 'AI Meal Planner'].includes(tab)) {
             if (!currentUser) {
                 setIsLoginModalOpen(true);
                 return;
@@ -419,15 +438,23 @@ const App: React.FC = () => {
         setExpertQuestions(prev => [newQuestion, ...prev]);
     };
 
+    const handleSaveChanges = () => {
+        recipeService.saveAllRecipes(allRecipes);
+        recipeService.saveNewRecipes(newThisMonthRecipes);
+        return Promise.resolve();
+    };
+
     // Admin panel functions
     const handleAddNewRecipe = async (title: string, addToNew: boolean): Promise<void> => {
-        // This function will call the Gemini service
         const recipeDetails = await generateRecipeDetailsFromTitle(title);
         const image = await generateImageFromPrompt(recipeDetails.title);
         
+        const newRecipeId = Date.now();
+        await imageStore.setImage(newRecipeId.toString(), image);
+
         const newRecipe: Recipe = {
-            id: Date.now(),
-            image,
+            id: newRecipeId,
+            image: `indexeddb:${newRecipeId}`,
             ...recipeDetails
         };
         
@@ -449,28 +476,28 @@ const App: React.FC = () => {
 
     const handleAddToNew = (recipeId: number) => {
         const recipeToAdd = allRecipes.find(r => r.id === recipeId);
-        // Check if it exists and is not already in the new list
         if (recipeToAdd && !newThisMonthRecipes.some(r => r.id === recipeId)) {
             setNewThisMonthRecipes(prev => [recipeToAdd, ...prev]);
         }
     };
 
     const handleUpdateRecipeWithAI = async (recipeId: number, title: string) => {
-        // These are async and don't depend on state, so they are fine here.
         const recipeDetails = await generateRecipeDetailsFromTitle(title);
         const image = await generateImageFromPrompt(recipeDetails.title);
     
+        await imageStore.setImage(recipeId.toString(), image);
+
         const updateFunction = (prevRecipes: Recipe[]): Recipe[] => {
             const index = prevRecipes.findIndex(r => r.id === recipeId);
             if (index === -1) {
-                return prevRecipes; // Not in this list, do nothing.
+                return prevRecipes;
             }
     
             const originalRecipe = prevRecipes[index];
             const updatedRecipe: Recipe = {
-                ...originalRecipe, // Preserves ID and any other properties like rating
+                ...originalRecipe,
                 ...recipeDetails,
-                image,
+                image: `indexeddb:${recipeId}`,
             };
             
             const newRecipes = [...prevRecipes];
@@ -485,17 +512,19 @@ const App: React.FC = () => {
     const handleUpdateAllRecipeImages = async (): Promise<void> => {
         setIsUpdatingAllImages(true);
         try {
-            const imageUpdatePromises = allRecipes.map(recipe => 
-                generateImageFromPrompt(recipe.title)
-            );
+            const updatePromises = allRecipes.map(async (recipe) => {
+                const imageData = await generateImageFromPrompt(recipe.title);
+                await imageStore.setImage(recipe.id.toString(), imageData);
+                return { recipeId: recipe.id, newImageSrc: `indexeddb:${recipe.id}` };
+            });
             
-            const results = await Promise.allSettled(imageUpdatePromises);
+            const results = await Promise.allSettled(updatePromises);
             
             const newImageMap = new Map<number, string>();
             results.forEach((result, index) => {
                 if (result.status === 'fulfilled') {
-                    const recipeId = allRecipes[index].id;
-                    newImageMap.set(recipeId, result.value);
+                    const { recipeId, newImageSrc } = result.value;
+                    newImageMap.set(recipeId, newImageSrc);
                 } else {
                     console.error(`Failed to generate image for recipe ${allRecipes[index].title}:`, result.reason);
                 }
@@ -534,7 +563,7 @@ const App: React.FC = () => {
         marketplaceService.saveProducts(updatedProducts);
     };
 
-    // --- Extractor functions ---
+    // --- Extractor & Generator functions ---
     const handleExtractFromUrl = async (url: string) => {
         if (!currentUser?.isPremium) {
             setIsUpgradeModalOpen(true);
@@ -545,13 +574,16 @@ const App: React.FC = () => {
         try {
             const recipeDetails = await generateRecipeFromUrl(url);
             const image = await generateImageFromPrompt(recipeDetails.title);
+            
+            const newRecipeId = Date.now();
+            await imageStore.setImage(newRecipeId.toString(), image);
+
             const newRecipe: Recipe = {
-                id: Date.now(),
-                image,
+                id: newRecipeId,
+                image: `indexeddb:${newRecipeId}`,
                 ...recipeDetails
             };
-            setAllRecipes(prev => [newRecipe, ...prev]);
-            setSelectedRecipe(newRecipe); // Open the new recipe in a modal
+            setPreviewRecipe(newRecipe);
         } catch (e: any) {
             setExtractError(e.message || 'An unknown error occurred.');
         } finally {
@@ -559,14 +591,31 @@ const App: React.FC = () => {
         }
     };
 
-    const handleRecipeGenerated = (recipeDetails: Omit<Recipe, 'id' | 'image'>, image: string) => {
+    const handleRecipeGenerated = async (recipeDetails: Omit<Recipe, 'id' | 'image'>, image: string) => {
+        const newRecipeId = Date.now();
+        await imageStore.setImage(newRecipeId.toString(), image);
+
         const newRecipe: Recipe = {
-            id: Date.now(),
-            image,
+            id: newRecipeId,
+            image: `indexeddb:${newRecipeId}`,
             ...recipeDetails
         };
-        setAllRecipes(prev => [newRecipe, ...prev]);
-        setSelectedRecipe(newRecipe);
+        setPreviewRecipe(newRecipe);
+    };
+    
+    const handleSaveNewRecipe = (recipe: Recipe) => {
+        setAllRecipes(prev => [recipe, ...prev]);
+        if (currentUser && currentUser.isPremium) {
+            handleToggleFavorite(recipe.id);
+        }
+        setPreviewRecipe(null);
+    };
+
+    const handleDiscardNewRecipe = (recipe: Recipe) => {
+        if (recipe.image.startsWith('indexeddb:')) {
+            imageStore.deleteImage(recipe.id.toString());
+        }
+        setPreviewRecipe(null);
     };
 
     const handleSubscribe = (email: string) => {
@@ -647,6 +696,7 @@ const App: React.FC = () => {
                 onExit={() => handleSelectTab('All Recipes')}
                 onRemoveFromNew={handleRemoveFromNew}
                 onAddToNew={handleAddToNew}
+                onSaveChanges={handleSaveChanges}
             />
         );
     }
@@ -671,6 +721,24 @@ const App: React.FC = () => {
                     );
                 }
                 return <PantryChef onRecipeGenerated={handleRecipeGenerated} />;
+            case 'AI Meal Planner':
+                if (!currentUser?.isPremium) {
+                    return (
+                        <PremiumContent
+                            isPremium={false}
+                            onUpgradeClick={() => setIsUpgradeModalOpen(true)}
+                            featureTitle="AI Meal Planner"
+                            featureDescription="Let our AI chef create a personalized meal plan for you based on your dietary needs and preferences."
+                            features={[
+                                "Generate custom meal plans on demand",
+                                "Use any prompt, like 'a week of healthy lunches'",
+                                "AI selects from our existing recipe collection",
+                                "Take the guesswork out of planning"
+                            ]}
+                        />
+                    );
+                }
+                return <MealPlanGenerator allRecipes={allRecipes} onRecipeClick={handleCardClick} />;
             case 'My Cookbook':
                  if (!currentUser?.isPremium) {
                     return (
@@ -851,6 +919,12 @@ const App: React.FC = () => {
             default:
                 return (
                     <div className="space-y-12">
+                        <RecipeOfTheDay 
+                            recipe={recipeOfTheDay} 
+                            isLoading={isLoadingRecipeOfTheDay} 
+                            onClick={handleCardClick}
+                        />
+
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-white p-8 rounded-lg shadow-sm">
                             <div>
                                 <h1 className="text-4xl font-bold text-slate-800">Recipe Extracter</h1>
@@ -910,7 +984,7 @@ const App: React.FC = () => {
                                     placeholder="Search by recipe name, description, etc..."
                                 />
                             </div>
-                            <TagFilter tags={ALL_CATEGORY_TAGS} selectedTag={selectedTag} onSelectTag={handleSelectTag} />
+                            <TagFilter tags={allCategoryTags} selectedTag={selectedTag} onSelectTag={handleSelectTag} />
                             
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                                 {filteredRecipes.slice(0, visibleRecipeCount).map(recipe => (
@@ -948,6 +1022,8 @@ const App: React.FC = () => {
                 );
         }
     }
+
+    const recipeForModal = previewRecipe || selectedRecipe;
 
     return (
         <div className="bg-slate-50 min-h-screen font-sans">
@@ -993,7 +1069,18 @@ const App: React.FC = () => {
                  </section>
             </main>
             
-            {selectedRecipe && <RecipeModal recipe={selectedRecipe} onClose={handleCloseModal} measurementSystem={measurementSystem} onEnterCookMode={handleEnterCookMode} onAddRating={handleAddRating} />}
+            {recipeForModal && (
+                <RecipeModal 
+                    recipe={recipeForModal} 
+                    onClose={handleCloseModal} 
+                    measurementSystem={measurementSystem} 
+                    onEnterCookMode={handleEnterCookMode} 
+                    onAddRating={handleAddRating} 
+                    isPreview={!!previewRecipe}
+                    onSave={handleSaveNewRecipe}
+                    onDiscard={handleDiscardNewRecipe}
+                />
+            )}
             {isLoginModalOpen && <LoginModal onClose={() => setIsLoginModalOpen(false)} onLoginSuccess={handleLoginSuccess} />}
             {isProfileModalOpen && currentUser && <ProfileModal user={currentUser} onClose={() => setIsProfileModalOpen(false)} onSave={handleUpdateUser} />}
             {viewingList && <ShoppingListModal list={viewingList} onClose={() => setViewingList(null)} allRecipes={allRecipes} measurementSystem={measurementSystem} />}

@@ -13,6 +13,10 @@ import AdminMarketplace from './AdminMarketplace';
 import EditUserModal from './EditUserModal';
 import AdminApiKeyManagement from './AdminApiKeyManagement';
 import AdminNewRecipeManagement from './AdminNewRecipeManagement';
+import Spinner from './Spinner';
+import CheckIcon from './icons/CheckIcon';
+import DownloadIcon from './icons/DownloadIcon';
+import AdminROTDManagement from './AdminROTDManagement';
 
 interface AdminDashboardProps {
     allRecipes: Recipe[];
@@ -33,6 +37,7 @@ interface AdminDashboardProps {
     onExit: () => void;
     onRemoveFromNew: (recipeId: number) => void;
     onAddToNew: (recipeId: number) => void;
+    onSaveChanges: () => Promise<void>;
 }
 
 const PlaceholderPanel: React.FC<{ title: string }> = ({ title }) => (
@@ -45,11 +50,23 @@ const PlaceholderPanel: React.FC<{ title: string }> = ({ title }) => (
 const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
     const [activePanel, setActivePanel] = useState('User Management');
     const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
     const menuItems = [
         'User Management', 'API Key Management', 'Leads', 'Newsletter', 'Recipe Management', 
-        'Add Recipe', 'Cooking Classes', 'Video Management', 'Marketplace Management', 'About Us'
+        'Add Recipe', 'Recipe of the Day Pool', 'Cooking Classes', 'Video Management', 'Marketplace Management', 'About Us'
     ];
+
+    const handleSave = () => {
+        setIsSaving(true);
+        setSaveSuccess(false);
+        props.onSaveChanges().then(() => {
+            setIsSaving(false);
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 2000);
+        });
+    };
 
     const renderPanel = () => {
         switch (activePanel) {
@@ -86,6 +103,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                 );
             case 'Add Recipe':
                  return <AdminAddRecipe onAddRecipe={props.onAddRecipe} />;
+            case 'Recipe of the Day Pool':
+                 return <AdminROTDManagement />;
             case 'Newsletter':
                  return (
                     <AdminNewsletter
@@ -112,13 +131,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
         <div className="bg-slate-50 min-h-screen p-4 sm:p-6 lg:p-8">
             <header className="container mx-auto flex items-center justify-between mb-8">
                 <h1 className="text-4xl font-bold text-slate-800">Admin Dashboard</h1>
-                <button 
-                    onClick={props.onExit}
-                    className="flex items-center gap-1 px-4 py-2 bg-teal-500 text-white font-semibold rounded-lg shadow-md hover:bg-teal-600 transition-colors"
-                >
-                    <ChevronLeftIcon className="w-5 h-5" />
-                    <span>Back to App</span>
-                </button>
+                 <div className="flex items-center gap-4">
+                    <button 
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition-colors disabled:bg-green-300 disabled:cursor-wait"
+                    >
+                        {isSaving ? <Spinner size="w-5 h-5" /> : (saveSuccess ? <CheckIcon className="w-5 h-5" /> : <DownloadIcon className="w-5 h-5" />)}
+                        <span>{isSaving ? 'Saving...' : (saveSuccess ? 'Saved!' : 'Save Changes')}</span>
+                    </button>
+                    <button 
+                        onClick={props.onExit}
+                        className="flex items-center gap-1 px-4 py-2 bg-teal-500 text-white font-semibold rounded-lg shadow-md hover:bg-teal-600 transition-colors"
+                    >
+                        <ChevronLeftIcon className="w-5 h-5" />
+                        <span>Back to App</span>
+                    </button>
+                </div>
             </header>
 
             <main className="container mx-auto">

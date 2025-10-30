@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { Recipe, CocktailRecipe, RecipeVariation, ProductAnalysis, Product } from "../types";
+import { Recipe, CocktailRecipe, RecipeVariation, ProductAnalysis, Product, GeneratedMealPlan } from "../types";
 
 export const generateImageFromPrompt = async (prompt: string): Promise<string> => {
     try {
@@ -152,6 +152,138 @@ export const generateRecipeDetailsFromTitle = async (title: string): Promise<Omi
     } catch (error) {
         console.error("Error generating recipe details with Gemini:", error);
         throw new Error("Failed to generate recipe details. Please try again.");
+    }
+};
+
+export const generateBulkRecipes = async (count: number): Promise<Omit<Recipe, 'id' | 'image'>[]> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const theme = `A collection of popular, crowd-pleasing, and visually appealing dinner recipes.`;
+        const prompt = `Generate a list of ${count} unique recipe titles based on the theme: "${theme}". The titles should be distinct and not variations of each other.`;
+        
+        // Step 1: Generate titles
+        const titlesResponse = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        titles: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        }
+                    },
+                    required: ['titles']
+                }
+            }
+        });
+
+        const { titles } = JSON.parse(titlesResponse.text);
+
+        if (!titles || !Array.isArray(titles) || titles.length === 0) {
+            throw new Error("AI failed to generate recipe titles.");
+        }
+
+        // Step 2: Generate details for each title
+        const recipePromises = titles.slice(0, count).map(title => generateRecipeDetailsFromTitle(title));
+        const recipes = await Promise.all(recipePromises);
+
+        return recipes;
+
+    } catch (error) {
+        console.error("Error generating bulk recipes with Gemini:", error);
+        throw new Error("Failed to generate the recipe collection. Please try again.");
+    }
+};
+
+export const generateRecipeOfTheDay = async (): Promise<Omit<Recipe, 'id' | 'image'>> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        const prompt = `Generate a popular, seasonally appropriate recipe that would be great for today, ${today}. The recipe should be appealing to a wide audience and not overly complex. Provide a complete, high-quality recipe. The recipe must be well-written, easy to follow, and appealing. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing.`;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING, description: "The final, polished title of the recipe." },
+                        description: { type: Type.STRING, description: "A brief, enticing description of the dish." },
+                        cookTime: { type: Type.STRING, description: "e.g., '45 minutes'" },
+                        servings: { type: Type.STRING, description: "e.g., '4 servings' or '4-6'" },
+                        ingredients: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    name: { type: Type.STRING },
+                                    metric: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            quantity: { type: Type.STRING },
+                                            unit: { type: Type.STRING }
+                                        },
+                                        required: ['quantity', 'unit']
+                                    },
+                                    us: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            quantity: { type: Type.STRING },
+                                            unit: { type: Type.STRING }
+                                        },
+                                        required: ['quantity', 'unit']
+                                    }
+                                },
+                                required: ['name', 'metric', 'us']
+                            }
+                        },
+                        instructions: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        },
+                        tags: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        },
+                        winePairing: {
+                            type: Type.OBJECT,
+                            properties: {
+                                suggestion: { type: Type.STRING },
+                                description: { type: Type.STRING }
+                            },
+                        }
+                    },
+                    required: ['title', 'description', 'cookTime', 'servings', 'ingredients', 'instructions', 'tags']
+                }
+            }
+        });
+        
+        const jsonText = response.text;
+        const recipeData = JSON.parse(jsonText);
+
+        // Ensure all required fields are present and have correct types
+        if (
+            !recipeData.title || typeof recipeData.title !== 'string' ||
+            !recipeData.description || typeof recipeData.description !== 'string' ||
+            !recipeData.cookTime || typeof recipeData.cookTime !== 'string' ||
+            !recipeData.servings || typeof recipeData.servings !== 'string' ||
+            !Array.isArray(recipeData.ingredients) ||
+            !Array.isArray(recipeData.instructions) ||
+            !Array.isArray(recipeData.tags)
+        ) {
+            throw new Error("Generated recipe data is missing required fields or has incorrect types.");
+        }
+
+        return recipeData;
+
+    } catch (error) {
+        console.error("Error generating Recipe of the Day with Gemini:", error);
+        throw new Error("Failed to generate the Recipe of the Day. Please try again later.");
     }
 };
 
@@ -493,5 +625,60 @@ export const generateRecipeFromIngredients = async (ingredients: string[], dieta
     } catch (error) {
         console.error("Error generating recipe from ingredients with Gemini:", error);
         throw new Error("Failed to generate a recipe from your ingredients. The AI might be stumped! Please try a different combination.");
+    }
+};
+
+export const generateMealPlan = async (prompt: string, recipeTitles: string[]): Promise<GeneratedMealPlan> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const fullPrompt = `Act as a helpful meal planner. The user's request is: "${prompt}". 
+        Create a meal plan using ONLY the following available recipe titles: ${recipeTitles.join(', ')}. 
+        Do not invent new recipes. If the request is impossible with the given recipes, explain why in the 'notes' field and leave the 'days' array empty.
+        Structure the response with a 'days' array. Each day should have a 'day' (e.g., "Day 1") and a 'meals' array. Each meal should have a 'mealType' (e.g., "Breakfast", "Lunch") and a 'recipeTitle' that exactly matches one from the provided list.`;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: fullPrompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        days: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    day: { type: Type.STRING },
+                                    meals: {
+                                        type: Type.ARRAY,
+                                        items: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                mealType: { type: Type.STRING },
+                                                recipeTitle: { type: Type.STRING }
+                                            },
+                                            required: ['mealType', 'recipeTitle']
+                                        }
+                                    }
+                                },
+                                required: ['day', 'meals']
+                            }
+                        },
+                        notes: { type: Type.STRING, description: "Optional notes or explanation if the plan couldn't be fully generated."}
+                    },
+                    required: ['days']
+                }
+            }
+        });
+
+        const jsonText = response.text;
+        const planData = JSON.parse(jsonText);
+
+        return planData;
+
+    } catch (error) {
+        console.error("Error generating meal plan with Gemini:", error);
+        throw new Error("Failed to generate a meal plan. The AI might be busy! Please try a different request.");
     }
 };

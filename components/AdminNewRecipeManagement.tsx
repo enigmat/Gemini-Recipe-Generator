@@ -3,6 +3,7 @@ import { Recipe } from '../types';
 import TrashIcon from './icons/TrashIcon';
 import SparklesIcon from './icons/SparklesIcon';
 import Spinner from './Spinner';
+import StoredImage from './StoredImage';
 
 interface AdminNewRecipeManagementProps {
     recipes: Recipe[];
@@ -52,7 +53,7 @@ const AdminNewRecipeManagement: React.FC<AdminNewRecipeManagementProps> = ({ rec
                                     </div>
                                 )}
                                 <div className="flex items-center gap-4 w-full sm:w-auto">
-                                    <img src={recipe.image} alt={recipe.title} className="w-16 h-16 object-cover rounded-md flex-shrink-0" />
+                                    <StoredImage src={recipe.image} alt={recipe.title} className="w-16 h-16 object-cover rounded-md flex-shrink-0" />
                                     <div className="flex-grow">
                                         <h3 className="font-bold text-gray-800">{recipe.title}</h3>
                                         <p className="text-sm text-gray-500">ID: {recipe.id}</p>

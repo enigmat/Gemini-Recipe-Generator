@@ -4,6 +4,7 @@ import TrashIcon from './icons/TrashIcon';
 import SparklesIcon from './icons/SparklesIcon';
 import Spinner from './Spinner';
 import PlusIcon from './icons/PlusIcon';
+import StoredImage from './StoredImage';
 
 interface AdminRecipeManagementProps {
     recipes: Recipe[];
@@ -85,7 +86,7 @@ const AdminRecipeManagement: React.FC<AdminRecipeManagementProps> = ({ recipes, 
                                 <React.Fragment key={recipe.id}>
                                     <tr className={updatingId === recipe.id ? 'opacity-50' : ''}>
                                         <td className="pl-6 pr-3 py-4 whitespace-nowrap">
-                                            <img src={recipe.image} alt={recipe.title} className="w-20 h-14 object-cover rounded-md border border-slate-200" />
+                                            <StoredImage src={recipe.image} alt={recipe.title} className="w-20 h-14 object-cover rounded-md border border-slate-200" />
                                         </td>
                                         <td className="px-3 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-slate-900">{recipe.title}</div>

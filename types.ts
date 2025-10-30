@@ -161,3 +161,16 @@ export interface AboutUsContent {
   contactEmail: string;
   address: string;
 }
+
+export interface GeneratedMeal {
+  mealType: string;
+  recipeTitle: string;
+}
+
+export interface GeneratedMealPlan {
+  days: {
+    day: string;
+    meals: GeneratedMeal[];
+  }[];
+  notes?: string;
+}

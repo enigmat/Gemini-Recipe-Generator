@@ -6,6 +6,7 @@ import UsersIcon from './icons/UsersIcon';
 import ShoppingCartIcon from './icons/ShoppingCartIcon';
 import CheckIcon from './icons/CheckIcon';
 import StarIcon from './icons/StarIcon';
+import StoredImage from './StoredImage';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -51,7 +52,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(recipe) }}
     >
       <div className="relative">
-        <img src={recipe.image} alt={recipe.title} className="w-full h-48 object-cover" />
+        <StoredImage src={recipe.image} alt={recipe.title} className="w-full h-48 object-cover" />
         {showSelect && (
           <button
             onClick={handleSelectClick}

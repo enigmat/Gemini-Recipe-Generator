@@ -81,15 +81,16 @@ const AdminMarketplace: React.FC<AdminMarketplaceProps> = ({ products, onUpdateP
             const { imagePrompt, ...productDetails } = await generateProductFromPrompt(aiPrompt);
             const imageUrl_base64 = await generateImage(imagePrompt);
 
+            const newProductId = `prod${Date.now()}`;
+            
             const newProduct: Product = {
-                id: `prod${Date.now()}`,
+                id: newProductId,
                 ...productDetails,
-                imageUrl: `indexeddb:${`prod${Date.now()}`}`,
+                imageUrl: `indexeddb:${newProductId}`,
                 affiliateUrl: 'https://www.example.com/placeholder'
             };
-            newProduct.imageUrl = `indexeddb:${newProduct.id}`;
 
-            await imageStore.setImage(newProduct.id, imageUrl_base64);
+            await imageStore.setImage(newProductId, imageUrl_base64);
 
             const updatedProducts = [newProduct, ...products];
             onUpdateProducts(updatedProducts);

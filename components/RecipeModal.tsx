@@ -14,16 +14,20 @@ import SparklesIcon from './icons/SparklesIcon';
 import { generateRecipeVariations } from '../services/geminiService';
 import Spinner from './Spinner';
 import XIcon from './icons/XIcon';
+import StoredImage from './StoredImage';
 
 interface RecipeModalProps {
-  recipe: Recipe | null;
+  recipe: Recipe;
   onClose: () => void;
   measurementSystem: 'metric' | 'us';
   onEnterCookMode: (recipe: Recipe) => void;
   onAddRating: (recipeId: number, score: number) => void;
+  isPreview: boolean;
+  onSave: (recipe: Recipe) => void;
+  onDiscard: (recipe: Recipe) => void;
 }
 
-const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementSystem, onEnterCookMode, onAddRating }) => {
+const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementSystem, onEnterCookMode, onAddRating, isPreview, onSave, onDiscard }) => {
   const [shareText, setShareText] = useState('Share');
   
   const originalServings = useMemo(() => recipe ? parseInt(recipe.servings.split('-')[0], 10) || 1 : 1, [recipe]);
@@ -43,23 +47,26 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementS
       setAdjustedIngredients(recipe.ingredients);
       setCurrentRating(Math.round(recipe.rating?.score || 0));
       
-      const fetchVariations = async () => {
-        setVariationsLoading(true);
-        setVariationsError(null);
-        setVariations([]);
-        try {
-            const result = await generateRecipeVariations(recipe);
-            setVariations(result);
-        } catch (e: any) {
-            setVariationsError(e.message || 'Failed to generate variations.');
-        } finally {
-            setVariationsLoading(false);
-        }
-      };
+      // Only fetch variations for existing, saved recipes, not for previews.
+      if (!isPreview) {
+        const fetchVariations = async () => {
+          setVariationsLoading(true);
+          setVariationsError(null);
+          setVariations([]);
+          try {
+              const result = await generateRecipeVariations(recipe);
+              setVariations(result);
+          } catch (e: any) {
+              setVariationsError(e.message || 'Failed to generate variations.');
+          } finally {
+              setVariationsLoading(false);
+          }
+        };
 
-      fetchVariations();
+        fetchVariations();
+      }
     }
-  }, [recipe]);
+  }, [recipe, isPreview]);
 
   useEffect(() => {
     if (recipe && originalServings > 0 && currentServings > 0) {
@@ -125,60 +132,65 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementS
             {/* Left Column: Image & Meta */}
             <div>
                 <h2 className="text-3xl font-bold mb-4 text-slate-800 lg:pr-8">{recipe.title}</h2>
-                <img src={recipe.image} alt={recipe.title} className="w-full h-64 object-cover rounded-lg mb-6" />
+                <StoredImage src={recipe.image} alt={recipe.title} className="w-full h-64 object-cover rounded-lg mb-6" />
                 <p className="text-slate-600 mb-6">{recipe.description}</p>
-                 <div className="flex flex-wrap items-center justify-between text-slate-600 mb-6 border-y py-3 gap-4">
-                    <div className="flex items-center space-x-6">
-                        <div className="flex items-center space-x-2">
-                            <ClockIcon className="h-5 w-5" />
-                            <span className="font-medium">{recipe.cookTime}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <UsersIcon className="h-5 w-5" />
-                            <span className="font-medium">{recipe.servings}</span>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 print:hidden">
-                        <button onClick={handlePrint} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full transition-colors" aria-label="Print recipe"><PrintIcon className="w-5 h-5" /></button>
-                        <button onClick={handleShare} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full transition-colors" aria-label={shareText}><ShareIcon className="w-5 h-5" /></button>
-                    </div>
-                </div>
-                
-                 <div className="space-y-4">
-                    {/* RATING */}
-                    <div className="bg-slate-50 p-4 rounded-lg">
-                        <h4 className="font-semibold text-slate-800 mb-2 text-center">Rate this recipe</h4>
-                        <div className="flex justify-center items-center" onMouseLeave={() => setHoverRating(0)}>
-                            {[...Array(5)].map((_, i) => {
-                                const ratingValue = i + 1;
-                                return (
-                                    <button
-                                        key={i}
-                                        onClick={() => handleRatingSubmit(ratingValue)}
-                                        onMouseEnter={() => setHoverRating(ratingValue)}
-                                        className="p-1"
-                                        aria-label={`Rate ${ratingValue} out of 5 stars`}
-                                    >
-                                        <StarIcon className="w-8 h-8 transition-colors" fill={ratingValue <= (hoverRating || currentRating) ? '#fbbf24' : 'none'} stroke={ratingValue <= (hoverRating || currentRating) ? '#fbbf24' : 'currentColor'} />
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {recipe.winePairing && (
-                        <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-200">
-                            <div className="flex items-start gap-3">
-                                <WineIcon className="w-6 h-6 text-amber-600 flex-shrink-0 mt-1" />
-                                <div>
-                                    <h4 className="font-semibold text-amber-800">Wine Pairing Suggestion</h4>
-                                    <p className="font-bold text-slate-800 mt-1">{recipe.winePairing.suggestion}</p>
-                                    <p className="text-sm text-slate-600 mt-1">{recipe.winePairing.description}</p>
-                                </div>
+                 
+                {!isPreview && (
+                  <>
+                    <div className="flex flex-wrap items-center justify-between text-slate-600 mb-6 border-y py-3 gap-4">
+                        <div className="flex items-center space-x-6">
+                            <div className="flex items-center space-x-2">
+                                <ClockIcon className="h-5 w-5" />
+                                <span className="font-medium">{recipe.cookTime}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <UsersIcon className="h-5 w-5" />
+                                <span className="font-medium">{recipe.servings}</span>
                             </div>
                         </div>
-                    )}
-                 </div>
+                        <div className="flex items-center gap-1.5 print:hidden">
+                            <button onClick={handlePrint} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full transition-colors" aria-label="Print recipe"><PrintIcon className="w-5 h-5" /></button>
+                            <button onClick={handleShare} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full transition-colors" aria-label={shareText}><ShareIcon className="w-5 h-5" /></button>
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                        {/* RATING */}
+                        <div className="bg-slate-50 p-4 rounded-lg">
+                            <h4 className="font-semibold text-slate-800 mb-2 text-center">Rate this recipe</h4>
+                            <div className="flex justify-center items-center" onMouseLeave={() => setHoverRating(0)}>
+                                {[...Array(5)].map((_, i) => {
+                                    const ratingValue = i + 1;
+                                    return (
+                                        <button
+                                            key={i}
+                                            onClick={() => handleRatingSubmit(ratingValue)}
+                                            onMouseEnter={() => setHoverRating(ratingValue)}
+                                            className="p-1"
+                                            aria-label={`Rate ${ratingValue} out of 5 stars`}
+                                        >
+                                            <StarIcon className="w-8 h-8 transition-colors" fill={ratingValue <= (hoverRating || currentRating) ? '#fbbf24' : 'none'} stroke={ratingValue <= (hoverRating || currentRating) ? '#fbbf24' : 'currentColor'} />
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {recipe.winePairing && (
+                            <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-200">
+                                <div className="flex items-start gap-3">
+                                    <WineIcon className="w-6 h-6 text-amber-600 flex-shrink-0 mt-1" />
+                                    <div>
+                                        <h4 className="font-semibold text-amber-800">Wine Pairing Suggestion</h4>
+                                        <p className="font-bold text-slate-800 mt-1">{recipe.winePairing.suggestion}</p>
+                                        <p className="text-sm text-slate-600 mt-1">{recipe.winePairing.description}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                  </>
+                )}
             </div>
 
             {/* Right Column: Ingredients & Instructions */}
@@ -204,47 +216,66 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementS
                         {recipe.instructions.map((inst, i) => <li key={i} className="pl-2">{formatInstruction(inst, measurementSystem)}</li>)}
                     </ol>
                 </div>
-
-                 <div className="mt-8 border-t pt-6">
-                     <button
-                        onClick={() => onEnterCookMode(recipe)}
-                        className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors font-bold"
-                        aria-label="Enter cook mode"
-                     >
-                        <ChefHatIcon className="w-6 h-6" />
-                        <span>Enter Cook Mode</span>
+                
+                {isPreview ? (
+                  <div className="mt-8 pt-6 border-t flex flex-col sm:flex-row gap-3">
+                    <button
+                        onClick={() => onSave(recipe)}
+                        className="w-full flex-grow px-6 py-3 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition-colors"
+                    >
+                        Save to Cookbook
                     </button>
-                </div>
+                    <button
+                        onClick={() => onDiscard(recipe)}
+                        className="w-full sm:w-auto px-6 py-3 bg-white text-slate-700 font-bold rounded-lg border-2 border-slate-300 hover:bg-slate-50 transition-colors"
+                    >
+                        Discard
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mt-8 border-t pt-6">
+                        <button
+                            onClick={() => onEnterCookMode(recipe)}
+                            className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors font-bold"
+                            aria-label="Enter cook mode"
+                        >
+                            <ChefHatIcon className="w-6 h-6" />
+                            <span>Enter Cook Mode</span>
+                        </button>
+                    </div>
 
-                <div className="mt-8 border-t pt-6">
-                    <h3 className="font-semibold text-xl mb-3 text-slate-700 flex items-center gap-2">
-                        <SparklesIcon className="w-6 h-6 text-teal-500" />
-                        Creative Variations
-                    </h3>
-                    {variationsLoading ? (
-                        <div className="flex items-center justify-center gap-2 p-4 bg-slate-50 rounded-lg">
-                            <Spinner />
-                            <span className="text-slate-600">Generating creative variations...</span>
-                        </div>
-                    ) : variationsError ? (
-                        <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
-                            <p><strong>Oops!</strong> {variationsError}</p>
-                        </div>
-                    ) : variations.length > 0 ? (
-                        <div className="space-y-3">
-                            {variations.map((variation, index) => (
-                                <div key={index} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                                    <h4 className="font-bold text-teal-700">{variation.title}</h4>
-                                    <p className="text-sm text-slate-600 mt-1">{variation.description}</p>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                            <p className="text-sm text-slate-600 text-center">No variations could be generated for this recipe.</p>
-                        </div>
-                    )}
-                </div>
+                    <div className="mt-8 border-t pt-6">
+                        <h3 className="font-semibold text-xl mb-3 text-slate-700 flex items-center gap-2">
+                            <SparklesIcon className="w-6 h-6 text-teal-500" />
+                            Creative Variations
+                        </h3>
+                        {variationsLoading ? (
+                            <div className="flex items-center justify-center gap-2 p-4 bg-slate-50 rounded-lg">
+                                <Spinner />
+                                <span className="text-slate-600">Generating creative variations...</span>
+                            </div>
+                        ) : variationsError ? (
+                            <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
+                                <p><strong>Oops!</strong> {variationsError}</p>
+                            </div>
+                        ) : variations.length > 0 ? (
+                            <div className="space-y-3">
+                                {variations.map((variation, index) => (
+                                    <div key={index} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                        <h4 className="font-bold text-teal-700">{variation.title}</h4>
+                                        <p className="text-sm text-slate-600 mt-1">{variation.description}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                <p className="text-sm text-slate-600 text-center">No variations could be generated for this recipe.</p>
+                            </div>
+                        )}
+                    </div>
+                  </>
+                )}
 
             </div>
           </div>
