@@ -42,14 +42,14 @@ const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser
   const premiumTabs = ['Cooking Classes', 'Ask an Expert', 'AI Meal Planner'];
 
   return (
-    <div className="flex justify-center flex-wrap gap-3 my-8">
+    <div className="px-4 sm:px-0 flex overflow-x-auto scrollbar-hide space-x-4 sm:justify-center sm:flex-wrap sm:space-x-0 sm:gap-3 my-8">
       {allTabs.map((tab) => {
         if (tab.isLink) {
             return (
                 <a
                     key={tab.id}
                     href={tab.href}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400 bg-white text-gray-600 hover:bg-gray-100`}
+                    className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400 bg-white text-gray-600 hover:bg-gray-100`}
                 >
                     {tab.icon}
                     <span>{tab.name}</span>
@@ -64,7 +64,7 @@ const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser
           <button
             key={tab.id}
             onClick={() => onSelectTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400 ${
+            className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400 ${
               isActive
                 ? 'bg-teal-500 text-white shadow'
                 : 'bg-white text-gray-600 hover:bg-gray-100'

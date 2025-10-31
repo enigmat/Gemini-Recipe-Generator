@@ -1084,10 +1084,10 @@ const App: React.FC = () => {
         <div className="bg-slate-50 min-h-screen font-sans">
              <header className="bg-white shadow-sm sticky top-0 z-40 print:hidden">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-20">
+                    <div className="flex items-center justify-between h-16 sm:h-20">
                         <button onClick={() => handleSelectTab('All Recipes')} className="flex items-center gap-3">
                             <ChefHatIcon className="w-10 h-10 text-amber-500" />
-                            <span className="text-2xl font-bold text-slate-800 tracking-tight">Recipe Extracter</span>
+                            <span className="hidden sm:block text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Recipe Extracter</span>
                         </button>
                         <div className="flex items-center gap-4">
                             <UnitToggleButton system={measurementSystem} onSystemChange={handleSystemChange} />
