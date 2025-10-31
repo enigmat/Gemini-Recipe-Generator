@@ -1,14 +1,19 @@
 import { Recipe } from '../types';
 import { recipes as initialRecipes } from '../data/recipes';
-
-// This is a simplified, read-only service to provide global recipe pools separate from user data.
-
-// A smaller, curated list for the global Recipe of the Day feature.
-const globalScheduledRecipes: Recipe[] = initialRecipes.slice(10, 20);
+import { getDatabase, saveDatabase } from './cloudService';
 
 export const getScheduledRecipes = (): Recipe[] => {
-    // In a real application, this could be fetched from a remote source.
-    return globalScheduledRecipes;
+    const db = getDatabase();
+    if (!db.globalScheduledRecipes) { // for migration from older versions
+        db.globalScheduledRecipes = initialRecipes.slice(10, 20);
+    }
+    return db.globalScheduledRecipes;
+};
+
+export const saveScheduledRecipes = (recipes: Recipe[]): void => {
+    const db = getDatabase();
+    db.globalScheduledRecipes = recipes;
+    saveDatabase(db);
 };
 
 export const getMasterRecipeList = (): Recipe[] => {

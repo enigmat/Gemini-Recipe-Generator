@@ -199,5 +199,6 @@ export interface AppDatabase {
         leads: Lead[];
     };
     ratings: RatingsStore;
+    globalScheduledRecipes: Recipe[];
     userData: Record<string, UserData>; // Keyed by user email
 }

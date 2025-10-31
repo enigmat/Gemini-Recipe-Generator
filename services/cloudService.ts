@@ -22,6 +22,7 @@ function initializeDatabase(): AppDatabase {
             leads: [],
         },
         ratings: {},
+        globalScheduledRecipes: initialRecipes.slice(10, 20),
         userData: {}, // User-specific data, including recipes, is now initialized on-demand
     };
     saveDatabase(newDb);
