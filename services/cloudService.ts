@@ -15,6 +15,11 @@ function initializeDatabase(): AppDatabase {
     console.log("Initializing cloud database in localStorage for the first time.");
     const newDb: AppDatabase = {
         users: initialUsers,
+        recipes: {
+            all: initialRecipes,
+            new: initialNewRecipes,
+            scheduled: [], // This is populated by admin actions
+        },
         products: initialProducts,
         aboutUs: initialAboutUsData,
         newsletters: {
@@ -22,8 +27,7 @@ function initializeDatabase(): AppDatabase {
             leads: [],
         },
         ratings: {},
-        globalScheduledRecipes: initialRecipes.slice(10, 20),
-        userData: {}, // User-specific data, including recipes, is now initialized on-demand
+        userData: {},
     };
     saveDatabase(newDb);
     return newDb;
@@ -62,26 +66,7 @@ export const saveDatabase = (db: AppDatabase): void => {
 export const getUserData = (userEmail: string): UserData => {
     const db = getDatabase();
     if (!db.userData[userEmail]) {
-        // Create a new user data object if it doesn't exist
-        db.userData[userEmail] = { 
-            favorites: [], 
-            shoppingLists: [], 
-            cocktails: [],
-            recipes: {
-                all: initialRecipes, // Seed with initial data
-                new: initialNewRecipes,
-                scheduled: []
-            }
-        };
-        console.log(`Initialized data store for new user: ${userEmail}`);
-    } else if (!db.userData[userEmail].recipes) {
-        // If an existing user from a previous version doesn't have recipes, add them.
-        db.userData[userEmail].recipes = {
-            all: initialRecipes,
-            new: initialNewRecipes,
-            scheduled: []
-        };
-        console.log(`Migrated recipes collection for existing user: ${userEmail}`);
+        db.userData[userEmail] = { favorites: [], shoppingLists: [], cocktails: [] };
     }
     return db.userData[userEmail];
 };

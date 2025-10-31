@@ -25,6 +25,7 @@ export interface Recipe {
   instructions: string[];
   calories?: string;
   tags?: string[];
+  cuisine: string;
   winePairing?: WinePairing;
   rating?: {
     score: number;
@@ -45,6 +46,7 @@ export interface User {
   isAdmin?: boolean;
   isSubscribed?: boolean;
   planEndDate?: string;
+  foodPreferences?: string[];
 }
 
 export interface AggregatedIngredient {
@@ -183,15 +185,15 @@ export interface UserData {
     favorites: number[];
     shoppingLists: ShoppingList[];
     cocktails: SavedCocktail[];
+}
+
+export interface AppDatabase {
+    users: User[];
     recipes: {
         all: Recipe[];
         new: Recipe[];
         scheduled: Recipe[];
     };
-}
-
-export interface AppDatabase {
-    users: User[];
     products: Product[];
     aboutUs: AboutUsContent;
     newsletters: {
@@ -199,6 +201,5 @@ export interface AppDatabase {
         leads: Lead[];
     };
     ratings: RatingsStore;
-    globalScheduledRecipes: Recipe[];
     userData: Record<string, UserData>; // Keyed by user email
 }

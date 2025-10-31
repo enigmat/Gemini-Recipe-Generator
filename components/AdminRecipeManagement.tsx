@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Recipe } from '../types';
 import TrashIcon from './icons/TrashIcon';
 import SparklesIcon from './icons/SparklesIcon';
@@ -8,19 +8,17 @@ import StoredImage from './StoredImage';
 
 interface AdminRecipeManagementProps {
     recipes: Recipe[];
-    newRecipes: Recipe[];
+    newRecipeIds: number[];
     onDeleteRecipe: (recipeId: number) => void;
     onUpdateRecipeWithAI: (recipeId: number, title: string) => Promise<void>;
     onUpdateAllRecipeImages: () => Promise<void>;
     isUpdatingAllImages: boolean;
     onAddToNew: (recipeId: number) => void;
-    onRemoveFromNew: (recipeId: number) => void;
 }
 
-const AdminRecipeManagement: React.FC<AdminRecipeManagementProps> = ({ recipes, newRecipes, onDeleteRecipe, onUpdateRecipeWithAI, onUpdateAllRecipeImages, isUpdatingAllImages, onAddToNew, onRemoveFromNew }) => {
+const AdminRecipeManagement: React.FC<AdminRecipeManagementProps> = ({ recipes, newRecipeIds, onDeleteRecipe, onUpdateRecipeWithAI, onUpdateAllRecipeImages, isUpdatingAllImages, onAddToNew }) => {
     const [updatingId, setUpdatingId] = useState<number | null>(null);
     const [updateErrors, setUpdateErrors] = useState<Record<number, string>>({});
-    const newRecipeIds = useMemo(() => newRecipes.map(r => r.id), [newRecipes]);
 
     const handleDelete = (recipeId: number, recipeTitle: string) => {
         if (window.confirm(`Are you sure you want to permanently delete "${recipeTitle}"? This cannot be undone.`)) {
@@ -50,12 +48,6 @@ const AdminRecipeManagement: React.FC<AdminRecipeManagementProps> = ({ recipes, 
             await onUpdateAllRecipeImages();
         }
     };
-    
-    const handleRemoveFromNew = (recipeId: number, recipeTitle: string) => {
-        if (window.confirm(`Are you sure you want to remove "${recipeTitle}" from the New Recipes list? It will NOT be deleted permanently.`)) {
-            onRemoveFromNew(recipeId);
-        }
-    };
 
     return (
         <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md relative">
@@ -67,29 +59,8 @@ const AdminRecipeManagement: React.FC<AdminRecipeManagementProps> = ({ recipes, 
                     </div>
                 </div>
             )}
-            <div className="mb-10">
-                <h2 className="text-2xl font-bold text-slate-800 mb-4">"New This Month" Management</h2>
-                <div className="space-y-3">
-                    {newRecipes.length > 0 ? (
-                        newRecipes.map(recipe => (
-                             <div key={recipe.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border">
-                                <div className="flex items-center gap-4">
-                                    <StoredImage src={recipe.image} alt={recipe.title} className="w-16 h-12 object-cover rounded-md" />
-                                    <span className="font-semibold text-slate-800">{recipe.title}</span>
-                                </div>
-                                <button onClick={() => handleRemoveFromNew(recipe.id, recipe.title)} className="flex items-center gap-2 px-3 py-2 text-sm bg-red-100 text-red-800 font-semibold rounded-lg hover:bg-red-200 transition-colors">
-                                    <TrashIcon className="w-4 h-4" />
-                                    <span>Remove</span>
-                                </button>
-                            </div>
-                        ))
-                    ) : (
-                        <p className="text-slate-500 text-center py-4">No recipes are currently marked as "New This Month". Add them from the list below.</p>
-                    )}
-                </div>
-            </div>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 pt-6 border-t">
-                <h2 className="text-2xl font-bold text-slate-800">All Recipes</h2>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <h2 className="text-2xl font-bold text-slate-800">All Recipes Management</h2>
                 <button
                     onClick={handleUpdateAll}
                     disabled={isUpdatingAllImages}

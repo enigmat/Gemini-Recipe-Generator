@@ -18,6 +18,7 @@ export const newRecipes: Recipe[] = [
     ],
     instructions: ['Cook sushi rice, then press into a pan and chill.', 'Cut chilled rice into squares and pan-fry until crispy.', 'Mix tuna with sriracha and mayonnaise.', 'Top each crispy rice cake with spicy tuna, avocado, and a slice of serrano.'],
     tags: ['Japanese', 'Appetizer', 'Seafood', 'Premium'],
+    cuisine: 'Japanese',
     winePairing: {
       suggestion: 'Sake or a dry Rosé',
       description: 'The crispness of Sake or a dry Rosé cuts through the richness of the spicy tuna and complements the crispy rice texture perfectly.'
@@ -40,6 +41,7 @@ export const newRecipes: Recipe[] = [
     ],
     instructions: ['Cook lentils with vegetables and broth until tender and thick.', 'Boil and mash sweet potatoes with plant-based milk.', 'Spread lentil mixture in a baking dish and top with mashed sweet potatoes.', 'Bake at [temp:200:400] for 20 minutes until heated through and golden on top.'],
     tags: ['Vegan', 'Dinner', 'Healthy', 'Premium'],
+    cuisine: 'Vegan',
     winePairing: {
       suggestion: 'Earthy Pinot Noir',
       description: 'An earthy Pinot Noir complements the savory lentil filling without overpowering the subtle sweetness of the sweet potato topping.'
@@ -63,6 +65,7 @@ export const newRecipes: Recipe[] = [
     ],
     instructions: ['Make cheesecake base and bake. Let cool, then chill for at least 4 hours.', 'Make caramel sauce by melting sugar, then whisking in cream, butter, and salt.', 'Pour cooled caramel sauce over the chilled cheesecake before serving.'],
     tags: ['Dessert', 'Baking', 'Premium'],
+    cuisine: 'American',
      winePairing: {
       suggestion: 'Late Harvest Riesling or a glass of Tawny Port',
       description: 'The sweetness of a late harvest wine or the nutty complexity of Tawny Port balances the rich, salty caramel and creamy cheesecake.'

@@ -18,6 +18,7 @@ export const recipes: Recipe[] = [
     ],
     instructions: ['Cook spaghetti according to package directions.', 'Fry pancetta until crisp.', 'Whisk eggs and cheese.', 'Combine everything and serve immediately.'],
     tags: ['Italian', 'Pasta', 'Quick'],
+    cuisine: 'Italian',
     winePairing: {
       suggestion: 'Pinot Grigio',
       description: 'A crisp Pinot Grigio cuts through the richness of the pancetta and egg, cleansing the palate with each sip.'
@@ -42,6 +43,7 @@ export const recipes: Recipe[] = [
     ],
     instructions: ['Marinate chicken in yogurt and spices for at least 1 hour.', 'Grill or pan-fry the chicken until cooked through.', 'In a separate pan, make the sauce with tomato puree and cream.', 'Add chicken to the sauce and simmer for 10 minutes.'],
     tags: ['Indian', 'Chicken', 'Dinner'],
+    cuisine: 'Indian',
     winePairing: {
       suggestion: 'Off-Dry Riesling',
       description: 'The slight sweetness of an off-dry Riesling balances the spice of the curry, while its acidity complements the tomato-based sauce.'
@@ -63,6 +65,7 @@ export const recipes: Recipe[] = [
     ],
     instructions: ['Cook ground beef until browned.', 'Drain fat and add taco seasoning and water.', 'Simmer for 5 minutes.', 'Serve in taco shells with toppings.'],
     tags: ['Mexican', 'Beef', 'Quick', 'Dinner'],
+    cuisine: 'Mexican',
     winePairing: {
         suggestion: 'Malbec',
         description: 'A juicy Malbec with soft tannins and dark fruit flavors complements the seasoned beef without overpowering the toppings.'
@@ -83,7 +86,8 @@ export const recipes: Recipe[] = [
       { name: 'lemon juice', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } }
     ],
     instructions: ['Toast the bread to your liking.', 'Mash the avocado with lemon juice, salt, and pepper.', 'Spread the avocado on the toast.', 'Sprinkle with red pepper flakes.'],
-    tags: ['Breakfast', 'Vegetarian', 'Quick', 'Healthy']
+    tags: ['Breakfast', 'Vegetarian', 'Quick', 'Healthy'],
+    cuisine: 'American',
   },
   {
     id: 5,
@@ -101,6 +105,7 @@ export const recipes: Recipe[] = [
     ],
     instructions: ['Wash and chop the romaine lettuce.', 'Toss with Caesar dressing.', 'Top with croutons and Parmesan cheese.'],
     tags: ['Salad', 'Vegetarian', 'Quick'],
+    cuisine: 'American',
     winePairing: {
         suggestion: 'Sauvignon Blanc',
         description: 'A crisp Sauvignon Blanc has the acidity to cut through the creamy dressing and complement the tangy Parmesan cheese.'
@@ -121,7 +126,8 @@ export const recipes: Recipe[] = [
       { name: 'Fresh basil leaves', metric: { quantity: 'a handful', unit: '' }, us: { quantity: 'a handful', unit: '' } }
     ],
     instructions: ['Preheat oven to [temp:220:425].', 'Roll out pizza dough.', 'Spread tomato sauce, top with mozzarella.', 'Bake for 10-12 minutes.', 'Garnish with fresh basil.'],
-    tags: ['Italian', 'Pizza', 'Vegetarian']
+    tags: ['Italian', 'Pizza', 'Vegetarian'],
+    cuisine: 'Italian',
   },
   {
     id: 7,
@@ -141,7 +147,8 @@ export const recipes: Recipe[] = [
       { name: 'chocolate chips', metric: { quantity: 340, unit: 'g' }, us: { quantity: 2, unit: 'cups' } }
     ],
     instructions: ['Preheat oven to [temp:190:375].', 'Cream butter and sugars.', 'Beat in eggs.', 'Stir in flour and baking soda.', 'Fold in chocolate chips.', 'Drop spoonfuls on a baking sheet and bake for 9-11 minutes.'],
-    tags: ['Dessert', 'Baking']
+    tags: ['Dessert', 'Baking'],
+    cuisine: 'American',
   },
   {
     id: 8,
@@ -162,6 +169,7 @@ export const recipes: Recipe[] = [
     ],
     instructions: ['Brown the beef in olive oil.', 'Remove beef and sauté vegetables.', 'Add beef back to the pot with broth and wine.', 'Simmer for 2-3 hours until beef is tender.'],
     tags: ['Beef', 'Soup', 'Dinner'],
+    cuisine: 'American',
     winePairing: {
         suggestion: 'Cabernet Sauvignon',
         description: 'A full-bodied Cabernet Sauvignon stands up to the rich, savory flavors of the beef stew, with dark fruit notes that complement the meat.'
@@ -186,6 +194,7 @@ export const recipes: Recipe[] = [
     ],
     instructions: ['Preheat oven to [temp:200:400].', 'Pat the chicken dry.', 'Stuff the cavity with lemon, herbs, and garlic.', 'Rub the outside with olive oil, salt, and pepper.', 'Roast for 1 hour 20 minutes or until juices run clear.'],
     tags: ['Chicken', 'Dinner'],
+    cuisine: 'French',
      winePairing: {
       suggestion: 'Chardonnay',
       description: 'An oaked Chardonnay offers buttery notes and a creamy texture that beautifully complements the roasted chicken and crispy skin.'
@@ -209,7 +218,8 @@ export const recipes: Recipe[] = [
         { name: 'melted butter', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } }
     ],
     instructions: ['Whisk together dry ingredients.', 'In a separate bowl, whisk wet ingredients.', 'Combine wet and dry ingredients until just mixed.', 'Pour 60ml (1/4 cup) of batter onto a hot, greased griddle.', 'Cook until bubbles form, then flip and cook until golden brown.'],
-    tags: ['Breakfast']
+    tags: ['Breakfast'],
+    cuisine: 'American',
   },
   {
     id: 11,
@@ -230,6 +240,7 @@ export const recipes: Recipe[] = [
     ],
     instructions: ['Sauté mushrooms until golden.', 'In the same pan, cook onion, then add rice and toast for 1 minute.', 'Add wine and cook until absorbed.', 'Add broth one ladle at a time, stirring constantly, until rice is creamy.', 'Stir in mushrooms and Parmesan.'],
     tags: ['Italian', 'Vegetarian', 'Dinner'],
+    cuisine: 'Italian',
     winePairing: {
         suggestion: 'Pinot Noir',
         description: 'The earthy notes of a Pinot Noir are a classic match for the savory, umami flavor of mushrooms in this creamy risotto.'
@@ -253,7 +264,8 @@ export const recipes: Recipe[] = [
         { name: 'red wine vinegar', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } }
     ],
     instructions: ['Combine cucumber, tomatoes, onion, and olives in a bowl.', 'Whisk together olive oil and vinegar for the dressing.', 'Pour dressing over the vegetables and toss gently.', 'Top with feta cheese before serving.'],
-    tags: ['Salad', 'Vegetarian', 'Quick']
+    tags: ['Salad', 'Vegetarian', 'Quick'],
+    cuisine: 'Healthy',
   },
   {
     id: 13,
@@ -273,7 +285,8 @@ export const recipes: Recipe[] = [
         { name: 'Gruyère cheese', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Caramelize onions in butter for 30-40 minutes.', 'Add garlic, then deglaze with wine.', 'Add beef broth and simmer for 30 minutes.', 'Ladle soup into oven-safe bowls, top with baguette and cheese.', 'Broil until cheese is bubbly and golden.'],
-    tags: ['Soup', 'French']
+    tags: ['Soup', 'French'],
+    cuisine: 'French',
   },
   {
     id: 14,
@@ -292,7 +305,8 @@ export const recipes: Recipe[] = [
         { name: 'Pad Thai sauce (tamarind, fish sauce, sugar)', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Soak rice noodles until soft.', 'Stir-fry shrimp/chicken.', 'Push to one side, scramble eggs on the other.', 'Add noodles and sauce, toss to combine.', 'Stir in bean sprouts and top with peanuts.'],
-    tags: ['Thai', 'Noodles', 'Seafood']
+    tags: ['Thai', 'Noodles', 'Seafood'],
+    cuisine: 'Thai',
   },
   {
     id: 15,
@@ -310,7 +324,8 @@ export const recipes: Recipe[] = [
         { name: 'Extra virgin olive oil', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Arrange alternating slices of tomato and mozzarella on a plate.', 'Tuck fresh basil leaves in between.', 'Drizzle with olive oil and balsamic glaze.', 'Season with salt and pepper.'],
-    tags: ['Salad', 'Italian', 'Vegetarian', 'Quick']
+    tags: ['Salad', 'Italian', 'Vegetarian', 'Quick'],
+    cuisine: 'Italian',
   },
   {
     id: 16,
@@ -329,7 +344,8 @@ export const recipes: Recipe[] = [
         { name: 'Oil for frying', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Cut potatoes into chips and fry until golden.', 'Mix flour, baking powder, and beer to make the batter.', 'Dip fish in batter and fry until golden brown.', 'Serve with chips, lemon, and tartar sauce.'],
-    tags: ['Seafood', 'Dinner']
+    tags: ['Seafood', 'Dinner'],
+    cuisine: 'American',
   },
   {
     id: 17,
@@ -348,7 +364,8 @@ export const recipes: Recipe[] = [
         { name: 'Salt to taste', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['Mash avocados in a bowl.', 'Stir in onion, jalapeño, cilantro, and lime juice.', 'Season with salt.', 'Serve immediately with tortilla chips.'],
-    tags: ['Mexican', 'Snack', 'Vegetarian', 'Quick']
+    tags: ['Mexican', 'Snack', 'Vegetarian', 'Quick'],
+    cuisine: 'Mexican',
   },
   {
     id: 18,
@@ -367,7 +384,8 @@ export const recipes: Recipe[] = [
         { name: 'half-and-half', metric: { quantity: 480, unit: 'ml' }, us: { quantity: 2, unit: 'cups' } }
     ],
     instructions: ['Cook bacon until crisp. Sauté onion and celery in bacon fat.', 'Add potatoes and clam juice. Simmer until potatoes are tender.', 'Stir in clams and half-and-half. Heat through but do not boil.', 'Garnish with bacon.'],
-    tags: ['Soup', 'Seafood']
+    tags: ['Soup', 'Seafood'],
+    cuisine: 'American',
   },
   {
     id: 19,
@@ -387,7 +405,8 @@ export const recipes: Recipe[] = [
         { name: 'butter', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } }
     ],
     instructions: ['Preheat oven to [temp:220:425].', 'Line a pie plate with one crust.', 'Mix apples with sugar, flour, and spices. Pour into crust.', 'Dot with butter. Cover with top crust, seal and vent.', 'Bake for 40-50 minutes until crust is golden and filling is bubbly.'],
-    tags: ['Dessert', 'Baking']
+    tags: ['Dessert', 'Baking'],
+    cuisine: 'American',
   },
   {
     id: 20,
@@ -406,7 +425,8 @@ export const recipes: Recipe[] = [
         { name: 'Salt and pepper', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['Roast butternut squash until tender.', 'Sauté onion and carrots.', 'Add roasted squash and broth to the pot. Simmer for 15 minutes.', 'Blend until smooth. Season with nutmeg, salt, and pepper.'],
-    tags: ['Soup', 'Vegetarian', 'Vegan']
+    tags: ['Soup', 'Vegetarian', 'Vegan'],
+    cuisine: 'Healthy',
   },
   {
     id: 21,
@@ -426,7 +446,8 @@ export const recipes: Recipe[] = [
         { name: 'large potatoes, for mashing', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } }
     ],
     instructions: ['Cook lamb, onion, and carrots until browned. Stir in flour, then broth. Simmer until thick. Add peas.', 'Boil, peel, and mash potatoes.', 'Spread meat mixture in a baking dish. Top with mashed potatoes.', 'Bake at [temp:200:400] for 20 minutes.'],
-    tags: ['Dinner', 'Beef']
+    tags: ['Dinner', 'Beef'],
+    cuisine: 'American',
   },
   {
     id: 22,
@@ -446,7 +467,8 @@ export const recipes: Recipe[] = [
         { name: 'Olive oil', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Arrange sliced vegetables in a spiral pattern in a baking dish.', 'Drizzle with olive oil and sprinkle with garlic, herbs, salt, and pepper.', 'Bake at [temp:190:375] for 45-55 minutes until vegetables are tender.'],
-    tags: ['French', 'Vegetarian', 'Dinner', 'Vegan']
+    tags: ['French', 'Vegetarian', 'Dinner', 'Vegan'],
+    cuisine: 'French',
   },
   {
     id: 23,
@@ -466,7 +488,8 @@ export const recipes: Recipe[] = [
         { name: 'all-purpose flour', metric: { quantity: 180, unit: 'g' }, us: { quantity: '1 1/2', unit: 'cups' } }
     ],
     instructions: ['Preheat oven to [temp:175:350].', 'Mix mashed bananas and melted butter.', 'Stir in sugar, egg, and baking soda.', 'Mix in flour.', 'Pour into a greased loaf pan and bake for 60-65 minutes.'],
-    tags: ['Baking', 'Dessert', 'Breakfast']
+    tags: ['Baking', 'Dessert', 'Breakfast'],
+    cuisine: 'American',
   },
   {
     id: 24,
@@ -485,7 +508,8 @@ export const recipes: Recipe[] = [
         { name: 'shredded mozzarella', metric: { quantity: 225, unit: 'g' }, us: { quantity: 2, unit: 'cups' } }
     ],
     instructions: ['Cook noodles. Brown beef and mix with marinara.', 'In a baking dish, layer sauce, noodles, ricotta, Parmesan, and mozzarella.', 'Repeat layers.', 'Bake at [temp:190:375] for 45 minutes until bubbly.'],
-    tags: ['Italian', 'Pasta', 'Dinner', 'Beef']
+    tags: ['Italian', 'Pasta', 'Dinner', 'Beef'],
+    cuisine: 'Italian',
   },
   {
     id: 25,
@@ -502,7 +526,8 @@ export const recipes: Recipe[] = [
         { name: 'Soy sauce, wasabi, pickled ginger for serving', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Cook sushi rice and season with rice vinegar.', 'Lay a sheet of nori on a bamboo mat.', 'Spread rice over nori, leaving a border.', 'Place fillings in a line. Roll tightly.', 'Slice into pieces and serve.'],
-    tags: ['Japanese', 'Seafood']
+    tags: ['Japanese', 'Seafood'],
+    cuisine: 'Japanese',
   },
   {
     id: 26,
@@ -520,7 +545,8 @@ export const recipes: Recipe[] = [
         { name: 'Salt and pepper', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['Bring chicken broth to a boil.', 'Add vegetables and noodles, cook until tender.', 'Stir in shredded chicken.', 'Season with salt and pepper.'],
-    tags: ['Soup', 'Chicken']
+    tags: ['Soup', 'Chicken'],
+    cuisine: 'American',
   },
   {
     id: 27,
@@ -539,7 +565,8 @@ export const recipes: Recipe[] = [
         { name: 'Salt and pepper', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['Cook macaroni. Make a roux with butter and flour.', 'Whisk in milk until it thickens.', 'Stir in cheese until melted.', 'Combine sauce with cooked macaroni.'],
-    tags: ['Pasta', 'Vegetarian', 'Dinner']
+    tags: ['Pasta', 'Vegetarian', 'Dinner'],
+    cuisine: 'American',
   },
   {
     id: 28,
@@ -560,6 +587,7 @@ export const recipes: Recipe[] = [
     ],
     instructions: ['Cook linguine. Sauté garlic in butter.', 'Add shrimp and cook until pink.', 'Deglaze with white wine and lemon juice.', 'Toss with pasta and parsley.'],
     tags: ['Pasta', 'Seafood', 'Italian', 'Quick'],
+    cuisine: 'Italian',
     winePairing: {
         suggestion: 'Sauvignon Blanc',
         description: 'The bright acidity and citrus notes of a Sauvignon Blanc enhance the garlic, lemon, and white wine sauce in the scampi.'
@@ -580,7 +608,8 @@ export const recipes: Recipe[] = [
         { name: 'Fillings (e.g., cheese, mushrooms, spinach)', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Whisk eggs, milk, salt, and pepper.', 'Pour into a hot, greased skillet.', 'As eggs set, add fillings to one half.', 'Fold the other half over and cook to desired doneness.'],
-    tags: ['Breakfast', 'Quick']
+    tags: ['Breakfast', 'Quick'],
+    cuisine: 'French',
   },
   {
     id: 30,
@@ -599,7 +628,8 @@ export const recipes: Recipe[] = [
         { name: 'flour', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } }
     ],
     instructions: ['Preheat oven to [temp:220:425]. Grease ramekins.', 'Melt butter and chocolate together.', 'Whisk eggs, yolks, and sugar until pale. Fold in chocolate mixture, then flour.', 'Pour into ramekins and bake for 12-14 minutes until sides are firm and center is soft.'],
-    tags: ['Dessert', 'Baking', 'Quick']
+    tags: ['Dessert', 'Baking', 'Quick'],
+    cuisine: 'French',
   },
   {
     id: 31,
@@ -618,7 +648,8 @@ export const recipes: Recipe[] = [
       { name: 'Salt to taste', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['Combine all ingredients in a food processor.', 'Blend until smooth and creamy, adding a little water if needed.', 'Serve drizzled with more olive oil and pita bread.'],
-    tags: ['Snack', 'Vegetarian', 'Quick', 'Vegan']
+    tags: ['Snack', 'Vegetarian', 'Quick', 'Vegan'],
+    cuisine: 'Healthy',
   },
   {
     id: 32,
@@ -639,7 +670,8 @@ export const recipes: Recipe[] = [
       { name: 'Vinaigrette dressing', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Arrange lettuce on a large platter.', 'Create rows of chicken, bacon, eggs, avocado, and tomatoes over the lettuce.', 'Sprinkle with blue cheese.', 'Drizzle with vinaigrette just before serving.'],
-    tags: ['Salad', 'Chicken']
+    tags: ['Salad', 'Chicken'],
+    cuisine: 'American',
   },
   {
     id: 33,
@@ -658,7 +690,8 @@ export const recipes: Recipe[] = [
       { name: 'Shredded cheese', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Preheat oven to [temp:175:350].', 'Brown meat with onion. Stir in rice and tomatoes.', 'Spoon mixture into bell peppers.', 'Top with cheese and bake for 25-30 minutes.'],
-    tags: ['Dinner', 'Beef']
+    tags: ['Dinner', 'Beef'],
+    cuisine: 'American',
   },
   {
     id: 34,
@@ -677,7 +710,8 @@ export const recipes: Recipe[] = [
       { name: 'Butter for cooking', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Whisk together eggs, milk, cinnamon, and vanilla.', 'Soak each slice of bread in the egg mixture.', 'Cook on a hot, buttered skillet until golden brown on both sides.', 'Serve with syrup and fruit.'],
-    tags: ['Breakfast']
+    tags: ['Breakfast'],
+    cuisine: 'French',
   },
   {
     id: 35,
@@ -696,7 +730,8 @@ export const recipes: Recipe[] = [
       { name: 'garlic, minced', metric: { quantity: 2, unit: 'cloves' }, us: { quantity: 2, unit: 'cloves' } }
     ],
     instructions: ['Marinate steak in soy sauce, cornstarch, ginger, and garlic.', 'Stir-fry steak until browned. Remove from pan.', 'Stir-fry broccoli until tender-crisp.', 'Return steak to pan and toss to combine.'],
-    tags: ['Chinese', 'Beef', 'Dinner', 'Quick']
+    tags: ['Chinese', 'Beef', 'Dinner', 'Quick'],
+    cuisine: 'Chinese',
   },
   {
     id: 36,
@@ -715,7 +750,8 @@ export const recipes: Recipe[] = [
       { name: 'celery stalks, chopped', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } }
     ],
     instructions: ['In a large bowl, combine mayonnaise and mustard.', 'Gently stir in potatoes, eggs, onion, and celery.', 'Season with salt and pepper.', 'Chill before serving.'],
-    tags: ['Salad', 'Side Dish']
+    tags: ['Salad', 'Side Dish'],
+    cuisine: 'American',
   },
   {
     id: 37,
@@ -735,7 +771,8 @@ export const recipes: Recipe[] = [
       { name: 'sherry vinegar', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } }
     ],
     instructions: ['Combine all vegetables in a blender.', 'Blend until smooth.', 'With the blender running, slowly stream in the olive oil.', 'Stir in vinegar, salt, and pepper. Chill thoroughly before serving.'],
-    tags: ['Soup', 'Vegetarian', 'Quick', 'Vegan']
+    tags: ['Soup', 'Vegetarian', 'Quick', 'Vegan'],
+    cuisine: 'Healthy',
   },
   {
     id: 38,
@@ -755,6 +792,7 @@ export const recipes: Recipe[] = [
     ],
     instructions: ['Preheat oven to [temp:200:400].', 'Place salmon on a baking sheet.', 'Rub with olive oil, garlic, salt, and pepper.', 'Top with lemon slices and herbs.', 'Bake for 12-15 minutes until fish flakes easily.'],
     tags: ['Seafood', 'Dinner', 'Quick', 'Healthy'],
+    cuisine: 'Healthy',
     winePairing: {
         suggestion: 'Pinot Noir',
         description: 'A light-bodied Pinot Noir is a great match for salmon. Its red fruit flavors and earthy notes won\'t overpower the delicate fish.'
@@ -778,7 +816,8 @@ export const recipes: Recipe[] = [
       { name: 'Oil for frying', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Gently mix all ingredients except oil.', 'Shape into patties.', 'Pan-fry in oil for 3-5 minutes per side until golden brown.', 'Serve with a lemon wedge.'],
-    tags: ['Seafood', 'Appetizer']
+    tags: ['Seafood', 'Appetizer'],
+    cuisine: 'American',
   },
   {
     id: 40,
@@ -799,7 +838,8 @@ export const recipes: Recipe[] = [
       { name: 'kidney beans, rinsed', metric: { quantity: 1, unit: 'can (425g)' }, us: { quantity: 1, unit: 'can (15 oz)' } }
     ],
     instructions: ['Sauté onion, carrots, and celery in olive oil.', 'Add tomatoes and broth. Bring to a simmer.', 'Stir in pasta and cook until al dente.', 'Add beans and heat through. Season to taste.'],
-    tags: ['Soup', 'Italian', 'Vegetarian', 'Vegan']
+    tags: ['Soup', 'Italian', 'Vegetarian', 'Vegan'],
+    cuisine: 'Italian',
   },
   {
     id: 41,
@@ -818,7 +858,8 @@ export const recipes: Recipe[] = [
       { name: 'Pinch of nutmeg', metric: { quantity: 1, unit: 'pinch' }, us: { quantity: 1, unit: 'pinch' } }
     ],
     instructions: ['Preheat oven to [temp:190:375]. Prick pie crust and bake for 10 minutes.', 'Sprinkle bacon and cheese into the crust.', 'Whisk eggs, cream, salt, pepper, and nutmeg. Pour over fillings.', 'Bake for 30-35 minutes until the center is set.'],
-    tags: ['French', 'Breakfast']
+    tags: ['French', 'Breakfast'],
+    cuisine: 'French',
   },
   {
     id: 42,
@@ -837,7 +878,8 @@ export const recipes: Recipe[] = [
       { name: 'mozzarella, sliced', metric: { quantity: 200, unit: 'g' }, us: { quantity: 7, unit: 'oz' } }
     ],
     instructions: ['Dredge chicken in egg, then in breadcrumb-Parmesan mixture.', 'Pan-fry until golden brown.', 'Place in a baking dish, top with marinara and mozzarella.', 'Bake at [temp:200:400] for 10-15 minutes until cheese is melted.'],
-    tags: ['Italian', 'Chicken', 'Dinner']
+    tags: ['Italian', 'Chicken', 'Dinner'],
+    cuisine: 'Italian',
   },
   {
     id: 43,
@@ -856,7 +898,8 @@ export const recipes: Recipe[] = [
       { name: 'Fresh basil', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Melt butter and sauté onion.', 'Add tomatoes and broth. Simmer for 20 minutes.', 'Blend until smooth.', 'Stir in cream and heat through. Garnish with basil.'],
-    tags: ['Soup', 'Vegetarian']
+    tags: ['Soup', 'Vegetarian'],
+    cuisine: 'American',
   },
   {
     id: 44,
@@ -875,7 +918,8 @@ export const recipes: Recipe[] = [
       { name: 'Cocoa powder for dusting', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Beat egg yolks and sugar until thick. Fold in mascarpone.', 'Quickly dip each ladyfinger in coffee and line a dish.', 'Spread half the mascarpone mixture over the ladyfingers. Repeat.', 'Chill for at least 4 hours. Dust with cocoa before serving.'],
-    tags: ['Dessert', 'Italian']
+    tags: ['Dessert', 'Italian'],
+    cuisine: 'Italian',
   },
   {
     id: 45,
@@ -894,7 +938,8 @@ export const recipes: Recipe[] = [
       { name: 'Parmesan cheese', metric: { quantity: 50, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } }
     ],
     instructions: ['Dredge eggplant slices in egg, then breadcrumbs. Pan-fry until golden.', 'In a baking dish, layer marinara, eggplant, mozzarella, and Parmesan.', 'Repeat layers.', 'Bake at [temp:190:375] for 20-25 minutes.'],
-    tags: ['Italian', 'Vegetarian', 'Dinner']
+    tags: ['Italian', 'Vegetarian', 'Dinner'],
+    cuisine: 'Italian',
   },
   {
     id: 46,
@@ -911,7 +956,8 @@ export const recipes: Recipe[] = [
       { name: 'Whipped cream', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Toss strawberries with sugar and let sit for 20 minutes to macerate.', 'Split biscuits in half.', 'Spoon strawberries and their juice over the bottom half.', 'Top with whipped cream and the other biscuit half.'],
-    tags: ['Dessert']
+    tags: ['Dessert'],
+    cuisine: 'American',
   },
   {
     id: 47,
@@ -929,7 +975,8 @@ export const recipes: Recipe[] = [
       { name: 'Coleslaw for serving', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Place pork and onion in a slow cooker. Cook on low for 8-10 hours.', 'Shred pork with two forks, discarding fat.', 'Stir in BBQ sauce.', 'Serve on buns with coleslaw.'],
-    tags: ['Dinner', 'Pork']
+    tags: ['Dinner', 'Pork'],
+    cuisine: 'American',
   },
   {
     id: 48,
@@ -948,7 +995,8 @@ export const recipes: Recipe[] = [
       { name: 'Toppings (salsa, sour cream, guacamole)', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Toss chicken, peppers, and onion with fajita seasoning.', 'Sauté in a hot skillet until chicken is cooked and vegetables are tender-crisp.', 'Serve with warm tortillas and toppings.'],
-    tags: ['Mexican', 'Chicken', 'Dinner', 'Quick']
+    tags: ['Mexican', 'Chicken', 'Dinner', 'Quick'],
+    cuisine: 'Mexican',
   },
   {
     id: 49,
@@ -967,7 +1015,8 @@ export const recipes: Recipe[] = [
       { name: 'vanilla extract', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } }
     ],
     instructions: ['Preheat oven to [temp:160:325]. Mix crumbs and butter; press into a springform pan.', 'Beat cream cheese and sugar until smooth. Beat in eggs one at a time, then vanilla.', 'Pour over crust. Bake for 55 minutes.', 'Let cool, then chill for at least 4 hours.'],
-    tags: ['Dessert', 'Baking']
+    tags: ['Dessert', 'Baking'],
+    cuisine: 'American',
   },
   {
     id: 50,
@@ -986,7 +1035,8 @@ export const recipes: Recipe[] = [
       { name: 'Salt and pepper', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['Preheat oven to [temp:200:400].', 'Cut a pocket into the side of each chicken breast.', 'Mix spinach, feta, and garlic. Stuff into the chicken pockets.', 'Season outside of chicken. Sear in an oiled skillet, then bake for 15-20 minutes.'],
-    tags: ['Chicken', 'Dinner', 'Healthy']
+    tags: ['Chicken', 'Dinner', 'Healthy'],
+    cuisine: 'Healthy',
   },
   {
     id: 51,
@@ -1009,7 +1059,8 @@ export const recipes: Recipe[] = [
       { name: 'Salt and pepper to taste', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['In a large pot, heat olive oil. Sauté onion, carrots, and celery until softened.', 'Add garlic and cook for another minute.', 'Stir in lentils, vegetable broth, diced tomatoes, and thyme.', 'Bring to a boil, then reduce heat and simmer for 30-40 minutes, until lentils are tender.', 'Season with salt and pepper before serving.'],
-    tags: ['Vegan', 'Soup', 'Vegetarian', 'Healthy']
+    tags: ['Vegan', 'Soup', 'Vegetarian', 'Healthy'],
+    cuisine: 'Vegan',
   },
   {
     id: 52,
@@ -1029,7 +1080,8 @@ export const recipes: Recipe[] = [
       { name: 'Soy sauce and mirin to taste', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['Prepare the broth by simmering it with aromatics like ginger and garlic.', 'Season the broth with soy sauce and mirin.', 'Cook ramen noodles according to package instructions.', 'Assemble the bowls: place noodles in the bottom, pour hot broth over.', 'Top with chashu pork, a halved soft-boiled egg, scallions, and nori.'],
-    tags: ['Japanese', 'Noodles', 'Pork', 'Soup']
+    tags: ['Japanese', 'Noodles', 'Pork', 'Soup'],
+    cuisine: 'Japanese',
   },
   {
     id: 53,
@@ -1051,7 +1103,8 @@ export const recipes: Recipe[] = [
       { name: 'Dressing: garlic', metric: { quantity: 1, unit: 'clove' }, us: { quantity: 1, unit: 'clove' } }
     ],
     instructions: ['Preheat oven to [temp:200:400]. Toss sweet potato and broccoli with olive oil, salt, and pepper. Roast for 20-25 minutes.', 'Cook quinoa with water or broth until liquid is absorbed.', 'Whisk together all dressing ingredients.', 'In a large bowl, combine cooked quinoa, roasted vegetables, and dressing. Toss to combine.'],
-    tags: ['Salad', 'Vegan', 'Vegetarian', 'Gluten-Free', 'Healthy']
+    tags: ['Salad', 'Vegan', 'Vegetarian', 'Gluten-Free', 'Healthy'],
+    cuisine: 'Vegan',
   },
   {
     id: 54,
@@ -1074,7 +1127,8 @@ export const recipes: Recipe[] = [
       { name: 'Fresh cilantro or parsley for garnish', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Heat oil in a large skillet. Sauté onion and bell pepper until soft.', 'Add garlic and spices, cook for one minute.', 'Pour in crushed tomatoes, season with salt and pepper. Simmer for 10 minutes.', 'Make wells in the sauce and crack an egg into each one.', 'Cover and cook for 5-8 minutes, until egg whites are set but yolks are still runny.', 'Garnish with fresh herbs and serve with crusty bread.'],
-    tags: ['Breakfast', 'Vegetarian', 'Quick', 'Healthy']
+    tags: ['Breakfast', 'Vegetarian', 'Quick', 'Healthy'],
+    cuisine: 'Healthy',
   },
   {
     id: 55,
@@ -1094,7 +1148,8 @@ export const recipes: Recipe[] = [
       { name: 'Pinch of cayenne pepper', metric: { quantity: 1, unit: 'pinch' }, us: { quantity: 1, unit: 'pinch' } }
     ],
     instructions: ['Remove meat from lobster shells, chop the meat, and set aside. Crush the shells.', 'In a large pot, melt butter and sauté shells and shallots for 5 minutes.', 'Add sherry and cook for 1 minute. Add stock and simmer for 30 minutes.', 'Strain the stock, discarding shells. Return stock to pot.', 'Stir in heavy cream and cayenne. Add lobster meat and heat through. Do not boil.'],
-    tags: ['Soup', 'Seafood', 'French']
+    tags: ['Soup', 'Seafood', 'French'],
+    cuisine: 'French',
   },
   {
     id: 56,
@@ -1116,7 +1171,8 @@ export const recipes: Recipe[] = [
       { name: 'chocolate chips', metric: { quantity: 170, unit: 'g' }, us: { quantity: 1, unit: 'cup' } }
     ],
     instructions: ['Preheat oven to [temp:175:350]. Grease an 20x20cm (8x8 inch) pan.', 'In a bowl, whisk together flour, cocoa powder, baking powder, and salt.', 'In another bowl, mix sugar, melted oil, eggs, and vanilla.', 'Combine wet and dry ingredients. Fold in chocolate chips.', 'Pour batter into prepared pan and bake for 25-30 minutes.'],
-    tags: ['Dessert', 'Baking', 'Gluten-Free']
+    tags: ['Dessert', 'Baking', 'Gluten-Free'],
+    cuisine: 'American',
   },
   {
     id: 57,
@@ -1137,7 +1193,8 @@ export const recipes: Recipe[] = [
       { name: 'burger buns', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } }
     ],
     instructions: ['Preheat oven to [temp:190:375].', 'Mash black beans in a large bowl.', 'Sauté bell pepper, onion, and garlic until soft. Add to black beans.', 'Stir in spices and bread crumbs. Form into 4 patties.', 'Bake for 10 minutes on each side. Serve on buns with your favorite toppings.'],
-    tags: ['Vegan', 'Vegetarian', 'Dinner', 'Healthy']
+    tags: ['Vegan', 'Vegetarian', 'Dinner', 'Healthy'],
+    cuisine: 'Vegan',
   },
   {
     id: 58,
@@ -1154,7 +1211,8 @@ export const recipes: Recipe[] = [
       { name: 'granulated sugar, plus more for topping', metric: { quantity: 100, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } }
     ],
     instructions: ['Preheat oven to [temp:165:325].', 'Heat cream and vanilla bean in a saucepan until just simmering. Remove from heat and let infuse for 15 minutes.', 'Whisk egg yolks and sugar until pale.', 'Slowly pour the warm cream into the egg mixture, whisking constantly. Strain the custard.', 'Pour into four ramekins. Place in a baking dish and add hot water to come halfway up the sides.', 'Bake for 30-35 minutes. Let cool, then refrigerate for at least 4 hours.', 'Sprinkle sugar on top and caramelize with a kitchen torch.'],
-    tags: ['Dessert', 'French', 'Baking']
+    tags: ['Dessert', 'French', 'Baking'],
+    cuisine: 'French',
   },
   {
     id: 59,
@@ -1174,7 +1232,8 @@ export const recipes: Recipe[] = [
       { name: 'Garnishes: bean sprouts, basil, lime wedges, jalapeños', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Char onion and ginger. Add to a large stockpot with beef bones and spices. Cover with water and simmer for at least 4 hours to create the broth.', 'Strain the broth.', 'Cook rice noodles according to package directions.', 'To serve, place noodles and raw sirloin slices in a bowl. Pour the boiling hot broth over the top (this will cook the beef).', 'Serve immediately with fresh garnishes.'],
-    tags: ['Vietnamese', 'Soup', 'Noodles', 'Beef']
+    tags: ['Vietnamese', 'Soup', 'Noodles', 'Beef'],
+    cuisine: 'Vietnamese',
   },
   {
     id: 60,
@@ -1193,6 +1252,7 @@ export const recipes: Recipe[] = [
       { name: 'Salt and pepper', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['Heat butter and oil in a skillet over high heat.', 'Add scallops in a single layer and sear for 1-2 minutes per side, until golden brown.', 'Add garlic and cook for 30 seconds more.', 'Serve immediately.'],
-    tags: ['Seafood', 'Dinner', 'Quick', 'Appetizer']
+    tags: ['Seafood', 'Dinner', 'Quick', 'Appetizer'],
+    cuisine: 'French',
   },
 ];

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { User } from '../types';
 import UserIcon from './icons/UserIcon';
 import CameraIcon from './icons/CameraIcon';
+import PreferenceSelector from './PreferenceSelector';
 
 interface ProfileModalProps {
   user: User;
@@ -13,6 +14,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onSave }) =>
   const [name, setName] = useState(user.name);
   const [profileImage, setProfileImage] = useState(user.profileImage);
   const [isSubscribed, setIsSubscribed] = useState(user.isSubscribed ?? true);
+  const [foodPreferences, setFoodPreferences] = useState(user.foodPreferences || []);
   const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -49,7 +51,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onSave }) =>
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (imageError) return;
-    onSave({ ...user, name, profileImage, isSubscribed });
+    onSave({ ...user, name, profileImage, isSubscribed, foodPreferences });
     onClose();
   };
 
@@ -59,7 +61,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onSave }) =>
         onClick={onClose}
     >
       <div 
-        className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md m-4"
+        className="bg-white rounded-lg shadow-xl p-8 w-full max-w-lg m-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
@@ -98,31 +100,33 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onSave }) =>
             )}
           </div>
           
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
-              Name
-            </label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-amber-500"
-              required
-            />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
+                Name
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-amber-500"
+                required
+              />
+            </div>
 
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email_display">
-              Email
-            </label>
-            <input
-              id="email_display"
-              type="email"
-              value={user.email}
-              className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 bg-gray-100 leading-tight focus:outline-none"
-              disabled
-            />
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email_display">
+                Email
+              </label>
+              <input
+                id="email_display"
+                type="email"
+                value={user.email}
+                className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 bg-gray-100 leading-tight focus:outline-none"
+                disabled
+              />
+            </div>
           </div>
 
           <div className="mb-6">
@@ -136,6 +140,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onSave }) =>
                 <span className="ml-2 text-gray-700 text-sm">Receive our newsletter</span>
             </label>
           </div>
+          
+          {user.isPremium && (
+            <div className="mb-6">
+                <PreferenceSelector selectedPreferences={foodPreferences} onChange={setFoodPreferences} limit={3} />
+            </div>
+          )}
           
           <div className="flex items-center justify-end gap-3">
             <button

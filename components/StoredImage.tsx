@@ -22,8 +22,7 @@ const StoredImage: React.FC<StoredImageProps> = ({ src, ...props }) => {
       }
 
       if (src.startsWith('indexeddb:')) {
-        const idWithQuery = src.split(':')[1];
-        const id = idWithQuery.split('?')[0]; // Extract just the ID, removing query params
+        const id = src.split(':')[1];
         try {
           const imageData = await imageStore.getImage(id);
           if (isMounted) {

@@ -5,6 +5,7 @@ import CheckIcon from './icons/CheckIcon';
 import Spinner from './Spinner';
 import CheckCircleIcon from './icons/CheckCircleIcon';
 import { User } from '../types';
+import PreferenceSelector from './PreferenceSelector';
 
 // This is a test publishable key. In a real application, this would come from an environment variable.
 const STRIPE_PUBLISHABLE_KEY = 'pk_test_51HPvU92eZvYClndf5O6c6jHhTf8bL7t7xWJ2a3bJ2xV9X2a3bJ2xV9X2a3bJ2xV9X2a3bJ2xV9X2a3bJ2xV9X003bJ2xV9X';
@@ -14,15 +15,18 @@ declare var Stripe: any; // Use the global Stripe object from the script tag
 interface UpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpgrade: () => void;
+  onUpgrade: (preferences: string[]) => void;
   currentUser: User | null;
   onLoginRequest: () => void;
 }
 
+type ModalStep = 'payment' | 'preferences' | 'success';
+
 const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, onUpgrade, currentUser, onLoginRequest }) => {
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [step, setStep] = useState<ModalStep>('payment');
+  const [preferences, setPreferences] = useState<string[]>([]);
 
   const [stripe, setStripe] = useState<any>(null);
   const [cardElement, setCardElement] = useState<any>(null);
@@ -33,7 +37,8 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, onUpgrade,
       // Reset state when modal opens/reopens
       setError(null);
       setIsProcessing(false);
-      setPaymentSuccess(false);
+      setStep('payment');
+      setPreferences([]);
 
       if (!stripe) {
         const stripeInstance = Stripe(STRIPE_PUBLISHABLE_KEY);
@@ -60,7 +65,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, onUpgrade,
         setCardElement(card);
       }
 
-      if (cardElement) {
+      if (cardElement && step === 'payment') {
         // Use a timeout to ensure the DOM element is ready for mounting
         setTimeout(() => {
           const cardElementDiv = document.getElementById('card-element');
@@ -77,11 +82,11 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, onUpgrade,
         }, 0);
       }
     }
-  }, [isOpen, stripe, cardElement]);
+  }, [isOpen, stripe, cardElement, step]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!currentUser) {
@@ -107,54 +112,94 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, onUpgrade,
     }
 
     // Since we have no backend to create a PaymentIntent and confirm the payment,
-    // we'll simulate the success state after tokenization.
+    // we'll simulate success and move to the next step.
     setTimeout(() => {
       setIsProcessing(false);
-      setPaymentSuccess(true);
-      
-      // Upgrade user in the background while success message is shown
-      onUpgrade();
-      
-      // Close modal after showing success message
-      setTimeout(() => {
-        onClose();
-        cardElement.clear();
-      }, 2500);
-
+      setStep('preferences');
+      cardElement.clear(); // Clear card details
     }, 1500);
   };
 
-  const renderPaymentForm = () => (
-    <form onSubmit={handleSubmit} className="mt-8">
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Card details</label>
-          <div id="card-element" className="p-3 border border-slate-300 rounded-md shadow-sm bg-white">
-            {/* Stripe's CardElement will be mounted here */}
+  const handleCompleteSignup = () => {
+    onUpgrade(preferences);
+    setStep('success');
+    
+    setTimeout(() => {
+      onClose();
+    }, 2500);
+  };
+
+  const renderPaymentStep = () => (
+    <>
+      <div className="text-center">
+        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-amber-100 mb-4">
+          <CrownIcon className="h-8 w-8 text-amber-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-900">Go Premium!</h2>
+        <p className="text-slate-600 mt-2 text-sm">Unlock exclusive recipes, classes, and an ad-free experience.</p>
+      </div>
+
+      <ul className="space-y-2 my-6 text-sm">
+        <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-slate-700">Personalized recipe recommendations</span></li>
+        <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-slate-700">Advanced cooking classes</span></li>
+        <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-slate-700">Ad-free browsing</span></li>
+        <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-slate-700">Ask a professional chef</span></li>
+      </ul>
+
+      <form onSubmit={handlePaymentSubmit} className="mt-8">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Card details</label>
+            <div id="card-element" className="p-3 border border-slate-300 rounded-md shadow-sm bg-white">
+              {/* Stripe's CardElement will be mounted here */}
+            </div>
           </div>
         </div>
-      </div>
-      {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
-      <div className="mt-6">
-        <button
-          type="submit"
-          disabled={isProcessing || !stripe}
-          className="w-full flex justify-center items-center px-4 py-3 bg-amber-500 border border-transparent rounded-lg shadow-sm text-base font-bold text-slate-900 hover:bg-amber-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:bg-amber-300"
+        {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
+        <div className="mt-6">
+          <button
+            type="submit"
+            disabled={isProcessing || !stripe}
+            className="w-full flex justify-center items-center px-4 py-3 bg-amber-500 border border-transparent rounded-lg shadow-sm text-base font-bold text-slate-900 hover:bg-amber-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:bg-amber-300"
+          >
+            {isProcessing ? <Spinner /> : 'Pay $4.99/month'}
+          </button>
+        </div>
+        <p className="text-center text-xs text-slate-400 mt-4">Secure payments powered by Stripe</p>
+      </form>
+    </>
+  );
+  
+  const renderPreferencesStep = () => (
+    <div className="animate-fade-in">
+      <PreferenceSelector selectedPreferences={preferences} onChange={setPreferences} limit={3} />
+       <button
+          onClick={handleCompleteSignup}
+          disabled={preferences.length === 0}
+          className="w-full mt-4 flex justify-center items-center px-4 py-3 bg-teal-500 border border-transparent rounded-lg shadow-sm text-base font-bold text-white hover:bg-teal-600 transition-colors disabled:bg-teal-300"
         >
-          {isProcessing ? <Spinner /> : 'Pay $4.99/month'}
+          Complete Signup
         </button>
-      </div>
-       <p className="text-center text-xs text-slate-400 mt-4">Secure payments powered by Stripe</p>
-    </form>
+    </div>
   );
 
   const renderSuccessView = () => (
-    <div className="mt-8 text-center animate-fade-in">
+    <div className="text-center animate-fade-in">
         <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto" />
-        <h3 className="text-2xl font-bold text-slate-800 mt-4">Payment Successful!</h3>
-        <p className="text-slate-600 mt-2">Welcome to Premium! You now have access to all exclusive features.</p>
+        <h3 className="text-2xl font-bold text-slate-800 mt-4">Welcome to Premium!</h3>
+        <p className="text-slate-600 mt-2">You now have access to all exclusive features and personalized recommendations.</p>
     </div>
   );
+
+  const renderContent = () => {
+    switch(step) {
+      case 'preferences': return renderPreferencesStep();
+      case 'success': return renderSuccessView();
+      case 'payment':
+      default:
+        return renderPaymentStep();
+    }
+  }
 
   return (
     <div
@@ -171,26 +216,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, onUpgrade,
           <XIcon className="w-6 h-6" />
         </button>
         
-        {!paymentSuccess && (
-            <>
-                <div className="text-center">
-                    <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-amber-100 mb-4">
-                        <CrownIcon className="h-8 w-8 text-amber-500" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-slate-900">Go Premium!</h2>
-                    <p className="text-slate-600 mt-2 text-sm">Unlock exclusive recipes, classes, and an ad-free experience.</p>
-                </div>
-
-                <ul className="space-y-2 my-6 text-sm">
-                    <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-slate-700">Exclusive monthly recipes</span></li>
-                    <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-slate-700">Advanced cooking classes</span></li>
-                    <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-slate-700">Ad-free browsing</span></li>
-                    <li className="flex items-start"><CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span className="text-slate-700">Ask a professional chef</span></li>
-                </ul>
-            </>
-        )}
-
-        {paymentSuccess ? renderSuccessView() : renderPaymentForm()}
+        {renderContent()}
       </div>
     </div>
   );
