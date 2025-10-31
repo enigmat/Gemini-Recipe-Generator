@@ -1,15 +1,16 @@
 import { Recipe } from '../types';
 import * as recipeService from './recipeService';
 
-const getDayOfYear = (): number => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 0);
-    const diff = (now.getTime() - start.getTime()) + ((start.getTimezoneOffset() - now.getTimezoneOffset()) * 60 * 1000);
+const LAST_ARCHIVE_KEY = 'recipeAppLastArchiveDate';
+
+const getDayOfYear = (date: Date): number => {
+    const start = new Date(date.getFullYear(), 0, 0);
+    const diff = (date.getTime() - start.getTime()) + ((start.getTimezoneOffset() - date.getTimezoneOffset()) * 60 * 1000);
     const oneDay = 1000 * 60 * 60 * 24;
     return Math.floor(diff / oneDay);
 };
 
-export const getRecipeOfTheDay = async (): Promise<Recipe | null> => {
+export const getTodaysRecipe = async (): Promise<Recipe | null> => {
     try {
         const scheduledRecipes = recipeService.getScheduledRecipes();
         
@@ -18,13 +19,49 @@ export const getRecipeOfTheDay = async (): Promise<Recipe | null> => {
             return null;
         }
 
-        const dayIndex = getDayOfYear() % scheduledRecipes.length;
+        const dayIndex = getDayOfYear(new Date()) % scheduledRecipes.length;
         const recipe = scheduledRecipes[dayIndex];
 
         return recipe;
 
     } catch (error) {
         console.error("Failed to get Recipe of the Day:", error);
+        return null;
+    }
+};
+
+export const archiveYesterdaysRecipe = async (): Promise<Recipe | null> => {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const lastArchiveDate = localStorage.getItem(LAST_ARCHIVE_KEY);
+
+    if (lastArchiveDate === today) {
+        // Already ran today
+        return null;
+    }
+
+    try {
+        const scheduledRecipes = recipeService.getScheduledRecipes();
+        if (scheduledRecipes.length === 0) {
+            localStorage.setItem(LAST_ARCHIVE_KEY, today);
+            return null; // No recipes to archive
+        }
+
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        const dayIndex = getDayOfYear(yesterday) % scheduledRecipes.length;
+        const yesterdaysRecipe = scheduledRecipes[dayIndex];
+
+        if (yesterdaysRecipe) {
+            const newlyAddedRecipe = await recipeService.addRecipeIfUnique(yesterdaysRecipe);
+            localStorage.setItem(LAST_ARCHIVE_KEY, today);
+            return newlyAddedRecipe;
+        }
+        localStorage.setItem(LAST_ARCHIVE_KEY, today);
+        return null;
+    } catch (error) {
+        console.error("Failed to archive yesterday's recipe:", error);
+        localStorage.setItem(LAST_ARCHIVE_KEY, today); // Still mark as run to avoid repeated errors
         return null;
     }
 };

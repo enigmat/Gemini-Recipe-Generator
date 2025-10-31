@@ -172,10 +172,14 @@ const App: React.FC = () => {
         ratingService.loadRatings();
         setProducts(marketplaceService.getProducts());
 
-        const fetchRecipeOfTheDay = async () => {
+        const initializeDailyFeatures = async () => {
             setIsLoadingRecipeOfTheDay(true);
             try {
-                const recipe = await recipeOfTheDayService.getRecipeOfTheDay();
+                const newlyArchivedRecipe = await recipeOfTheDayService.archiveYesterdaysRecipe();
+                if (newlyArchivedRecipe) {
+                    setAllRecipes(prev => [newlyArchivedRecipe, ...prev]);
+                }
+                const recipe = await recipeOfTheDayService.getTodaysRecipe();
                 setRecipeOfTheDay(recipe);
             } catch (error) {
                 console.error("Failed to load Recipe of the Day", error);
@@ -185,7 +189,7 @@ const App: React.FC = () => {
             }
         };
 
-        fetchRecipeOfTheDay();
+        initializeDailyFeatures();
     }, []);
 
     useEffect(() => {
@@ -445,7 +449,7 @@ const App: React.FC = () => {
     };
 
     // Admin panel functions
-    const handleAddNewRecipe = async (title: string, addToNew: boolean): Promise<void> => {
+    const handleAddNewRecipe = async (title: string, addToNew: boolean, addToRecipeOfTheDayPool: boolean): Promise<void> => {
         const recipeDetails = await generateRecipeDetailsFromTitle(title);
         const image = await generateImageFromPrompt(recipeDetails.title);
         
@@ -458,10 +462,16 @@ const App: React.FC = () => {
             ...recipeDetails
         };
         
-        setAllRecipes(prev => [newRecipe, ...prev]);
-
-        if (addToNew) {
-            setNewThisMonthRecipes(prev => [newRecipe, ...prev]);
+        if (addToRecipeOfTheDayPool) {
+            const scheduledRecipes = recipeService.getScheduledRecipes();
+            recipeService.saveScheduledRecipes([newRecipe, ...scheduledRecipes]);
+        } else {
+            // Only add to main lists if it's NOT for the ROTD pool
+            setAllRecipes(prev => [newRecipe, ...prev]);
+    
+            if (addToNew) {
+                setNewThisMonthRecipes(prev => [newRecipe, ...prev]);
+            }
         }
     };
 

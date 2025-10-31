@@ -3,6 +3,7 @@ import { Recipe } from '../types';
 import TrophyIcon from './icons/TrophyIcon';
 import ClockIcon from './icons/ClockIcon';
 import UsersIcon from './icons/UsersIcon';
+import StoredImage from './StoredImage';
 
 interface RecipeOfTheDayProps {
   recipe: Recipe | null;
@@ -56,7 +57,7 @@ const RecipeOfTheDay: React.FC<RecipeOfTheDayProps> = ({ recipe, isLoading, onCl
             </div>
             <div className="md:flex">
                 <div className="md:w-1/2">
-                    <img className="h-80 w-full object-cover" src={recipe.image} alt={recipe.title} />
+                    <StoredImage className="h-80 w-full object-cover" src={recipe.image} alt={recipe.title} />
                 </div>
                 <div className="md:w-1/2 p-8 flex flex-col justify-center">
                     <h3 className="text-3xl font-bold text-slate-800 mb-2">{recipe.title}</h3>

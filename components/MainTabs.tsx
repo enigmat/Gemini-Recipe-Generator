@@ -13,6 +13,7 @@ import CrownIcon from './icons/CrownIcon';
 import RefrigeratorIcon from './icons/RefrigeratorIcon';
 import InformationCircleIcon from './icons/InformationCircleIcon';
 import ClipboardListIcon from './icons/ClipboardListIcon';
+import HomeIcon from './icons/HomeIcon';
 
 interface MainTabsProps {
   activeTab: string;
@@ -21,7 +22,8 @@ interface MainTabsProps {
 }
 
 const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser }) => {
-  const allTabs = [
+  const allTabs: any[] = [
+    { id: 'Home', name: 'Home', icon: <HomeIcon className="w-5 h-5" />, isLink: true, href: 'https://recipeextracter.com/' },
     { id: 'All Recipes', name: 'All Recipes', icon: null },
     { id: 'Pantry Chef', name: 'Pantry Chef', icon: <RefrigeratorIcon className="w-5 h-5" /> },
     { id: 'AI Meal Planner', name: 'AI Meal Planner', icon: <ClipboardListIcon className="w-5 h-5" /> },
@@ -42,6 +44,19 @@ const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser
   return (
     <div className="flex justify-center flex-wrap gap-3 my-8">
       {allTabs.map((tab) => {
+        if (tab.isLink) {
+            return (
+                <a
+                    key={tab.id}
+                    href={tab.href}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400 bg-white text-gray-600 hover:bg-gray-100`}
+                >
+                    {tab.icon}
+                    <span>{tab.name}</span>
+                </a>
+            );
+        }
+
         const isActive = activeTab === tab.id;
         const isPremiumFeature = premiumTabs.includes(tab.id);
         const showPremiumBadge = isPremiumFeature && !currentUser?.isPremium;

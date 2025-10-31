@@ -25,7 +25,7 @@ interface AdminDashboardProps {
     sentNewsletters: Newsletter[];
     collectedLeads: Lead[];
     products: Product[];
-    onAddRecipe: (title: string, addToNew: boolean) => Promise<void>;
+    onAddRecipe: (title: string, addToNew: boolean, addToRecipeOfTheDayPool: boolean) => Promise<void>;
     onDeleteRecipe: (recipeId: number) => void;
     onUpdateRecipeWithAI: (recipeId: number, title: string) => Promise<void>;
     onUpdateAllRecipeImages: () => Promise<void>;

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Product } from '../types';
-import * as marketplaceService from '../services/marketplaceService';
-import { generateProductFromPrompt, generateImage } from '../services/geminiService';
 import * as imageStore from '../services/imageStore';
+import { generateProductFromPrompt, generateImage } from '../services/geminiService';
 import StoredImage from './StoredImage';
 import TrashIcon from './icons/TrashIcon';
 import PencilIcon from './icons/PencilIcon';
@@ -10,6 +9,7 @@ import PlusIcon from './icons/PlusIcon';
 import XIcon from './icons/XIcon';
 import SparklesIcon from './icons/SparklesIcon';
 import Spinner from './Spinner';
+import StoreIcon from './icons/StoreIcon';
 
 interface AdminMarketplaceProps {
     products: Product[];
@@ -27,34 +27,85 @@ const AdminMarketplace: React.FC<AdminMarketplaceProps> = ({ products, onUpdateP
     const [updatingImageId, setUpdatingImageId] = useState<string | null>(null);
     const [generateError, setGenerateError] = useState<string | null>(null);
 
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
     const handleOpenModal = (product: Product | null) => {
         setEditingProduct(product);
         if (product) {
             setFormData(product);
+            setImagePreview(product.imageUrl);
         } else {
             setFormData({ name: '', brand: '', description: '', imageUrl: '', affiliateUrl: '', category: '' });
+            setImagePreview(null);
         }
+        setSelectedFile(null); // always reset file
         setIsModalOpen(true);
     };
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setEditingProduct(null);
+        setImagePreview(null);
+        setSelectedFile(null);
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
+    
+    const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Invalid file type. Please use JPG, PNG, GIF, or WEBP.');
+                return;
+            }
+            const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
+            if (file.size > maxSizeInBytes) {
+                alert('File is too large. Please select an image under 5MB.');
+                return;
+            }
 
-    const handleSubmit = (e: React.FormEvent) => {
+            setSelectedFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         let updatedProducts: Product[];
+        const productId = editingProduct ? editingProduct.id : `prod${Date.now()}`;
+        let finalImageUrl = formData.imageUrl;
+
+        if (selectedFile) {
+            const promise = new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(selectedFile);
+            });
+            const base64Image = await promise;
+            
+            await imageStore.setImage(productId, base64Image);
+            finalImageUrl = `indexeddb:${productId}`;
+        }
+
         if (editingProduct) {
-            const finalProduct = { ...formData, id: editingProduct.id };
+            const finalProduct = { ...formData, id: editingProduct.id, imageUrl: finalImageUrl };
             updatedProducts = products.map(p => p.id === editingProduct.id ? finalProduct : p);
         } else {
-            const newProduct = { ...formData, id: `prod${Date.now()}` };
+            if (!finalImageUrl && !selectedFile) {
+                alert("Please select an image for the new product.");
+                return;
+            }
+            const newProduct = { ...formData, id: productId, imageUrl: finalImageUrl };
             updatedProducts = [newProduct, ...products];
         }
         onUpdateProducts(updatedProducts);
@@ -223,6 +274,26 @@ const AdminMarketplace: React.FC<AdminMarketplaceProps> = ({ products, onUpdateP
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
+                                <label className="block text-sm font-medium text-slate-700">Product Image</label>
+                                <div className="mt-1 flex items-center gap-4">
+                                    {imagePreview ? (
+                                        <StoredImage src={imagePreview} alt="Product preview" className="w-20 h-20 object-cover rounded-md border" />
+                                    ) : (
+                                        <div className="w-20 h-20 bg-slate-100 rounded-md flex items-center justify-center text-slate-400">
+                                            <StoreIcon className="w-10 h-10" />
+                                        </div>
+                                    )}
+                                    <input 
+                                        type="file" 
+                                        name="imageFile" 
+                                        onChange={handleImageFileChange} 
+                                        className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100" 
+                                        accept="image/png, image/jpeg, image/gif, image/webp"
+                                        required={!editingProduct}
+                                    />
+                                </div>
+                            </div>
+                            <div>
                                 <label className="block text-sm font-medium text-slate-700">Product Name</label>
                                 <input type="text" name="name" value={formData.name} onChange={handleChange} className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" required />
                             </div>
@@ -237,10 +308,6 @@ const AdminMarketplace: React.FC<AdminMarketplaceProps> = ({ products, onUpdateP
                             <div>
                                 <label className="block text-sm font-medium text-slate-700">Description</label>
                                 <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" required />
-                            </div>
-                             <div>
-                                <label className="block text-sm font-medium text-slate-700">Image URL</label>
-                                <input type="url" name="imageUrl" value={formData.imageUrl} onChange={handleChange} className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" required />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700">Affiliate URL</label>

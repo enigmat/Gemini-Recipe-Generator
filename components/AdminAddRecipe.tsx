@@ -3,12 +3,13 @@ import Spinner from './Spinner';
 import SparklesIcon from './icons/SparklesIcon';
 
 interface AdminAddRecipeProps {
-    onAddRecipe: (title: string, addToNew: boolean) => Promise<void>;
+    onAddRecipe: (title: string, addToNew: boolean, addToRotd: boolean) => Promise<void>;
 }
 
 const AdminAddRecipe: React.FC<AdminAddRecipeProps> = ({ onAddRecipe }) => {
     const [title, setTitle] = useState('');
     const [addToNew, setAddToNew] = useState(false);
+    const [addToRotd, setAddToRotd] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
@@ -21,10 +22,11 @@ const AdminAddRecipe: React.FC<AdminAddRecipeProps> = ({ onAddRecipe }) => {
         setError(null);
         setSuccess(null);
         try {
-            await onAddRecipe(title, addToNew);
+            await onAddRecipe(title, addToNew, addToRotd);
             setSuccess(`Successfully added recipe for "${title}"!`);
             setTitle('');
             setAddToNew(false);
+            setAddToRotd(false);
         } catch (err: any) {
             setError(err.message || 'An unexpected error occurred.');
         } finally {
@@ -53,17 +55,31 @@ const AdminAddRecipe: React.FC<AdminAddRecipeProps> = ({ onAddRecipe }) => {
                         required
                     />
                 </div>
-                <div className="flex items-center">
-                    <input
-                        id="add-to-new"
-                        type="checkbox"
-                        checked={addToNew}
-                        onChange={(e) => setAddToNew(e.target.checked)}
-                        className="h-4 w-4 text-teal-600 border-slate-300 rounded focus:ring-teal-500"
-                    />
-                    <label htmlFor="add-to-new" className="ml-2 block text-sm text-slate-900">
-                        Add to "New This Month" section
-                    </label>
+                <div className="flex items-center space-x-6">
+                    <div className="flex items-center">
+                        <input
+                            id="add-to-new"
+                            type="checkbox"
+                            checked={addToNew}
+                            onChange={(e) => setAddToNew(e.target.checked)}
+                            className="h-4 w-4 text-teal-600 border-slate-300 rounded focus:ring-teal-500"
+                        />
+                        <label htmlFor="add-to-new" className="ml-2 block text-sm text-slate-900">
+                            Add to "New This Month"
+                        </label>
+                    </div>
+                    <div className="flex items-center">
+                        <input
+                            id="add-to-rotd"
+                            type="checkbox"
+                            checked={addToRotd}
+                            onChange={(e) => setAddToRotd(e.target.checked)}
+                            className="h-4 w-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500"
+                        />
+                        <label htmlFor="add-to-rotd" className="ml-2 block text-sm text-slate-900">
+                            Add to Recipe of the Day Pool
+                        </label>
+                    </div>
                 </div>
                 <button
                     type="submit"
