@@ -1,5 +1,6 @@
 import { Recipe } from '../types';
 import * as recipeService from './recipeService';
+import * as globalRecipeService from './globalRecipeService';
 
 const LAST_ARCHIVE_KEY = 'recipeAppLastArchiveDate';
 
@@ -12,10 +13,11 @@ const getDayOfYear = (date: Date): number => {
 
 export const getTodaysRecipe = async (): Promise<Recipe | null> => {
     try {
-        const scheduledRecipes = recipeService.getScheduledRecipes();
+        // ROTD is global, so it pulls from a global, non-user-specific list.
+        const scheduledRecipes = globalRecipeService.getScheduledRecipes();
         
         if (scheduledRecipes.length === 0) {
-            console.warn("Recipe of the Day pool is empty. Admin needs to generate recipes.");
+            console.warn("Global Recipe of the Day pool is empty.");
             return null;
         }
 
@@ -30,17 +32,16 @@ export const getTodaysRecipe = async (): Promise<Recipe | null> => {
     }
 };
 
-export const archiveYesterdaysRecipe = async (): Promise<Recipe | null> => {
+export const archiveYesterdaysRecipe = async (userEmail: string): Promise<Recipe | null> => {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const lastArchiveDate = localStorage.getItem(LAST_ARCHIVE_KEY);
 
     if (lastArchiveDate === today) {
-        // Already ran today
-        return null;
+        return null; // Already ran today
     }
 
     try {
-        const scheduledRecipes = recipeService.getScheduledRecipes();
+        const scheduledRecipes = globalRecipeService.getScheduledRecipes();
         if (scheduledRecipes.length === 0) {
             localStorage.setItem(LAST_ARCHIVE_KEY, today);
             return null; // No recipes to archive
@@ -53,7 +54,8 @@ export const archiveYesterdaysRecipe = async (): Promise<Recipe | null> => {
         const yesterdaysRecipe = scheduledRecipes[dayIndex];
 
         if (yesterdaysRecipe) {
-            const newlyAddedRecipe = await recipeService.addRecipeIfUnique(yesterdaysRecipe);
+            // Add to the specific user's recipe list
+            const newlyAddedRecipe = await recipeService.addRecipeIfUnique(userEmail, yesterdaysRecipe);
             localStorage.setItem(LAST_ARCHIVE_KEY, today);
             return newlyAddedRecipe;
         }
@@ -61,7 +63,7 @@ export const archiveYesterdaysRecipe = async (): Promise<Recipe | null> => {
         return null;
     } catch (error) {
         console.error("Failed to archive yesterday's recipe:", error);
-        localStorage.setItem(LAST_ARCHIVE_KEY, today); // Still mark as run to avoid repeated errors
+        localStorage.setItem(LAST_ARCHIVE_KEY, today);
         return null;
     }
 };

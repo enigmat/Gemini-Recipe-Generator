@@ -183,15 +183,15 @@ export interface UserData {
     favorites: number[];
     shoppingLists: ShoppingList[];
     cocktails: SavedCocktail[];
-}
-
-export interface AppDatabase {
-    users: User[];
     recipes: {
         all: Recipe[];
         new: Recipe[];
         scheduled: Recipe[];
     };
+}
+
+export interface AppDatabase {
+    users: User[];
     products: Product[];
     aboutUs: AboutUsContent;
     newsletters: {

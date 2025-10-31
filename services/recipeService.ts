@@ -1,62 +1,64 @@
 import { Recipe } from '../types';
 import * as imageStore from './imageStore';
-import { getDatabase, saveDatabase } from './cloudService';
+import { getDatabase, saveDatabase, getUserData } from './cloudService';
 
-export const getAllRecipes = (): Recipe[] => {
-    const db = getDatabase();
-    return db.recipes.all;
+export const getAllRecipes = (userEmail: string): Recipe[] => {
+    const userData = getUserData(userEmail);
+    return userData.recipes.all;
 };
 
-export const saveAllRecipes = (recipes: Recipe[]): void => {
+export const saveAllRecipes = (userEmail: string, recipes: Recipe[]): void => {
     const db = getDatabase();
-    db.recipes.all = recipes;
+    const userData = getUserData(userEmail); // ensures user data object exists
+    db.userData[userEmail].recipes.all = recipes;
     saveDatabase(db);
 };
 
-export const getNewRecipes = (): Recipe[] => {
-    const db = getDatabase();
-    return db.recipes.new;
+export const getNewRecipes = (userEmail: string): Recipe[] => {
+    const userData = getUserData(userEmail);
+    return userData.recipes.new;
 };
 
-export const saveNewRecipes = (recipes: Recipe[]): void => {
+export const saveNewRecipes = (userEmail: string, recipes: Recipe[]): void => {
     const db = getDatabase();
-    db.recipes.new = recipes;
+    const userData = getUserData(userEmail);
+    db.userData[userEmail].recipes.new = recipes;
     saveDatabase(db);
 };
 
-export const getScheduledRecipes = (): Recipe[] => {
-    const db = getDatabase();
-    return db.recipes.scheduled;
+export const getScheduledRecipes = (userEmail: string): Recipe[] => {
+    const userData = getUserData(userEmail);
+    return userData.recipes.scheduled;
 };
 
-export const saveScheduledRecipes = (recipes: Recipe[]): void => {
+export const saveScheduledRecipes = (userEmail: string, recipes: Recipe[]): void => {
     const db = getDatabase();
-    db.recipes.scheduled = recipes;
+    const userData = getUserData(userEmail);
+    db.userData[userEmail].recipes.scheduled = recipes;
     saveDatabase(db);
 };
 
-export const addRecipeIfUnique = async (recipe: Recipe): Promise<Recipe | null> => {
-    const allRecipes = getAllRecipes();
+export const addRecipeIfUnique = async (userEmail: string, recipe: Recipe): Promise<Recipe | null> => {
+    const allRecipes = getAllRecipes(userEmail);
     const existingRecipe = allRecipes.find(r => r.title.toLowerCase() === recipe.title.toLowerCase());
 
     if (existingRecipe) {
-        console.log(`Recipe "${recipe.title}" already exists. Skipping archival.`);
+        console.log(`Recipe "${recipe.title}" already exists for user. Skipping.`);
         return null;
     }
 
     const newId = Date.now();
     let newImageSrc = recipe.image;
 
-    // Handle image transfer from ROTD pool to permanent storage
+    // Handle image transfer from a temporary recipe (like ROTD) to permanent user storage
     if (recipe.image.startsWith('indexeddb:')) {
-        const oldId = recipe.id.toString(); // The recipe ID and image ID from the pool should match
-        const imageData = await imageStore.getImage(oldId); // Get the base64 data
+        const oldId = recipe.id.toString();
+        const imageData = await imageStore.getImage(oldId);
         if (imageData) {
-            await imageStore.setImage(newId.toString(), imageData); // Save it with the new ID
+            await imageStore.setImage(newId.toString(), imageData);
             newImageSrc = `indexeddb:${newId}`;
         }
     } else if (!recipe.image.startsWith('https://')) { 
-        // Fallback for if image is a raw base64 string, or from initial data that wasn't indexeddb
         await imageStore.setImage(newId.toString(), recipe.image);
         newImageSrc = `indexeddb:${newId}`;
     }
@@ -68,8 +70,8 @@ export const addRecipeIfUnique = async (recipe: Recipe): Promise<Recipe | null> 
     };
 
     const updatedRecipes = [newRecipe, ...allRecipes];
-    saveAllRecipes(updatedRecipes);
+    saveAllRecipes(userEmail, updatedRecipes);
     
-    console.log(`Archived new recipe: "${newRecipe.title}"`);
+    console.log(`Added new recipe for user: "${newRecipe.title}"`);
     return newRecipe;
 };

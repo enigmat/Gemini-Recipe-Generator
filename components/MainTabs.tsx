@@ -14,6 +14,7 @@ import RefrigeratorIcon from './icons/RefrigeratorIcon';
 import InformationCircleIcon from './icons/InformationCircleIcon';
 import ClipboardListIcon from './icons/ClipboardListIcon';
 import HomeIcon from './icons/HomeIcon';
+import LayoutDashboardIcon from './icons/LayoutDashboardIcon';
 
 interface MainTabsProps {
   activeTab: string;
@@ -23,40 +24,29 @@ interface MainTabsProps {
 
 const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser }) => {
   const allTabs: any[] = [
-    { id: 'Home', name: 'Home', icon: <HomeIcon className="w-5 h-5" />, isLink: true, href: 'https://recipeextracter.com/' },
-    { id: 'All Recipes', name: 'All Recipes', icon: null },
+    { id: 'All Recipes', name: 'Recipes', icon: <HomeIcon className="w-5 h-5" /> },
     { id: 'Pantry Chef', name: 'Pantry Chef', icon: <RefrigeratorIcon className="w-5 h-5" /> },
     { id: 'AI Meal Planner', name: 'AI Meal Planner', icon: <ClipboardListIcon className="w-5 h-5" /> },
-    { id: 'My Cookbook', name: 'My Cookbook', icon: <HeartIcon className="w-5 h-5" /> },
+    { id: 'My Cookbook', name: 'Cookbook', icon: <HeartIcon className="w-5 h-5" /> },
     { id: 'My Bar', name: 'My Bar', icon: <CocktailIcon className="w-5 h-5" /> },
     { id: 'Shopping List', name: 'Shopping List', icon: <ShoppingCartIcon className="w-5 h-5" /> },
+    { id: 'Recipe Hub', name: 'Recipe Hub', icon: <LayoutDashboardIcon className="w-5 h-5" />, requiresUser: true },
     { id: 'Marketplace', name: 'Marketplace', icon: <StoreIcon className="w-5 h-5" /> },
     { id: 'Meal Plans', name: 'Meal Plans', icon: <CalendarDaysIcon className="w-5 h-5" /> },
-    { id: 'Video Tutorials', name: 'Video Tutorials', icon: <FilmIcon className="w-5 h-5" /> },
-    { id: 'Cooking Classes', name: 'Cooking Classes', icon: <MortarPestleIcon className="w-5 h-5" /> },
-    { id: 'Bartender Helper', name: 'Bartender Helper', icon: <SparklesIcon className="w-5 h-5" /> },
+    { id: 'Video Tutorials', name: 'Videos', icon: <FilmIcon className="w-5 h-5" /> },
+    { id: 'Cooking Classes', name: 'Classes', icon: <MortarPestleIcon className="w-5 h-5" /> },
+    { id: 'Bartender Helper', name: 'Bartender', icon: <SparklesIcon className="w-5 h-5" /> },
     { id: 'Ask an Expert', name: 'Ask an Expert', icon: <QuestionMarkCircleIcon className="w-5 h-5" /> },
     { id: 'About Us', name: 'About Us', icon: <InformationCircleIcon className="w-5 h-5" /> },
   ];
 
   const premiumTabs = ['Cooking Classes', 'Ask an Expert', 'AI Meal Planner'];
 
+  const visibleTabs = allTabs.filter(tab => !tab.requiresUser || (tab.requiresUser && currentUser));
+
   return (
     <div className="px-4 sm:px-0 flex overflow-x-auto scrollbar-hide space-x-4 sm:justify-center sm:flex-wrap sm:space-x-0 sm:gap-3 my-8">
-      {allTabs.map((tab) => {
-        if (tab.isLink) {
-            return (
-                <a
-                    key={tab.id}
-                    href={tab.href}
-                    className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400 bg-white text-gray-600 hover:bg-gray-100`}
-                >
-                    {tab.icon}
-                    <span>{tab.name}</span>
-                </a>
-            );
-        }
-
+      {visibleTabs.map((tab) => {
         const isActive = activeTab === tab.id;
         const isPremiumFeature = premiumTabs.includes(tab.id);
         const showPremiumBadge = isPremiumFeature && !currentUser?.isPremium;

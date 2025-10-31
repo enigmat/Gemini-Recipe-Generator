@@ -20,6 +20,11 @@ const AdminBulkImport: React.FC<AdminBulkImportProps> = ({ onImport, isImporting
     return (
         <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-slate-800 mb-4">Bulk Import Recipes from HTML</h2>
+            
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                <p><span className="font-bold">Premium Subscribers:</span> You will receive a monthly recipe file via email. Paste the content of that file here to add the new recipes to your collection.</p>
+            </div>
+
             <p className="text-slate-600 mb-2">
                 This tool allows you to import recipes from a Recipe Keeper HTML export file.
             </p>

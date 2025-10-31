@@ -1,6 +1,47 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { Recipe, CocktailRecipe, RecipeVariation, ProductAnalysis, Product, GeneratedMealPlan } from "../types";
 
+// Helper function to robustly parse JSON from Gemini response text
+function cleanAndParseJson<T>(responseText: string): T {
+    let jsonString = responseText;
+
+    // Check for markdown code block and extract JSON from it
+    const markdownMatch = jsonString.match(/```(json)?\s*([\s\S]*?)\s*```/);
+    if (markdownMatch && markdownMatch[2]) {
+        jsonString = markdownMatch[2];
+    } else {
+        // If no markdown, find the first and last curly or square brackets
+        const firstBracket = jsonString.indexOf('{');
+        const firstSquare = jsonString.indexOf('[');
+
+        let startIndex = -1;
+        if (firstBracket === -1 && firstSquare !== -1) {
+            startIndex = firstSquare;
+        } else if (firstBracket !== -1 && firstSquare === -1) {
+            startIndex = firstBracket;
+        } else if (firstBracket !== -1 && firstSquare !== -1) {
+            startIndex = Math.min(firstBracket, firstSquare);
+        }
+
+        if (startIndex !== -1) {
+            const lastBracket = jsonString.lastIndexOf('}');
+            const lastSquare = jsonString.lastIndexOf(']');
+            const endIndex = Math.max(lastBracket, lastSquare);
+
+            if (endIndex > startIndex) {
+                jsonString = jsonString.substring(startIndex, endIndex + 1);
+            }
+        }
+    }
+
+    try {
+        return JSON.parse(jsonString);
+    } catch (error) {
+        console.error("Failed to parse JSON string:", jsonString);
+        throw error; // Re-throw the original parsing error
+    }
+}
+
 export const generateImageFromPrompt = async (prompt: string): Promise<string> => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -132,8 +173,7 @@ export const generateRecipeDetailsFromTitle = async (title: string): Promise<Omi
             }
         });
         
-        const jsonText = response.text;
-        const recipeData = JSON.parse(jsonText);
+        const recipeData = cleanAndParseJson<Omit<Recipe, 'id' | 'image'>>(response.text);
 
         // Ensure all required fields are present and have correct types
         if (
@@ -182,7 +222,7 @@ export const generateBulkRecipes = async (count: number): Promise<Omit<Recipe, '
             }
         });
 
-        const { titles } = JSON.parse(titlesResponse.text);
+        const { titles } = cleanAndParseJson<{ titles: string[] }>(titlesResponse.text);
 
         if (!titles || !Array.isArray(titles) || titles.length === 0) {
             throw new Error("AI failed to generate recipe titles.");
@@ -266,8 +306,7 @@ export const generateRecipeOfTheDay = async (): Promise<Omit<Recipe, 'id' | 'ima
             }
         });
         
-        const jsonText = response.text;
-        const recipeData = JSON.parse(jsonText);
+        const recipeData = cleanAndParseJson<Omit<Recipe, 'id' | 'image'>>(response.text);
 
         // Ensure all required fields are present and have correct types
         if (
@@ -356,8 +395,7 @@ export const generateRecipeFromUrl = async (url: string): Promise<Omit<Recipe, '
             }
         });
         
-        const jsonText = response.text;
-        const recipeData = JSON.parse(jsonText);
+        const recipeData = cleanAndParseJson<Omit<Recipe, 'id' | 'image'>>(response.text);
 
         // Ensure all required fields are present and have correct types
         if (
@@ -407,8 +445,7 @@ export const generateCocktailRecipe = async (prompt: string): Promise<CocktailRe
             }
         });
 
-        const jsonText = response.text;
-        const recipeData = JSON.parse(jsonText);
+        const recipeData = cleanAndParseJson<CocktailRecipe>(response.text);
 
         return recipeData;
 
@@ -448,8 +485,7 @@ export const generateRecipeVariations = async (recipe: Recipe): Promise<RecipeVa
             }
         });
         
-        const jsonText = response.text;
-        const result = JSON.parse(jsonText);
+        const result = cleanAndParseJson<{ variations: RecipeVariation[] }>(response.text);
 
         if (!result.variations || !Array.isArray(result.variations)) {
             throw new Error("Invalid response format from AI.");
@@ -509,8 +545,7 @@ export const analyzeProduct = async (productName: string): Promise<ProductAnalys
             }
         });
 
-        const jsonText = response.text;
-        const analysisData = JSON.parse(jsonText);
+        const analysisData = cleanAndParseJson<ProductAnalysis>(response.text);
         return analysisData;
 
     } catch (error) {
@@ -543,8 +578,7 @@ export const generateProductFromPrompt = async (prompt: string): Promise<Omit<Pr
             }
         });
 
-        const jsonText = response.text;
-        const productData = JSON.parse(jsonText);
+        const productData = cleanAndParseJson<Omit<Product, 'id' | 'imageUrl' | 'affiliateUrl'> & { imagePrompt: string }>(response.text);
         
         return productData;
 
@@ -624,8 +658,7 @@ export const generateRecipeFromIngredients = async (ingredients: string[], dieta
             }
         });
         
-        const jsonText = response.text;
-        const recipeData = JSON.parse(jsonText);
+        const recipeData = cleanAndParseJson<Omit<Recipe, 'id' | 'image'>>(response.text);
 
         return recipeData;
 
@@ -679,8 +712,7 @@ export const generateMealPlan = async (prompt: string, recipeTitles: string[]): 
             }
         });
 
-        const jsonText = response.text;
-        const planData = JSON.parse(jsonText);
+        const planData = cleanAndParseJson<GeneratedMealPlan>(response.text);
 
         return planData;
 

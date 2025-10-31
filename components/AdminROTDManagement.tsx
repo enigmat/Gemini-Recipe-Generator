@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Recipe } from '../types';
+import { Recipe, User } from '../types';
 import * as recipeService from '../services/recipeService';
 import * as geminiService from '../services/geminiService';
 import Spinner from './Spinner';
@@ -11,43 +11,38 @@ import DownloadIcon from './icons/DownloadIcon';
 
 interface AdminROTDManagementProps {
     onMoveRecipe: (recipe: Recipe) => Promise<boolean>;
+    currentUser: User;
 }
 
-const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe }) => {
+const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe, currentUser }) => {
     const [scheduledRecipes, setScheduledRecipes] = useState<Recipe[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [movingId, setMovingId] = useState<number | null>(null);
 
     useEffect(() => {
-        setScheduledRecipes(recipeService.getScheduledRecipes());
-    }, []);
+        setScheduledRecipes(recipeService.getScheduledRecipes(currentUser.email));
+    }, [currentUser.email]);
 
     const handleGenerateNewPool = async () => {
-        if (!window.confirm("Are you sure you want to generate 30 new recipes? This will replace the entire existing 'Recipe of the Day' pool. This action can take a few minutes and cannot be undone.")) {
+        if (!window.confirm("Are you sure you want to generate 30 new recipes? This will replace your entire existing 'Scheduled Recipes' pool. This can take a few minutes.")) {
             return;
         }
 
         setIsLoading(true);
         setError(null);
-        // Clear the existing pool immediately to show progress from scratch
         setScheduledRecipes([]);
-        recipeService.saveScheduledRecipes([]);
+        recipeService.saveScheduledRecipes(currentUser.email, []);
 
         try {
-            // Step 1: Generate 30 recipe details
             const recipeDetailsList = await geminiService.generateBulkRecipes(30);
-
-            // This will hold the successfully generated recipes
             const newRecipes: Recipe[] = [];
 
-            // Step 2: Generate images for each recipe and save incrementally
             for (const details of recipeDetailsList) {
-                // To avoid rate limiting, add a small delay
                 await new Promise(resolve => setTimeout(resolve, 500));
                 
                 const image = await geminiService.generateImageFromPrompt(details.title);
-                const newId = Date.now() + Math.random(); // Temp unique ID
+                const newId = Date.now() + Math.random();
                 
                 await imageStore.setImage(String(newId), image);
 
@@ -56,19 +51,12 @@ const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe 
                     image: `indexeddb:${newId}`, 
                     ...details
                 };
-
                 newRecipes.push(newRecipe);
-
-                // Update UI and save to localStorage on each successful generation
                 setScheduledRecipes([...newRecipes]);
-                recipeService.saveScheduledRecipes(newRecipes);
+                recipeService.saveScheduledRecipes(currentUser.email, newRecipes);
             }
-            
-            // Final state update
-            setScheduledRecipes(newRecipes);
-
         } catch (err: any) {
-            setError(err.message || 'An unknown error occurred during generation. Any recipes generated so far have been saved.');
+            setError(err.message || 'An unknown error occurred during generation.');
         } finally {
             setIsLoading(false);
         }
@@ -78,7 +66,6 @@ const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe 
         setMovingId(recipe.id);
         const success = await onMoveRecipe(recipe);
         if (success) {
-            // If move was successful, update local state to remove the item
             setScheduledRecipes(prev => prev.filter(r => r.id !== recipe.id));
         }
         setMovingId(null);
@@ -90,9 +77,9 @@ const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe 
                 <div>
                     <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                         <TrophyIcon className="w-7 h-7 text-amber-500" />
-                        Recipe of the Day Pool
+                        Scheduled Recipes Pool
                     </h2>
-                    <p className="text-slate-500 mt-1">This is the pool of 30 recipes that will rotate daily for all users.</p>
+                    <p className="text-slate-500 mt-1">Manage a pool of recipes for automated features or personal planning.</p>
                 </div>
                 <button
                     onClick={handleGenerateNewPool}
@@ -110,7 +97,7 @@ const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe 
                 <table className="min-w-full">
                     <thead className="bg-slate-50">
                         <tr>
-                            <th className="pl-6 pr-3 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-24">Day</th>
+                            <th className="pl-6 pr-3 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-24">#</th>
                             <th className="px-3 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Image</th>
                             <th className="px-3 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
                             <th className="pl-3 pr-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
@@ -141,7 +128,6 @@ const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe 
                                 </td>
                             </tr>
                         ))}
-
                         {isLoading && (
                              <tr>
                                 <td colSpan={5} className="text-center p-4">
@@ -152,11 +138,10 @@ const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe 
                                 </td>
                             </tr>
                         )}
-
                         {!isLoading && scheduledRecipes.length === 0 && (
                             <tr>
                                 <td colSpan={5} className="text-center py-12 text-slate-500">
-                                    The recipe pool is empty. Click the "Generate" button to populate it.
+                                    The scheduled recipe pool is empty. Click "Generate" to populate it.
                                 </td>
                             </tr>
                         )}

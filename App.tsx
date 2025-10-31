@@ -36,8 +36,6 @@ import { cookingClasses } from './data/cookingClasses';
 import CookingClassCard from './components/CookingClassCard';
 import CookingClassDetail from './components/CookingClassDetail';
 import MortarPestleIcon from './components/icons/MortarPestleIcon';
-import AdminDashboard from './components/AdminDashboard';
-import LayoutDashboardIcon from './components/icons/LayoutDashboardIcon';
 import XIcon from './components/icons/XIcon';
 import { generateImageFromPrompt, generateRecipeDetailsFromTitle, generateRecipeFromUrl } from './services/geminiService';
 import * as newsletterService from './services/newsletterService';
@@ -72,7 +70,7 @@ import MealPlanGenerator from './components/MealPlanGenerator';
 import RecipeOfTheDay from './components/RecipeOfTheDay';
 import * as recipeOfTheDayService from './services/recipeOfTheDayService';
 import UnitToggleButton from './components/UnitToggleButton';
-import { runMigration } from './services/migrationService';
+import RecipeHub from './components/RecipeHub';
 
 const RECIPES_PER_PAGE = 12;
 
@@ -84,11 +82,8 @@ const applyRatings = (recipes: Recipe[]): Recipe[] => {
 };
 
 const App: React.FC = () => {
-    // Run data migration before any state is initialized
-    runMigration();
-    
-    const [allRecipes, setAllRecipes] = useState<Recipe[]>(() => applyRatings(recipeService.getAllRecipes()));
-    const [newThisMonthRecipes, setNewThisMonthRecipes] = useState<Recipe[]>(() => applyRatings(recipeService.getNewRecipes()));
+    const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
+    const [newThisMonthRecipes, setNewThisMonthRecipes] = useState<Recipe[]>([]);
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [previewRecipe, setPreviewRecipe] = useState<Recipe | null>(null);
     const [activeTab, setActiveTab] = useState<string>('All Recipes');
@@ -123,10 +118,7 @@ const App: React.FC = () => {
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
     const [viewingCookingClass, setViewingCookingClass] = useState<CookingClass | null>(null);
     
-    // Admin state
-    const [allUsers, setAllUsers] = useState<User[]>([]);
-    const [sentNewsletters, setSentNewsletters] = useState<Newsletter[]>([]);
-    const [collectedLeads, setCollectedLeads] = useState<Lead[]>([]);
+    // Admin state (now user-specific recipe management)
     const [isUpdatingAllImages, setIsUpdatingAllImages] = useState(false);
 
     // Extractor state
@@ -153,10 +145,9 @@ const App: React.FC = () => {
     const [isLoadingRecipeOfTheDay, setIsLoadingRecipeOfTheDay] = useState<boolean>(true);
 
     const isRecipeOfTheDayArchived = useMemo(() => {
-        if (!recipeOfTheDay) return false;
+        if (!recipeOfTheDay || !currentUser) return false;
         return allRecipes.some(r => r.title.toLowerCase() === recipeOfTheDay.title.toLowerCase());
-    }, [recipeOfTheDay, allRecipes]);
-
+    }, [recipeOfTheDay, allRecipes, currentUser]);
 
     const allCategoryTags = useMemo(() => {
         const tags = new Set<string>();
@@ -166,28 +157,30 @@ const App: React.FC = () => {
         return Array.from(tags).sort((a, b) => a.localeCompare(b));
     }, [allRecipes]);
 
+    // Initial load for non-user-specific data
     useEffect(() => {
         const savedSystem = localStorage.getItem('recipeAppMeasurementSystem');
         if (savedSystem === 'us' || savedSystem === 'metric') {
             setMeasurementSystem(savedSystem as 'metric' | 'us');
         }
+        ratingService.loadRatings();
+        setProducts(marketplaceService.getProducts());
+
         const user = userService.getCurrentUser();
         if (user) {
             setCurrentUser(user);
         }
-        // Load all data for admin panel
-        setAllUsers(userService.getAllUsers());
-        setSentNewsletters(newsletterService.getSentNewsletters());
-        setCollectedLeads(leadService.getLeads());
-        ratingService.loadRatings();
-        setProducts(marketplaceService.getProducts());
 
         const initializeDailyFeatures = async () => {
             setIsLoadingRecipeOfTheDay(true);
             try {
-                const newlyArchivedRecipe = await recipeOfTheDayService.archiveYesterdaysRecipe();
-                if (newlyArchivedRecipe) {
-                    setAllRecipes(prev => [newlyArchivedRecipe, ...prev]);
+                // Recipe of the day is global, but archiving it depends on the current user.
+                const userForArchive = userService.getCurrentUser();
+                if (userForArchive) {
+                    const newlyArchivedRecipe = await recipeOfTheDayService.archiveYesterdaysRecipe(userForArchive.email);
+                    if (newlyArchivedRecipe) {
+                        // This logic will be handled when user data reloads
+                    }
                 }
                 const recipe = await recipeOfTheDayService.getTodaysRecipe();
                 setRecipeOfTheDay(recipe);
@@ -202,11 +195,23 @@ const App: React.FC = () => {
         initializeDailyFeatures();
     }, []);
 
+    // Load user-specific data whenever currentUser changes
     useEffect(() => {
         const userEmail = currentUser?.email || null;
-        setFavorites(favoritesService.getFavorites(userEmail));
-        setShoppingLists(shoppingListManager.getLists(userEmail));
-        setSavedCocktails(cocktailService.getSavedCocktails(userEmail));
+        if (userEmail) {
+            setAllRecipes(applyRatings(recipeService.getAllRecipes(userEmail)));
+            setNewThisMonthRecipes(applyRatings(recipeService.getNewRecipes(userEmail)));
+            setFavorites(favoritesService.getFavorites(userEmail));
+            setShoppingLists(shoppingListManager.getLists(userEmail));
+            setSavedCocktails(cocktailService.getSavedCocktails(userEmail));
+        } else {
+            // Clear user-specific data on logout
+            setAllRecipes([]);
+            setNewThisMonthRecipes([]);
+            setFavorites([]);
+            setShoppingLists([]);
+            setSavedCocktails([]);
+        }
     }, [currentUser]);
 
     // Reset recipe pagination when filters change
@@ -273,35 +278,24 @@ const App: React.FC = () => {
     const handleLoginSuccess = (user: User) => {
         setCurrentUser(user);
         setIsLoginModalOpen(false);
-        // Refresh users list in case of new signup
-        setAllUsers(userService.getAllUsers());
     };
 
     const handleLogout = () => {
         userService.logout();
         setCurrentUser(null);
-        setFavorites([]);
         setActiveTab('All Recipes');
         setSelectedTag('All'); 
-        setShoppingLists([]);
         setViewingMealPlan(null);
         setViewingCookingClass(null);
-        setSavedCocktails([]);
     };
 
     const handleUpdateUser = (updatedUser: User) => {
-        // If the user being updated is the one currently logged in, update their session too.
         if (currentUser && currentUser.email === updatedUser.email) {
-            const userInSession = userService.updateUser(updatedUser); // This updates session and master list
+            const userInSession = userService.updateUser(updatedUser);
             if (userInSession) {
                 setCurrentUser(userInSession);
             }
-        } else {
-            // Otherwise, just update the master list
-            userService.updateUserInList(updatedUser);
         }
-        // Refresh the user list for the admin panel.
-        setAllUsers(userService.getAllUsers());
     };
 
     const handleUpgradeUser = () => {
@@ -312,7 +306,7 @@ const App: React.FC = () => {
     };
 
     const handleCardClick = (recipe: Recipe) => {
-        if (previewRecipe) return; // Don't open another recipe while one is in preview
+        if (previewRecipe) return;
         if (!currentUser?.isPremium) {
             setIsUpgradeModalOpen(true);
             return;
@@ -326,7 +320,7 @@ const App: React.FC = () => {
     };
 
     const handleEnterCookMode = (recipe: Recipe) => {
-        setSelectedRecipe(null); // Close the modal first
+        setSelectedRecipe(null);
         setCookModeRecipe(recipe);
     };
 
@@ -335,7 +329,7 @@ const App: React.FC = () => {
     };
     
     const handleSelectTab = (tab: string) => {
-        if (['My Cookbook', 'Shopping List', 'My Bar', 'AI Meal Planner'].includes(tab)) {
+        if (['My Cookbook', 'Shopping List', 'My Bar', 'AI Meal Planner', 'Recipe Hub'].includes(tab)) {
             if (!currentUser) {
                 setIsLoginModalOpen(true);
                 return;
@@ -452,50 +446,26 @@ const App: React.FC = () => {
         setExpertQuestions(prev => [newQuestion, ...prev]);
     };
 
-    const handleSaveChanges = () => {
-        recipeService.saveAllRecipes(allRecipes);
-        recipeService.saveNewRecipes(newThisMonthRecipes);
-        return Promise.resolve();
-    };
-
     const handleArchiveRecipeOfTheDay = async (recipeToArchive: Recipe) => {
-        if (!recipeToArchive) return;
+        if (!recipeToArchive || !currentUser) return;
 
         if (allRecipes.some(r => r.title.toLowerCase() === recipeToArchive.title.toLowerCase())) {
-            alert(`Recipe "${recipeToArchive.title}" already exists in the main recipe list.`);
+            alert(`Recipe "${recipeToArchive.title}" already exists in your recipe list.`);
             return;
         }
 
-        const newlyAddedRecipe = await recipeService.addRecipeIfUnique(recipeToArchive);
+        const newlyAddedRecipe = await recipeService.addRecipeIfUnique(currentUser.email, recipeToArchive);
         if (newlyAddedRecipe) {
             setAllRecipes(prev => [newlyAddedRecipe, ...prev]);
-            alert(`Recipe "${newlyAddedRecipe.title}" has been added to the main recipe list.`);
+            alert(`Recipe "${newlyAddedRecipe.title}" has been added to your recipe list.`);
         } else {
             alert(`Could not add "${recipeToArchive.title}". It might already exist.`);
         }
     };
 
-    const handleMoveRecipeFromRotdToMain = async (recipeToMove: Recipe): Promise<boolean> => {
-        const newlyAddedRecipe = await recipeService.addRecipeIfUnique(recipeToMove);
-        
-        if (newlyAddedRecipe) {
-            setAllRecipes(prev => [newlyAddedRecipe, ...prev]);
-    
-            const scheduledRecipes = recipeService.getScheduledRecipes();
-            const updatedScheduledRecipes = scheduledRecipes.filter(r => r.id !== recipeToMove.id);
-            recipeService.saveScheduledRecipes(updatedScheduledRecipes);
-    
-            alert(`Recipe "${newlyAddedRecipe.title}" has been moved to the main recipe list.`);
-            return true;
-        } else {
-            alert(`Could not move "${recipeToMove.title}". It might already exist in the main list.`);
-            return false;
-        }
-    };
-
-
-    // Admin panel functions
-    const handleAddNewRecipe = async (title: string, addToNew: boolean, addToRecipeOfTheDayPool: boolean): Promise<void> => {
+    // User-specific recipe management functions
+    const handleAddNewRecipe = async (title: string, addToNew: boolean, addToScheduled: boolean): Promise<void> => {
+        if (!currentUser) throw new Error("User must be logged in.");
         const recipeDetails = await generateRecipeDetailsFromTitle(title);
         const image = await generateImageFromPrompt(recipeDetails.title);
         
@@ -508,93 +478,78 @@ const App: React.FC = () => {
             ...recipeDetails
         };
         
-        if (addToRecipeOfTheDayPool) {
-            const scheduledRecipes = recipeService.getScheduledRecipes();
-            recipeService.saveScheduledRecipes([newRecipe, ...scheduledRecipes]);
+        if (addToScheduled) {
+            const scheduled = recipeService.getScheduledRecipes(currentUser.email);
+            recipeService.saveScheduledRecipes(currentUser.email, [newRecipe, ...scheduled]);
         } else {
-            // Only add to main lists if it's NOT for the ROTD pool
             setAllRecipes(prev => [newRecipe, ...prev]);
+            recipeService.saveAllRecipes(currentUser.email, [newRecipe, ...allRecipes]);
     
             if (addToNew) {
                 setNewThisMonthRecipes(prev => [newRecipe, ...prev]);
+                recipeService.saveNewRecipes(currentUser.email, [newRecipe, ...newThisMonthRecipes]);
             }
         }
     };
 
     const handleDeleteRecipe = (recipeId: number) => {
-        setAllRecipes(prev => prev.filter(r => r.id !== recipeId));
-        setNewThisMonthRecipes(prev => prev.filter(r => r.id !== recipeId));
-    };
+        if (!currentUser) return;
+        const newAll = allRecipes.filter(r => r.id !== recipeId);
+        setAllRecipes(newAll);
+        recipeService.saveAllRecipes(currentUser.email, newAll);
 
-    const handleRemoveFromNew = (recipeId: number) => {
-        setNewThisMonthRecipes(prev => prev.filter(r => r.id !== recipeId));
-    };
-
-    const handleAddToNew = (recipeId: number) => {
-        const recipeToAdd = allRecipes.find(r => r.id === recipeId);
-        if (recipeToAdd && !newThisMonthRecipes.some(r => r.id === recipeId)) {
-            setNewThisMonthRecipes(prev => [recipeToAdd, ...prev]);
-        }
+        const newNew = newThisMonthRecipes.filter(r => r.id !== recipeId);
+        setNewThisMonthRecipes(newNew);
+        recipeService.saveNewRecipes(currentUser.email, newNew);
     };
 
     const handleUpdateRecipeWithAI = async (recipeId: number, title: string) => {
+        if (!currentUser) return;
         const recipeDetails = await generateRecipeDetailsFromTitle(title);
         const image = await generateImageFromPrompt(recipeDetails.title);
     
         await imageStore.setImage(recipeId.toString(), image);
 
-        const updateFunction = (prevRecipes: Recipe[]): Recipe[] => {
-            const index = prevRecipes.findIndex(r => r.id === recipeId);
-            if (index === -1) {
-                return prevRecipes;
-            }
-    
-            const originalRecipe = prevRecipes[index];
-            const updatedRecipe: Recipe = {
-                ...originalRecipe,
-                ...recipeDetails,
-                image: `indexeddb:${recipeId}`,
-            };
-            
-            const newRecipes = [...prevRecipes];
-            newRecipes[index] = updatedRecipe;
-            return newRecipes;
+        const updateRecipeInList = (recipes: Recipe[]): Recipe[] => {
+            return recipes.map(r => r.id === recipeId ? { ...r, ...recipeDetails, image: `indexeddb:${recipeId}?v=${Date.now()}` } : r);
         };
         
-        setAllRecipes(updateFunction);
-        setNewThisMonthRecipes(updateFunction);
+        const updatedAll = updateRecipeInList(allRecipes);
+        setAllRecipes(updatedAll);
+        recipeService.saveAllRecipes(currentUser.email, updatedAll);
+
+        if (newThisMonthRecipes.some(r => r.id === recipeId)) {
+            const updatedNew = updateRecipeInList(newThisMonthRecipes);
+            setNewThisMonthRecipes(updatedNew);
+            recipeService.saveNewRecipes(currentUser.email, updatedNew);
+        }
     };
 
     const handleUpdateAllRecipeImages = async (): Promise<void> => {
+        if (!currentUser) return;
         setIsUpdatingAllImages(true);
         try {
             const updatePromises = allRecipes.map(async (recipe) => {
                 const imageData = await generateImageFromPrompt(recipe.title);
                 await imageStore.setImage(recipe.id.toString(), imageData);
-                return { recipeId: recipe.id, newImageSrc: `indexeddb:${recipe.id}` };
+                return { recipeId: recipe.id, newImageSrc: `indexeddb:${recipe.id}?v=${Date.now()}` };
             });
             
-            const results = await Promise.allSettled(updatePromises);
+            const results = await Promise.all(updatePromises);
             
-            const newImageMap = new Map<number, string>();
-            results.forEach((result, index) => {
-                if (result.status === 'fulfilled') {
-                    const { recipeId, newImageSrc } = result.value;
-                    newImageMap.set(recipeId, newImageSrc);
-                } else {
-                    console.error(`Failed to generate image for recipe ${allRecipes[index].title}:`, result.reason);
-                }
-            });
+            const newImageMap = new Map<number, string>(results.map(r => [r.recipeId, r.newImageSrc]));
     
-            const updateRecipes = (recipes: Recipe[]) => recipes.map(recipe => {
-                if (newImageMap.has(recipe.id)) {
-                    return { ...recipe, image: newImageMap.get(recipe.id)! };
-                }
-                return recipe;
-            });
+            const updateRecipes = (recipes: Recipe[]) => recipes.map(recipe => 
+                newImageMap.has(recipe.id) ? { ...recipe, image: newImageMap.get(recipe.id)! } : recipe
+            );
     
-            setAllRecipes(prev => updateRecipes(prev));
-            setNewThisMonthRecipes(prev => updateRecipes(prev));
+            const updatedAll = updateRecipes(allRecipes);
+            setAllRecipes(updatedAll);
+            recipeService.saveAllRecipes(currentUser.email, updatedAll);
+
+            const updatedNew = updateRecipes(newThisMonthRecipes);
+            setNewThisMonthRecipes(updatedNew);
+            recipeService.saveNewRecipes(currentUser.email, updatedNew);
             
         } catch (error) {
             console.error("A critical error occurred during bulk image update:", error);
@@ -604,19 +559,12 @@ const App: React.FC = () => {
         }
     };
 
-    const handleDeleteUser = (userEmail: string) => {
-        userService.deleteUser(userEmail);
-        setAllUsers(userService.getAllUsers());
-    };
-
-    const handleSendNewsletter = (newsletterData: Omit<Newsletter, 'id' | 'sentDate'>) => {
-        const newNewsletter = newsletterService.sendNewsletter(newsletterData);
-        setSentNewsletters(prev => [newNewsletter, ...prev]);
-    };
-
-    const handleUpdateProducts = (updatedProducts: Product[]) => {
-        setProducts(updatedProducts);
-        marketplaceService.saveProducts(updatedProducts);
+    const handleSaveChangesToRecipes = () => {
+        if (!currentUser) return;
+        recipeService.saveAllRecipes(currentUser.email, allRecipes);
+        recipeService.saveNewRecipes(currentUser.email, newThisMonthRecipes);
+        // Note: Scheduled recipes are saved inside the RecipeHub
+        return Promise.resolve();
     };
 
     // --- Extractor & Generator functions ---
@@ -660,8 +608,12 @@ const App: React.FC = () => {
     };
     
     const handleSaveNewRecipe = (recipe: Recipe) => {
-        setAllRecipes(prev => [recipe, ...prev]);
-        if (currentUser && currentUser.isPremium) {
+        if (!currentUser) return;
+        const newAllRecipes = [recipe, ...allRecipes];
+        setAllRecipes(newAllRecipes);
+        recipeService.saveAllRecipes(currentUser.email, newAllRecipes);
+
+        if (currentUser.isPremium) {
             handleToggleFavorite(recipe.id);
         }
         setPreviewRecipe(null);
@@ -675,11 +627,9 @@ const App: React.FC = () => {
     };
 
     const handleSubscribe = (email: string) => {
+        // This is a global action, doesn't need user-specific context
         newsletterService.subscribeByEmail(email);
         leadService.addLead(email);
-        // Refresh data for admin dashboard if it's open
-        setCollectedLeads(leadService.getLeads());
-        setAllUsers(userService.getAllUsers());
     };
 
     // --- Render Logic ---
@@ -687,7 +637,6 @@ const App: React.FC = () => {
         return allRecipes.filter(r => favorites.includes(r.id));
     }, [favorites, allRecipes]);
 
-    // FIX: Add component render logic and default export to fix module resolution error.
     const filteredAndSortedCookbook = useMemo(() => {
         return favoriteRecipes
             .filter(r => cookbookSelectedTag === 'All' || r.tags?.includes(cookbookSelectedTag))
@@ -731,34 +680,34 @@ const App: React.FC = () => {
         return <CookMode recipe={cookModeRecipe} onExit={handleExitCookMode} measurementSystem={measurementSystem} />;
     }
     
-    if (activeTab === 'Admin Dashboard' && currentUser?.isAdmin) {
+    if (activeTab === 'Recipe Hub' && currentUser) {
         return (
-            <AdminDashboard
-                allRecipes={allRecipes}
-                newRecipes={newThisMonthRecipes}
-                users={allUsers}
-                sentNewsletters={sentNewsletters}
-                collectedLeads={collectedLeads}
-                products={products}
+            <RecipeHub
+                currentUser={currentUser}
                 onAddRecipe={handleAddNewRecipe}
                 onDeleteRecipe={handleDeleteRecipe}
                 onUpdateRecipeWithAI={handleUpdateRecipeWithAI}
                 onUpdateAllRecipeImages={handleUpdateAllRecipeImages}
                 isUpdatingAllImages={isUpdatingAllImages}
-                onUpdateUserRoles={handleUpdateUser}
-                onDeleteUser={handleDeleteUser}
-                onSendNewsletter={handleSendNewsletter}
-                onUpdateProducts={handleUpdateProducts}
                 onExit={() => handleSelectTab('All Recipes')}
-                onRemoveFromNew={handleRemoveFromNew}
-                onAddToNew={handleAddToNew}
-                onSaveChanges={handleSaveChanges}
-                onMoveRecipeFromRotdToMain={handleMoveRecipeFromRotdToMain}
+                onSaveChanges={handleSaveChangesToRecipes}
             />
         );
     }
     
     const renderContent = () => {
+        if (!currentUser && ['All Recipes', 'New This Month'].includes(activeTab)) {
+            return (
+                <EmptyState
+                    icon={<UserCircleIcon />}
+                    title="Welcome to Recipe Extracter"
+                    message="Please log in or sign up to view and manage your personal recipe collection."
+                    actionText="Login / Sign Up"
+                    onActionClick={() => setIsLoginModalOpen(true)}
+                />
+            );
+        }
+
         switch(activeTab) {
             case 'Pantry Chef':
                 if (!currentUser?.isPremium) {
@@ -1102,7 +1051,7 @@ const App: React.FC = () => {
                                     onShowFavorites={() => handleSelectTab('My Cookbook')}
                                     onOpenProfile={() => setIsProfileModalOpen(true)}
                                     onOpenLists={() => handleSelectTab('Shopping List')}
-                                    onOpenAdmin={() => handleSelectTab('Admin Dashboard')}
+                                    onOpenAdmin={() => handleSelectTab('Recipe Hub')}
                                 />
                             ) : (
                                 <button
