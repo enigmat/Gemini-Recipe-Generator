@@ -5,6 +5,7 @@ import ClockIcon from './icons/ClockIcon';
 import UsersIcon from './icons/UsersIcon';
 import StoredImage from './StoredImage';
 import CheckCircleIcon from './icons/CheckCircleIcon';
+import FireIcon from './icons/FireIcon';
 
 interface RecipeOfTheDayProps {
   recipe: Recipe | null;
@@ -73,6 +74,12 @@ const RecipeOfTheDay: React.FC<RecipeOfTheDayProps> = ({ recipe, isLoading, onCl
                             <UsersIcon className="w-5 h-5" />
                             <span>{recipe.servings}</span>
                         </div>
+                        {recipe.calories && (
+                            <div className="flex items-center space-x-2">
+                                <FireIcon className="w-5 h-5" />
+                                <span>{recipe.calories}</span>
+                            </div>
+                        )}
                     </div>
                     <p className="text-slate-600 mb-6">{recipe.description}</p>
                     <div className="flex flex-wrap gap-4">

@@ -15,6 +15,7 @@ import { generateRecipeVariations } from '../services/geminiService';
 import Spinner from './Spinner';
 import XIcon from './icons/XIcon';
 import StoredImage from './StoredImage';
+import FireIcon from './icons/FireIcon';
 
 interface RecipeModalProps {
   recipe: Recipe;
@@ -138,7 +139,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementS
                 {!isPreview && (
                   <>
                     <div className="flex flex-wrap items-center justify-between text-slate-600 mb-6 border-y py-3 gap-4">
-                        <div className="flex items-center space-x-6">
+                        <div className="flex items-center flex-wrap gap-x-6 gap-y-2">
                             <div className="flex items-center space-x-2">
                                 <ClockIcon className="h-5 w-5" />
                                 <span className="font-medium">{recipe.cookTime}</span>
@@ -147,6 +148,12 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementS
                                 <UsersIcon className="h-5 w-5" />
                                 <span className="font-medium">{recipe.servings}</span>
                             </div>
+                            {recipe.calories && (
+                                <div className="flex items-center space-x-2">
+                                    <FireIcon className="h-5 w-5" />
+                                    <span className="font-medium">{recipe.calories}</span>
+                                </div>
+                            )}
                         </div>
                         <div className="flex items-center gap-1.5 print:hidden">
                             <button onClick={handlePrint} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full transition-colors" aria-label="Print recipe"><PrintIcon className="w-5 h-5" /></button>

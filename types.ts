@@ -23,6 +23,7 @@ export interface Recipe {
   servings: string;
   ingredients: Ingredient[];
   instructions: string[];
+  calories?: string;
   tags?: string[];
   winePairing?: WinePairing;
   rating?: {

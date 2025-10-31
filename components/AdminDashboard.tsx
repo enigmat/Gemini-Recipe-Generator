@@ -17,6 +17,7 @@ import Spinner from './Spinner';
 import CheckIcon from './icons/CheckIcon';
 import DownloadIcon from './icons/DownloadIcon';
 import AdminROTDManagement from './AdminROTDManagement';
+import AdminBulkImport from './AdminBulkImport';
 
 interface AdminDashboardProps {
     allRecipes: Recipe[];
@@ -53,10 +54,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
+    const [importProgress, setImportProgress] = useState('');
 
     const menuItems = [
         'User Management', 'API Key Management', 'Leads', 'Newsletter', 'Recipe Management', 
-        'Add Recipe', 'Recipe of the Day Pool', 'Cooking Classes', 'Video Management', 'Marketplace Management', 'About Us'
+        'Add Recipe', 'Recipe of the Day Pool', 'Bulk Import', 'Cooking Classes', 'Video Management', 'Marketplace Management', 'About Us'
     ];
 
     const handleSave = () => {
@@ -67,6 +70,41 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 2000);
         });
+    };
+
+    const handleBulkImport = async (htmlContent: string) => {
+        setIsImporting(true);
+        setImportProgress('Starting import... Parsing HTML file.');
+
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlContent, 'text/html');
+            
+            const titles = Array.from(doc.querySelectorAll('.recipe-card h1.recipe-title, .recipe h1.fn'))
+                .map(el => (el as HTMLElement).innerText.trim())
+                .filter(title => title);
+
+            if (titles.length === 0) {
+                throw new Error("Could not find any recipe titles in the provided HTML. Please ensure you copied the entire file content. The tool looks for elements like `<div class='recipe-card'><h1 class='recipe-title'>...</h1></div>`.");
+            }
+            
+            setImportProgress(`Found ${titles.length} recipes. Starting AI generation...`);
+
+            for (let i = 0; i < titles.length; i++) {
+                const title = titles[i];
+                setImportProgress(`(${i + 1}/${titles.length}) Generating recipe for "${title}"...`);
+                await props.onAddRecipe(title, false, false);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            setImportProgress(`Import complete! Successfully added ${titles.length} new recipes.`);
+
+        } catch (error: any) {
+            console.error("Bulk import failed:", error);
+            setImportProgress(`Error: ${error.message}`);
+        } finally {
+            setIsImporting(false);
+        }
     };
 
     const renderPanel = () => {
@@ -106,6 +144,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                  return <AdminAddRecipe onAddRecipe={props.onAddRecipe} />;
             case 'Recipe of the Day Pool':
                  return <AdminROTDManagement onMoveRecipe={props.onMoveRecipeFromRotdToMain} />;
+            case 'Bulk Import':
+                return <AdminBulkImport onImport={handleBulkImport} isImporting={isImporting} importProgress={importProgress} />;
             case 'Newsletter':
                  return (
                     <AdminNewsletter

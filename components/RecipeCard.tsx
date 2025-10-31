@@ -7,6 +7,7 @@ import ShoppingCartIcon from './icons/ShoppingCartIcon';
 import CheckIcon from './icons/CheckIcon';
 import StarIcon from './icons/StarIcon';
 import StoredImage from './StoredImage';
+import FireIcon from './icons/FireIcon';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -101,11 +102,17 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
             </div>
         )}
 
-        <div className={`flex items-center text-slate-500 mt-auto border-t pt-3 ${variant === 'default' ? 'justify-between text-xs' : 'text-sm'}`}>
-          <div className="flex items-center space-x-2">
+        <div className={`flex items-center text-slate-500 mt-auto border-t pt-3 ${variant === 'default' ? 'justify-between text-xs' : 'gap-4 text-sm'}`}>
+          <div className="flex items-center space-x-1">
             <ClockIcon className="w-4 h-4" />
             <span>{recipe.cookTime}</span>
           </div>
+           {recipe.calories && (
+              <div className="flex items-center space-x-1">
+                  <FireIcon className="w-4 h-4" />
+                  <span>{recipe.calories.replace('Approx. ', '').replace(' per serving', '').replace(' per slice', '').replace(' per cookie', '').replace(' kcal', '')} kcal</span>
+              </div>
+          )}
           {variant === 'default' && (
             <div className="flex items-center space-x-1">
               <UsersIcon className="w-4 h-4" />

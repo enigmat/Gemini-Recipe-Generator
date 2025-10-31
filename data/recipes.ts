@@ -8,6 +8,7 @@ export const recipes: Recipe[] = [
     description: 'A classic and indulgent Italian pasta dish made with eggs, cheese, pancetta, and pepper. Ready in under 30 minutes!',
     cookTime: '25 minutes',
     servings: '2-3',
+    calories: 'Approx. 600 kcal',
     ingredients: [
       { name: 'spaghetti', metric: { quantity: 200, unit: 'g' }, us: { quantity: 7, unit: 'oz' } },
       { name: 'pancetta', metric: { quantity: 100, unit: 'g' }, us: { quantity: 3.5, unit: 'oz' } },
@@ -29,6 +30,7 @@ export const recipes: Recipe[] = [
     description: 'A creamy and flavorful curry with tender, marinated chicken pieces in a rich tomato-based sauce.',
     cookTime: '45 minutes',
     servings: '4',
+    calories: 'Approx. 480 kcal',
     ingredients: [
         { name: 'chicken breast, cubed', metric: { quantity: 500, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
         { name: 'plain yogurt', metric: { quantity: 240, unit: 'ml' }, us: { quantity: 1, unit: 'cup' } },
@@ -52,6 +54,7 @@ export const recipes: Recipe[] = [
     description: 'A quick and easy weeknight meal featuring seasoned ground beef in crispy taco shells with your favorite toppings.',
     cookTime: '20 minutes',
     servings: '4',
+    calories: 'Approx. 350 kcal',
     ingredients: [
       { name: 'ground beef', metric: { quantity: 500, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
       { name: 'taco seasoning', metric: { quantity: 1, unit: 'packet' }, us: { quantity: 1, unit: 'packet' } },
@@ -72,6 +75,7 @@ export const recipes: Recipe[] = [
     description: 'A simple, healthy, and delicious breakfast or snack. Creamy mashed avocado on perfectly toasted bread.',
     cookTime: '5 minutes',
     servings: '1-2',
+    calories: 'Approx. 290 kcal',
     ingredients: [
       { name: 'slices of bread', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
       { name: 'ripe avocado', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
@@ -88,6 +92,7 @@ export const recipes: Recipe[] = [
     description: 'The timeless salad with crisp romaine lettuce, crunchy croutons, and sharp Parmesan cheese tossed in a creamy Caesar dressing.',
     cookTime: '10 minutes',
     servings: '2',
+    calories: 'Approx. 470 kcal',
     ingredients: [
       { name: 'head of romaine lettuce', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
       { name: 'croutons', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
@@ -108,6 +113,7 @@ export const recipes: Recipe[] = [
     description: 'A classic Italian pizza showcasing the colors of the flag with fresh mozzarella, savory tomato sauce, and aromatic basil.',
     cookTime: '20 minutes',
     servings: '2-3',
+    calories: 'Approx. 700 kcal',
     ingredients: [
       { name: 'pizza dough', metric: { quantity: 1, unit: 'ball' }, us: { quantity: 1, unit: 'ball' } },
       { name: 'tomato sauce', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
@@ -124,6 +130,7 @@ export const recipes: Recipe[] = [
     description: 'The ultimate comfort dessert: soft, chewy cookies loaded with gooey, melted chocolate chips.',
     cookTime: '25 minutes',
     servings: '24 cookies',
+    calories: 'Approx. 150 kcal per cookie',
     ingredients: [
       { name: 'all-purpose flour', metric: { quantity: 270, unit: 'g' }, us: { quantity: '2 1/4', unit: 'cups' } },
       { name: 'baking soda', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
@@ -143,6 +150,7 @@ export const recipes: Recipe[] = [
     description: 'A hearty and comforting slow-cooked stew with tender beef, root vegetables, and a rich, savory broth.',
     cookTime: '3 hours',
     servings: '6-8',
+    calories: 'Approx. 550 kcal',
     ingredients: [
         { name: 'beef chuck, cubed', metric: { quantity: 1, unit: 'kg' }, us: { quantity: 2.2, unit: 'lbs' } },
         { name: 'olive oil', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
@@ -166,6 +174,7 @@ export const recipes: Recipe[] = [
     description: 'A juicy, flavorful whole roasted chicken with crispy skin, infused with the bright flavors of lemon and fresh herbs.',
     cookTime: '1 hour 30 minutes',
     servings: '4-6',
+    calories: 'Approx. 650 kcal',
     ingredients: [
         { name: 'whole chicken', metric: { quantity: 1.8, unit: 'kg' }, us: { quantity: 4, unit: 'lbs' } },
         { name: 'lemon, halved', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
@@ -189,6 +198,7 @@ export const recipes: Recipe[] = [
     description: 'Fluffy, golden-brown pancakes perfect for a weekend breakfast, ready to be topped with your favorite syrup and fruits.',
     cookTime: '15 minutes',
     servings: '4',
+    calories: 'Approx. 380 kcal',
     ingredients: [
         { name: 'all-purpose flour', metric: { quantity: 180, unit: 'g' }, us: { quantity: '1 1/2', unit: 'cups' } },
         { name: 'sugar', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
@@ -208,6 +218,7 @@ export const recipes: Recipe[] = [
     description: 'A creamy, decadent Italian rice dish cooked slowly with broth, mushrooms, and Parmesan cheese.',
     cookTime: '40 minutes',
     servings: '4',
+    calories: 'Approx. 450 kcal',
     ingredients: [
         { name: 'olive oil', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
         { name: 'mushrooms, sliced', metric: { quantity: 250, unit: 'g' }, us: { quantity: 8, unit: 'oz' } },
@@ -231,6 +242,7 @@ export const recipes: Recipe[] = [
     description: 'A refreshing salad with crisp cucumber, juicy tomatoes, red onion, olives, and creamy feta cheese in a light vinaigrette.',
     cookTime: '15 minutes',
     servings: '4',
+    calories: 'Approx. 300 kcal',
     ingredients: [
         { name: 'cucumber, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
         { name: 'tomatoes, chopped', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
@@ -250,6 +262,7 @@ export const recipes: Recipe[] = [
     description: 'A rich and savory soup with sweet caramelized onions, topped with a crusty baguette and melted Gruyère cheese.',
     cookTime: '1 hour 15 minutes',
     servings: '4',
+    calories: 'Approx. 400 kcal',
     ingredients: [
         { name: 'large onions, sliced', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
         { name: 'butter', metric: { quantity: 60, unit: 'ml' }, us: { quantity: 4, unit: 'tbsp' } },
@@ -269,6 +282,7 @@ export const recipes: Recipe[] = [
     description: 'A popular Thai stir-fried noodle dish with a perfect balance of sweet, sour, and savory flavors.',
     cookTime: '30 minutes',
     servings: '2',
+    calories: 'Approx. 800 kcal',
     ingredients: [
         { name: 'rice noodles', metric: { quantity: 200, unit: 'g' }, us: { quantity: 7, unit: 'oz' } },
         { name: 'shrimp or chicken', metric: { quantity: 200, unit: 'g' }, us: { quantity: 7, unit: 'oz' } },
@@ -287,6 +301,7 @@ export const recipes: Recipe[] = [
     description: 'A simple yet elegant Italian salad of sliced fresh mozzarella, tomatoes, and sweet basil, drizzled with balsamic glaze.',
     cookTime: '10 minutes',
     servings: '2',
+    calories: 'Approx. 200 kcal',
     ingredients: [
         { name: 'ripe tomatoes, sliced', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
         { name: 'fresh mozzarella, sliced', metric: { quantity: 200, unit: 'g' }, us: { quantity: 7, unit: 'oz' } },
@@ -304,6 +319,7 @@ export const recipes: Recipe[] = [
     description: 'A classic British comfort food featuring crispy beer-battered fish served with golden, fluffy chips.',
     cookTime: '35 minutes',
     servings: '2',
+    calories: 'Approx. 950 kcal',
     ingredients: [
         { name: 'white fish fillets (cod, haddock)', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
         { name: 'all-purpose flour', metric: { quantity: 120, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
@@ -322,6 +338,7 @@ export const recipes: Recipe[] = [
     description: 'A creamy and zesty dip made from mashed avocados, onion, cilantro, jalapeño, and lime juice. Perfect with chips!',
     cookTime: '10 minutes',
     servings: '4',
+    calories: 'Approx. 150 kcal per serving',
     ingredients: [
         { name: 'ripe avocados', metric: { quantity: 3, unit: '' }, us: { quantity: 3, unit: '' } },
         { name: 'red onion, finely chopped', metric: { quantity: '1/2', unit: '' }, us: { quantity: '1/2', unit: '' } },
@@ -340,6 +357,7 @@ export const recipes: Recipe[] = [
     description: 'A rich, creamy New England-style chowder packed with clams, potatoes, and savory bacon.',
     cookTime: '40 minutes',
     servings: '4-6',
+    calories: 'Approx. 350 kcal',
     ingredients: [
         { name: 'bacon, chopped', metric: { quantity: 4, unit: 'slices' }, us: { quantity: 4, unit: 'slices' } },
         { name: 'onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
@@ -358,6 +376,7 @@ export const recipes: Recipe[] = [
     description: 'A classic American dessert with a flaky, buttery crust and a sweet, spiced apple filling.',
     cookTime: '1 hour',
     servings: '8',
+    calories: 'Approx. 410 kcal per slice',
     ingredients: [
         { name: 'double-crust pie pastry', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
         { name: 'apples, peeled and sliced', metric: { quantity: '6-8', unit: '' }, us: { quantity: '6-8', unit: '' } },
@@ -373,10 +392,11 @@ export const recipes: Recipe[] = [
   {
     id: 20,
     title: 'Butternut Squash Soup',
-    image: 'https://images.unsplash.com/photo-1603579590920-692716b60c49?auto=format&fit=crop&q=80&w=871&ixlib-rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1603579590920-692716b60c49?auto=format&fit=crop&q=80&w=871&ixlib=rb-4.0.3',
     description: 'A velvety smooth and warming soup with the sweet, nutty flavor of roasted butternut squash.',
     cookTime: '50 minutes',
     servings: '6',
+    calories: 'Approx. 250 kcal',
     ingredients: [
         { name: 'large butternut squash, peeled and cubed', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
         { name: 'onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
@@ -395,6 +415,7 @@ export const recipes: Recipe[] = [
     description: 'A comforting casserole of savory ground lamb and vegetables topped with a creamy layer of mashed potatoes.',
     cookTime: '1 hour',
     servings: '4-6',
+    calories: 'Approx. 600 kcal',
     ingredients: [
         { name: 'ground lamb', metric: { quantity: 500, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
         { name: 'onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
@@ -414,6 +435,7 @@ export const recipes: Recipe[] = [
     description: 'A beautiful and rustic French vegetable stew with eggplant, zucchini, peppers, and tomatoes.',
     cookTime: '1 hour',
     servings: '6',
+    calories: 'Approx. 150 kcal',
     ingredients: [
         { name: 'eggplant, sliced', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
         { name: 'zucchinis, sliced', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
@@ -433,6 +455,7 @@ export const recipes: Recipe[] = [
     description: 'A moist and delicious quick bread perfect for using up ripe bananas. Great for breakfast or a snack.',
     cookTime: '1 hour 10 minutes',
     servings: '10 slices',
+    calories: 'Approx. 200 kcal per slice',
     ingredients: [
         { name: 'ripe bananas, mashed', metric: { quantity: 3, unit: '' }, us: { quantity: 3, unit: '' } },
         { name: 'melted butter', metric: { quantity: 113, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } },
@@ -452,6 +475,7 @@ export const recipes: Recipe[] = [
     description: 'A hearty Italian-American classic with layers of pasta, rich meat sauce, creamy ricotta, and melted mozzarella cheese.',
     cookTime: '1 hour 30 minutes',
     servings: '8',
+    calories: 'Approx. 750 kcal',
     ingredients: [
         { name: 'lasagna noodles', metric: { quantity: 9, unit: '' }, us: { quantity: 9, unit: '' } },
         { name: 'ground beef', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
@@ -470,6 +494,7 @@ export const recipes: Recipe[] = [
     description: 'Learn to make your own Japanese sushi rolls at home with your favorite fillings.',
     cookTime: '45 minutes',
     servings: '2-3',
+    calories: 'Approx. 300 kcal per roll',
     ingredients: [
         { name: 'sushi rice', metric: { quantity: 185, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
         { name: 'sheets of nori', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
@@ -486,6 +511,7 @@ export const recipes: Recipe[] = [
     description: 'The ultimate comfort food. A simple, savory soup with shredded chicken, vegetables, and tender egg noodles.',
     cookTime: '30 minutes',
     servings: '4',
+    calories: 'Approx. 200 kcal',
     ingredients: [
         { name: 'cooked chicken breast, shredded', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
         { name: 'chicken broth', metric: { quantity: 1.4, unit: 'L' }, us: { quantity: 6, unit: 'cups' } },
@@ -503,6 +529,7 @@ export const recipes: Recipe[] = [
     description: 'A creamy, cheesy, and incredibly satisfying homemade macaroni and cheese that beats the boxed version every time.',
     cookTime: '25 minutes',
     servings: '4',
+    calories: 'Approx. 600 kcal',
     ingredients: [
         { name: 'macaroni', metric: { quantity: 225, unit: 'g' }, us: { quantity: 2, unit: 'cups' } },
         { name: 'butter', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
@@ -521,6 +548,7 @@ export const recipes: Recipe[] = [
     description: 'A quick and elegant pasta dish with plump shrimp sautéed in a delicious garlic, butter, and white wine sauce.',
     cookTime: '20 minutes',
     servings: '2',
+    calories: 'Approx. 550 kcal',
     ingredients: [
         { name: 'linguine', metric: { quantity: 250, unit: 'g' }, us: { quantity: 8, unit: 'oz' } },
         { name: 'shrimp, peeled', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
@@ -544,6 +572,7 @@ export const recipes: Recipe[] = [
     description: 'A versatile and quick breakfast staple. Master the perfect fluffy omelette and customize it with your favorite fillings.',
     cookTime: '10 minutes',
     servings: '1',
+    calories: 'Approx. 300 kcal',
     ingredients: [
         { name: 'large eggs', metric: { quantity: 3, unit: '' }, us: { quantity: 3, unit: '' } },
         { name: 'milk', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
@@ -560,6 +589,7 @@ export const recipes: Recipe[] = [
     description: 'An impressive and decadent dessert with a warm, molten chocolate center that flows out when you cut into it.',
     cookTime: '25 minutes',
     servings: '2',
+    calories: 'Approx. 450 kcal',
     ingredients: [
         { name: 'butter', metric: { quantity: 113, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } },
         { name: 'bittersweet chocolate', metric: { quantity: 120, unit: 'g' }, us: { quantity: 4, unit: 'oz' } },
@@ -578,6 +608,7 @@ export const recipes: Recipe[] = [
     description: 'A smooth and creamy Middle Eastern dip made from chickpeas, tahini, lemon, and garlic. Perfect for dipping vegetables or pita.',
     cookTime: '10 minutes',
     servings: '6',
+    calories: 'Approx. 100 kcal per serving',
     ingredients: [
       { name: 'chickpeas, drained', metric: { quantity: 1, unit: 'can (425g)' }, us: { quantity: 1, unit: 'can (15 oz)' } },
       { name: 'tahini', metric: { quantity: 60, unit: 'ml' }, us: { quantity: '1/4', unit: 'cup' } },
@@ -596,6 +627,7 @@ export const recipes: Recipe[] = [
     description: 'A classic American garden salad with rows of chicken, bacon, hard-boiled eggs, avocado, and blue cheese.',
     cookTime: '20 minutes',
     servings: '2-4',
+    calories: 'Approx. 600 kcal',
     ingredients: [
       { name: 'Chopped lettuce', metric: { quantity: '1 head', unit: '' }, us: { quantity: '1 head', unit: '' } },
       { name: 'Cooked chicken breast, diced', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
@@ -616,6 +648,7 @@ export const recipes: Recipe[] = [
     description: 'Hollowed-out bell peppers filled with a savory mixture of ground meat, rice, and tomatoes, then baked to perfection.',
     cookTime: '45 minutes',
     servings: '4',
+    calories: 'Approx. 350 kcal',
     ingredients: [
       { name: 'bell peppers, tops cut off', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
       { name: 'ground beef or turkey', metric: { quantity: 500, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
@@ -630,10 +663,11 @@ export const recipes: Recipe[] = [
   {
     id: 34,
     title: 'French Toast',
-    image: 'https://images.unsplash.com/photo-1639108097123-5e3630c14b6c?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1639108097123-5e3630c14b6c?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
     description: 'A breakfast favorite where bread slices are soaked in a sweet egg batter and pan-fried to golden perfection.',
     cookTime: '15 minutes',
     servings: '2',
+    calories: 'Approx. 400 kcal',
     ingredients: [
       { name: 'slices of thick bread', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
       { name: 'large eggs', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
@@ -652,6 +686,7 @@ export const recipes: Recipe[] = [
     description: 'A quick and healthy Chinese-American stir-fry with tender slices of beef and crisp broccoli florets in a savory sauce.',
     cookTime: '20 minutes',
     servings: '3-4',
+    calories: 'Approx. 450 kcal',
     ingredients: [
       { name: 'flank steak, thinly sliced', metric: { quantity: 500, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
       { name: 'large head of broccoli, cut into florets', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
@@ -670,6 +705,7 @@ export const recipes: Recipe[] = [
     description: 'A creamy and classic side dish for picnics and barbecues, made with boiled potatoes, hard-boiled eggs, and a tangy mayonnaise dressing.',
     cookTime: '30 minutes',
     servings: '6-8',
+    calories: 'Approx. 360 kcal',
     ingredients: [
       { name: 'potatoes, boiled and diced', metric: { quantity: 1, unit: 'kg' }, us: { quantity: 2.2, unit: 'lbs' } },
       { name: 'mayonnaise', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
@@ -688,6 +724,7 @@ export const recipes: Recipe[] = [
     description: 'A refreshing chilled soup from Spain, made with blended raw vegetables like tomatoes, peppers, and cucumbers.',
     cookTime: '15 minutes (+ chilling)',
     servings: '4-6',
+    calories: 'Approx. 100 kcal',
     ingredients: [
       { name: 'ripe tomatoes, chopped', metric: { quantity: 1, unit: 'kg' }, us: { quantity: 2.2, unit: 'lbs' } },
       { name: 'cucumber, peeled and chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
@@ -707,6 +744,7 @@ export const recipes: Recipe[] = [
     description: 'A simple, healthy, and elegant main course. Tender salmon fillets baked with lemon, garlic, and fresh herbs.',
     cookTime: '20 minutes',
     servings: '4',
+    calories: 'Approx. 400 kcal',
     ingredients: [
       { name: 'salmon fillets', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
       { name: 'olive oil', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
@@ -729,6 +767,7 @@ export const recipes: Recipe[] = [
     description: 'Flavorful patties of crab meat and breadcrumbs, pan-fried to golden perfection. A delicious seafood appetizer or main.',
     cookTime: '20 minutes',
     servings: '4',
+    calories: 'Approx. 250 kcal',
     ingredients: [
       { name: 'crabmeat, picked over', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
       { name: 'breadcrumbs', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
@@ -748,6 +787,7 @@ export const recipes: Recipe[] = [
     description: 'A thick and hearty Italian soup loaded with vegetables, beans, and small pasta in a tomato-based broth.',
     cookTime: '45 minutes',
     servings: '6',
+    calories: 'Approx. 200 kcal',
     ingredients: [
       { name: 'olive oil', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
       { name: 'onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
@@ -768,6 +808,7 @@ export const recipes: Recipe[] = [
     description: 'A classic French tart with a rich egg and cream custard, filled with bacon and Gruyère cheese in a flaky pastry crust.',
     cookTime: '50 minutes',
     servings: '6-8',
+    calories: 'Approx. 500 kcal per slice',
     ingredients: [
       { name: 'unbaked 9-inch pie crust', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
       { name: 'bacon, cooked and crumbled', metric: { quantity: 150, unit: 'g' }, us: { quantity: 5, unit: 'oz' } },
@@ -786,6 +827,7 @@ export const recipes: Recipe[] = [
     description: 'A beloved Italian-American comfort food featuring breaded chicken cutlets topped with marinara sauce and melted mozzarella.',
     cookTime: '40 minutes',
     servings: '4',
+    calories: 'Approx. 650 kcal',
     ingredients: [
       { name: 'chicken cutlets, pounded thin', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
       { name: 'breadcrumbs', metric: { quantity: 120, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
@@ -804,6 +846,7 @@ export const recipes: Recipe[] = [
     description: 'A creamy and comforting soup made from ripe tomatoes, perfect for pairing with a grilled cheese sandwich.',
     cookTime: '30 minutes',
     servings: '4',
+    calories: 'Approx. 250 kcal',
     ingredients: [
       { name: 'butter', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
       { name: 'onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
@@ -822,6 +865,7 @@ export const recipes: Recipe[] = [
     description: 'An elegant no-bake Italian dessert with layers of coffee-soaked ladyfingers and a rich mascarpone cream, dusted with cocoa.',
     cookTime: '25 minutes (+ chilling)',
     servings: '8',
+    calories: 'Approx. 500 kcal',
     ingredients: [
       { name: 'egg yolks', metric: { quantity: 6, unit: '' }, us: { quantity: 6, unit: '' } },
       { name: 'sugar', metric: { quantity: 150, unit: 'g' }, us: { quantity: '3/4', unit: 'cup' } },
@@ -840,6 +884,7 @@ export const recipes: Recipe[] = [
     description: 'A delicious vegetarian casserole with layers of fried eggplant, marinara sauce, and melted mozzarella and Parmesan cheeses.',
     cookTime: '50 minutes',
     servings: '6',
+    calories: 'Approx. 450 kcal',
     ingredients: [
       { name: 'medium eggplants, sliced', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
       { name: 'breadcrumbs', metric: { quantity: 120, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
@@ -858,6 +903,7 @@ export const recipes: Recipe[] = [
     description: 'A classic summer dessert featuring sweet, juicy strawberries and fluffy whipped cream served over tender shortcake biscuits.',
     cookTime: '25 minutes',
     servings: '6',
+    calories: 'Approx. 350 kcal',
     ingredients: [
       { name: 'strawberries, sliced', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
       { name: 'sugar', metric: { quantity: 50, unit: 'g' }, us: { quantity: '1/4', unit: 'cup' } },
@@ -874,6 +920,7 @@ export const recipes: Recipe[] = [
     description: 'Tender, slow-cooked pork shoulder shredded and mixed with tangy BBQ sauce, served on a soft bun.',
     cookTime: '8 hours',
     servings: '8',
+    calories: 'Approx. 600 kcal',
     ingredients: [
       { name: 'pork shoulder', metric: { quantity: 1.5, unit: 'kg' }, us: { quantity: 3.3, unit: 'lbs' } },
       { name: 'BBQ sauce', metric: { quantity: 240, unit: 'ml' }, us: { quantity: 1, unit: 'cup' } },
@@ -891,6 +938,7 @@ export const recipes: Recipe[] = [
     description: 'A sizzling skillet of seasoned chicken, bell peppers, and onions served with warm tortillas and your favorite toppings.',
     cookTime: '25 minutes',
     servings: '4',
+    calories: 'Approx. 500 kcal',
     ingredients: [
       { name: 'chicken breast, sliced', metric: { quantity: 500, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
       { name: 'bell peppers, sliced', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
@@ -909,6 +957,7 @@ export const recipes: Recipe[] = [
     description: 'A rich, dense, and creamy dessert with a graham cracker crust and a smooth cream cheese filling.',
     cookTime: '1 hour 15 minutes (+ chilling)',
     servings: '12',
+    calories: 'Approx. 400 kcal per slice',
     ingredients: [
       { name: 'graham cracker crumbs', metric: { quantity: 150, unit: 'g' }, us: { quantity: '1 1/2', unit: 'cups' } },
       { name: 'melted butter', metric: { quantity: 113, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } },
@@ -927,6 +976,7 @@ export const recipes: Recipe[] = [
     description: 'Juicy chicken breasts filled with a savory mixture of spinach, feta cheese, and garlic, then baked to perfection.',
     cookTime: '30 minutes',
     servings: '4',
+    calories: 'Approx. 450 kcal',
     ingredients: [
       { name: 'chicken breasts', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
       { name: 'frozen spinach, thawed and squeezed dry', metric: { quantity: 280, unit: 'g' }, us: { quantity: '10', unit: 'oz' } },
@@ -945,6 +995,7 @@ export const recipes: Recipe[] = [
     description: 'A hearty and nutritious vegan soup made with brown lentils, vegetables, and savory herbs. Perfect for a cold day.',
     cookTime: '45 minutes',
     servings: '6',
+    calories: 'Approx. 250 kcal',
     ingredients: [
       { name: 'olive oil', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
       { name: 'large onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
@@ -967,6 +1018,7 @@ export const recipes: Recipe[] = [
     description: 'A comforting bowl of Japanese ramen with a rich broth, tender noodles, soft-boiled egg, and chashu pork.',
     cookTime: '2 hours',
     servings: '2',
+    calories: 'Approx. 700 kcal',
     ingredients: [
       { name: 'fresh ramen noodles', metric: { quantity: 2, unit: 'servings' }, us: { quantity: 2, unit: 'servings' } },
       { name: 'chicken or pork broth', metric: { quantity: 1, unit: 'L' }, us: { quantity: 4, unit: 'cups' } },
@@ -986,6 +1038,7 @@ export const recipes: Recipe[] = [
     description: 'A vibrant and healthy gluten-free salad with fluffy quinoa, roasted sweet potatoes and broccoli, and a lemon-tahini dressing.',
     cookTime: '40 minutes',
     servings: '4',
+    calories: 'Approx. 400 kcal',
     ingredients: [
       { name: 'quinoa, rinsed', metric: { quantity: 185, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
       { name: 'water or vegetable broth', metric: { quantity: 480, unit: 'ml' }, us: { quantity: 2, unit: 'cups' } },
@@ -1007,6 +1060,7 @@ export const recipes: Recipe[] = [
     description: 'A delicious Middle Eastern and North African dish of eggs poached in a flavorful tomato and bell pepper sauce.',
     cookTime: '30 minutes',
     servings: '2-3',
+    calories: 'Approx. 350 kcal',
     ingredients: [
       { name: 'olive oil', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
       { name: 'large onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
@@ -1029,6 +1083,7 @@ export const recipes: Recipe[] = [
     description: 'A luxurious, creamy, and smooth soup made from lobster stock, cream, and a hint of sherry.',
     cookTime: '1 hour',
     servings: '4',
+    calories: 'Approx. 500 kcal',
     ingredients: [
       { name: 'cooked lobsters (about 680g each)', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '(about 1.5 lbs each)' } },
       { name: 'butter', metric: { quantity: 60, unit: 'ml' }, us: { quantity: 4, unit: 'tbsp' } },
@@ -1048,6 +1103,7 @@ export const recipes: Recipe[] = [
     description: 'Fudgy, decadent, and completely gluten-free chocolate brownies that are sure to satisfy any sweet tooth.',
     cookTime: '40 minutes',
     servings: '16',
+    calories: 'Approx. 180 kcal per brownie',
     ingredients: [
       { name: 'gluten-free all-purpose flour', metric: { quantity: 120, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
       { name: 'unsweetened cocoa powder', metric: { quantity: 60, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } },
@@ -1069,6 +1125,7 @@ export const recipes: Recipe[] = [
     description: 'Hearty, flavorful, and satisfying vegan burgers made from black beans and spices.',
     cookTime: '30 minutes',
     servings: '4',
+    calories: 'Approx. 400 kcal',
     ingredients: [
       { name: 'black beans, rinsed and drained', metric: { quantity: 1, unit: 'can (425g)' }, us: { quantity: 1, unit: 'can (15 oz)' } },
       { name: 'green bell pepper, chopped', metric: { quantity: '1/2', unit: '' }, us: { quantity: '1/2', unit: '' } },
@@ -1089,6 +1146,7 @@ export const recipes: Recipe[] = [
     description: 'A classic French dessert consisting of a rich custard base topped with a contrasting layer of hard caramel.',
     cookTime: '1 hour',
     servings: '4',
+    calories: 'Approx. 350 kcal',
     ingredients: [
       { name: 'heavy cream', metric: { quantity: 480, unit: 'ml' }, us: { quantity: 2, unit: 'cups' } },
       { name: 'vanilla bean, split lengthwise', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
@@ -1105,6 +1163,7 @@ export const recipes: Recipe[] = [
     description: 'A fragrant Vietnamese noodle soup with a savory broth, rice noodles, herbs, and thinly sliced beef or chicken.',
     cookTime: '4 hours',
     servings: '4-6',
+    calories: 'Approx. 600 kcal',
     ingredients: [
       { name: 'beef bones', metric: { quantity: 1, unit: 'kg' }, us: { quantity: 2, unit: 'lbs' } },
       { name: 'onion, halved', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
@@ -1124,218 +1183,16 @@ export const recipes: Recipe[] = [
     description: 'Perfectly seared sea scallops with a golden-brown crust and a sweet, tender interior. An elegant and quick meal.',
     cookTime: '10 minutes',
     servings: '2',
+    calories: 'Approx. 250 kcal',
     ingredients: [
+      // FIX: Added missing 'unit' property to conform to the IngredientUnit interface.
       { name: 'large sea scallops, patted dry', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
       { name: 'butter', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
       { name: 'olive oil', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
       { name: 'garlic, minced', metric: { quantity: 2, unit: 'cloves' }, us: { quantity: 2, unit: 'cloves' } },
-      { name: 'Juice of 1/2 lemon', metric: { quantity: 0.5, unit: '' }, us: { quantity: 0.5, unit: '' } },
-      { name: 'Fresh parsley, chopped', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } },
       { name: 'Salt and pepper', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
-    instructions: ['Season scallops with salt and pepper.', 'Heat butter and oil in a skillet over high heat.', 'Place scallops in the hot pan in a single layer. Sear for 1-2 minutes per side, until golden brown.', 'Add garlic and cook for 30 seconds. Deglaze with lemon juice.', 'Garnish with parsley and serve immediately.'],
-    tags: ['Seafood', 'Quick', 'Dinner']
+    instructions: ['Heat butter and oil in a skillet over high heat.', 'Add scallops in a single layer and sear for 1-2 minutes per side, until golden brown.', 'Add garlic and cook for 30 seconds more.', 'Serve immediately.'],
+    tags: ['Seafood', 'Dinner', 'Quick', 'Appetizer']
   },
-  {
-    id: 61,
-    title: 'Vegan Chili',
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=871&ixlib=rb-4.0.3',
-    description: 'A hearty and flavorful plant-based chili packed with beans, vegetables, and warm spices.',
-    cookTime: '1 hour',
-    servings: '6',
-    ingredients: [
-      { name: 'olive oil', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
-      { name: 'onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
-      { name: 'bell peppers, chopped', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
-      { name: 'garlic, minced', metric: { quantity: 3, unit: 'cloves' }, us: { quantity: 3, unit: 'cloves' } },
-      { name: 'kidney beans', metric: { quantity: 1, unit: 'can (425g)' }, us: { quantity: 1, unit: 'can (15 oz)' } },
-      { name: 'black beans', metric: { quantity: 1, unit: 'can (425g)' }, us: { quantity: 1, unit: 'can (15 oz)' } },
-      { name: 'crushed tomatoes', metric: { quantity: 1, unit: 'can (794g)' }, us: { quantity: 1, unit: 'can (28 oz)' } },
-      { name: 'chili powder', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
-      { name: 'cumin', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } }
-    ],
-    instructions: ['Sauté onion and peppers until soft.', 'Add garlic and cook for a minute.', 'Stir in all other ingredients.', 'Bring to a simmer and cook for at least 45 minutes to let flavors meld.', 'Serve with your favorite toppings like avocado or vegan sour cream.'],
-    tags: ['Vegan', 'Vegetarian', 'Soup', 'Dinner']
-  },
-  {
-    id: 62,
-    title: 'Red Velvet Cake',
-    image: 'https://images.unsplash.com/photo-1616541823729-00fe0aacd3be?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
-    description: 'A striking cake with a mild cocoa flavor and a vibrant red color, topped with a classic cream cheese frosting.',
-    cookTime: '1 hour 30 minutes',
-    servings: '12',
-    ingredients: [
-      { name: 'all-purpose flour', metric: { quantity: 300, unit: 'g' }, us: { quantity: '2 1/2', unit: 'cups' } },
-      { name: 'sugar', metric: { quantity: 300, unit: 'g' }, us: { quantity: '1 1/2', unit: 'cups' } },
-      { name: 'baking soda', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
-      { name: 'cocoa powder', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
-      { name: 'buttermilk', metric: { quantity: 240, unit: 'ml' }, us: { quantity: 1, unit: 'cup' } },
-      { name: 'large eggs', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
-      { name: 'vegetable oil', metric: { quantity: 240, unit: 'ml' }, us: { quantity: 1, unit: 'cup' } },
-      { name: 'vinegar', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
-      { name: 'Red food coloring', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } },
-      { name: 'Cream cheese frosting', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
-    ],
-    instructions: ['Preheat oven to [temp:175:350].', 'Whisk dry ingredients. In a separate bowl, whisk wet ingredients including food coloring.', 'Combine wet and dry ingredients and mix until smooth.', 'Pour into two 23cm (9-inch) round cake pans.', 'Bake for 30-35 minutes. Cool completely before frosting.'],
-    tags: ['Dessert', 'Baking']
-  },
-  {
-    id: 63,
-    title: 'General Tso\'s Chicken',
-    image: 'https://images.unsplash.com/photo-1628790021966-419c8d553716?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
-    description: 'A popular Chinese-American dish featuring crispy fried chicken pieces tossed in a sweet and slightly spicy sauce.',
-    cookTime: '30 minutes',
-    servings: '4',
-    ingredients: [
-      { name: 'boneless chicken thighs, cut into chunks', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
-      { name: 'cornstarch', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
-      { name: 'Oil for frying', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } },
-      { name: 'Sauce: soy sauce', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
-      { name: 'Sauce: rice vinegar', metric: { quantity: 60, unit: 'ml' }, us: { quantity: '1/4', unit: 'cup' } },
-      { name: 'Sauce: sugar', metric: { quantity: 60, unit: 'ml' }, us: { quantity: '1/4', unit: 'cup' } },
-      { name: 'Sauce: garlic, minced', metric: { quantity: 2, unit: 'cloves' }, us: { quantity: 2, unit: 'cloves' } },
-      { name: 'Sauce: Dried red chilies', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
-    ],
-    instructions: ['Toss chicken in cornstarch.', 'Fry chicken in hot oil until golden and crispy. Drain and set aside.', 'In a separate pan, combine all sauce ingredients and bring to a simmer.', 'Thicken sauce with a cornstarch slurry if needed.', 'Toss the crispy chicken in the sauce to coat evenly. Serve with steamed broccoli and rice.'],
-    tags: ['Chinese', 'Chicken', 'Dinner']
-  },
-  {
-    id: 64,
-    title: 'Acai Smoothie Bowl',
-    image: 'https://images.unsplash.com/photo-1562142259-2268b3c9b0e2?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
-    description: 'A thick, creamy, and antioxidant-rich smoothie bowl made with acai berries and topped with fresh fruit, granola, and seeds.',
-    cookTime: '5 minutes',
-    servings: '1',
-    ingredients: [
-      { name: 'frozen acai puree', metric: { quantity: 1, unit: 'packet' }, us: { quantity: 1, unit: 'packet' } },
-      { name: 'frozen banana', metric: { quantity: '1/2', unit: '' }, us: { quantity: '1/2', unit: '' } },
-      { name: 'almond milk', metric: { quantity: 60, unit: 'ml' }, us: { quantity: '1/4', unit: 'cup' } },
-      { name: 'Toppings: granola, sliced banana, berries, chia seeds, coconut flakes', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
-    ],
-    instructions: ['Blend the frozen acai, frozen banana, and almond milk until thick and smooth.', 'Pour into a bowl.', 'Arrange your favorite toppings neatly over the surface.', 'Serve immediately and enjoy with a spoon.'],
-    tags: ['Breakfast', 'Vegan', 'Healthy', 'Quick', 'Gluten-Free']
-  },
-  {
-    id: 65,
-    title: 'Chicken Alfredo',
-    image: 'https://images.unsplash.com/photo-1627042582795-35c85671a68c?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
-    description: 'A classic Italian-American pasta dish with fettuccine noodles tossed in a rich and creamy Parmesan cheese sauce.',
-    cookTime: '25 minutes',
-    servings: '4',
-    ingredients: [
-      { name: 'fettuccine', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
-      { name: 'chicken breast, sliced', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
-      { name: 'butter', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
-      { name: 'garlic, minced', metric: { quantity: 2, unit: 'cloves' }, us: { quantity: 2, unit: 'cloves' } },
-      { name: 'heavy cream', metric: { quantity: 360, unit: 'ml' }, us: { quantity: '1 1/2', unit: 'cups' } },
-      { name: 'grated Parmesan cheese', metric: { quantity: 170, unit: 'g' }, us: { quantity: '1 1/2', unit: 'cups' } },
-      { name: 'Salt, pepper, and fresh parsley', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
-    ],
-    instructions: ['Cook fettuccine according to package directions.', 'Season and cook chicken slices in a skillet until done. Set aside.', 'In the same skillet, melt butter and sauté garlic. Add heavy cream and bring to a simmer.', 'Stir in Parmesan cheese until the sauce is smooth and thick.', 'Combine sauce with pasta and chicken. Garnish with parsley.'],
-    tags: ['Italian', 'Pasta', 'Chicken', 'Dinner']
-  },
-  {
-    id: 66,
-    title: 'Kimchi Fried Rice',
-    image: 'https://images.unsplash.com/photo-1599558156182-143615951864?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
-    description: 'A flavorful and spicy Korean fried rice dish made with tangy kimchi, rice, and often topped with a fried egg.',
-    cookTime: '15 minutes',
-    servings: '2',
-    ingredients: [
-      { name: 'cooked, chilled rice', metric: { quantity: 370, unit: 'g' }, us: { quantity: 2, unit: 'cups' } },
-      { name: 'chopped kimchi', metric: { quantity: 150, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
-      { name: 'kimchi juice', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
-      { name: 'soy sauce', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
-      { name: 'sesame oil', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
-      { name: 'green onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
-      { name: 'fried eggs for topping', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } }
-    ],
-    instructions: ['Heat a little oil in a wok or large skillet.', 'Add kimchi and cook for a few minutes until it starts to caramelize.', 'Add the chilled rice and break it up. Stir-fry for a few minutes.', 'Stir in kimchi juice, soy sauce, and sesame oil.', 'Top with green onions and a fried egg before serving.'],
-    tags: ['Korean', 'Quick', 'Vegetarian']
-  },
-  {
-    id: 67,
-    title: 'Classic Mojito',
-    image: 'https://images.unsplash.com/photo-1607613169427-58a432c68a18?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
-    description: 'A refreshing Cuban highball cocktail with white rum, sugar, lime juice, soda water, and mint.',
-    cookTime: '5 minutes',
-    servings: '1',
-    ingredients: [
-      { name: 'fresh mint leaves', metric: { quantity: '6-8', unit: '' }, us: { quantity: '6-8', unit: '' } },
-      { name: 'sugar', metric: { quantity: 10, unit: 'ml' }, us: { quantity: 2, unit: 'tsp' } },
-      { name: 'Juice of 1 lime', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
-      { name: 'white rum', metric: { quantity: 60, unit: 'ml' }, us: { quantity: 2, unit: 'oz' } },
-      { name: 'Club soda', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } },
-      { name: 'Ice', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
-    ],
-    instructions: ['In a sturdy glass, muddle the mint leaves with the sugar and lime juice.', 'Fill the glass with ice.', 'Pour in the rum and top off with club soda.', 'Stir gently and garnish with a lime wedge and a mint sprig.'],
-    tags: ['Drink', 'Quick']
-  },
-  {
-    id: 68,
-    title: 'Moussaka',
-    image: 'https://images.unsplash.com/photo-1554722530-9a3e6de6522c?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
-    description: 'A classic Greek casserole made with layers of eggplant, a spiced meat filling, and a creamy béchamel sauce.',
-    cookTime: '1 hour 45 minutes',
-    servings: '6',
-    ingredients: [
-      { name: 'large eggplants, sliced', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
-      { name: 'ground lamb or beef', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
-      { name: 'onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
-      { name: 'garlic, minced', metric: { quantity: 2, unit: 'cloves' }, us: { quantity: 2, unit: 'cloves' } },
-      { name: 'crushed tomatoes', metric: { quantity: 1, unit: 'can (425g)' }, us: { quantity: 1, unit: 'can (15 oz)' } },
-      { name: 'red wine', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
-      { name: 'cinnamon', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
-      { name: 'For Béchamel: butter', metric: { quantity: 60, unit: 'ml' }, us: { quantity: 4, unit: 'tbsp' } },
-      { name: 'For Béchamel: flour', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
-      { name: 'For Béchamel: milk', metric: { quantity: 480, unit: 'ml' }, us: { quantity: 2, unit: 'cups' } },
-      { name: 'For Béchamel: nutmeg', metric: { quantity: 1, unit: 'pinch' }, us: { quantity: 1, unit: 'pinch' } }
-    ],
-    instructions: ['Salt eggplant slices and let them sit, then rinse and pat dry. Fry or bake until golden.', 'Brown the meat with onion and garlic. Add tomatoes, wine, and cinnamon. Simmer until thick.', 'Make the béchamel sauce by creating a roux with butter and flour, then whisking in milk until thick.', 'Layer eggplant and meat sauce in a baking dish. Top with béchamel.', 'Bake at [temp:175:350] for 45-60 minutes until golden and bubbly.'],
-    tags: ['Greek', 'Dinner', 'Beef']
-  },
-  {
-    id: 69,
-    title: 'Ceviche',
-    image: 'https://images.unsplash.com/photo-1599599810694-b5b37304c847?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
-    description: 'A refreshing Latin American dish of raw fish cured in fresh citrus juices, spiced with chili peppers and other seasonings.',
-    cookTime: '20 minutes (+ marinating)',
-    servings: '4',
-    ingredients: [
-      { name: 'fresh white fish (like sea bass or halibut), cubed', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
-      { name: 'fresh lime juice', metric: { quantity: 240, unit: 'ml' }, us: { quantity: 1, unit: 'cup' } },
-      { name: 'red onion, thinly sliced', metric: { quantity: '1/2', unit: '' }, us: { quantity: '1/2', unit: '' } },
-      { name: 'jalapeño, minced', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
-      { name: 'chopped cilantro', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
-      { name: 'Salt to taste', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
-    ],
-    instructions: ['In a glass bowl, combine the fish, lime juice, and onion. The lime juice should cover the fish.', 'Cover and refrigerate for at least 30 minutes, or until the fish becomes opaque and "cooked" through.', 'Gently stir in the jalapeño and cilantro.', 'Season with salt and serve immediately with tortilla chips or plantain chips.'],
-    tags: ['Seafood', 'Appetizer', 'Quick', 'Healthy']
-  },
-  {
-    id: 70,
-    title: 'Paella',
-    image: 'https://images.unsplash.com/photo-1575252195209-a0a19451d696?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
-    description: 'A classic Spanish rice dish from Valencia, made in a wide, shallow pan and traditionally loaded with saffron, vegetables, chicken, and seafood.',
-    cookTime: '1 hour',
-    servings: '6',
-    ingredients: [
-      { name: 'chicken thighs, cut into pieces', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
-      { name: 'chorizo sausage, sliced', metric: { quantity: 225, unit: 'g' }, us: { quantity: '1/2', unit: 'lb' } },
-      { name: 'shrimp, peeled', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
-      { name: 'mussels', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
-      { name: 'onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
-      { name: 'garlic, minced', metric: { quantity: 4, unit: 'cloves' }, us: { quantity: 4, unit: 'cloves' } },
-      { name: 'diced tomatoes', metric: { quantity: 1, unit: 'can (425g)' }, us: { quantity: 1, unit: 'can (15 oz)' } },
-      { name: 'chicken broth', metric: { quantity: 1, unit: 'L' }, us: { quantity: 4, unit: 'cups' } },
-      { name: 'paella rice (like Bomba)', metric: { quantity: 400, unit: 'g' }, us: { quantity: 2, unit: 'cups' } },
-      { name: 'Pinch of saffron threads', metric: { quantity: 1, unit: 'pinch' }, us: { quantity: 1, unit: 'pinch' } }
-    ],
-    instructions: ['Heat olive oil in a paella pan. Brown chicken and chorizo.', 'Sauté onion and garlic. Add tomatoes and cook for 5 minutes.', 'Add rice and stir to coat. Pour in broth and saffron. Bring to a simmer.', 'Arrange shrimp and mussels on top. Do not stir again.', 'Cook for 20-25 minutes until liquid is absorbed. Let it rest for 10 minutes before serving.'],
-    tags: ['Spanish', 'Dinner', 'Seafood', 'Chicken'],
-    winePairing: {
-        suggestion: 'Albariño',
-        description: 'This crisp Spanish white wine with notes of citrus and saline is the perfect refreshing partner for a seafood-rich paella.'
-    }
-  }
 ];

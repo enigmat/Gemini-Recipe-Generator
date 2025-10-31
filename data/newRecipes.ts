@@ -8,6 +8,7 @@ export const newRecipes: Recipe[] = [
     description: 'A trendy and delicious appetizer featuring spicy tuna on a pan-fried crispy rice cake, topped with avocado and serrano.',
     cookTime: '45 minutes',
     servings: '4',
+    calories: 'Approx. 450 kcal',
     ingredients: [
       { name: 'sushi rice', metric: { quantity: 185, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
       { name: 'sushi-grade tuna, finely chopped', metric: { quantity: 225, unit: 'g' }, us: { quantity: '1/2', unit: 'lb' } },
@@ -29,6 +30,7 @@ export const newRecipes: Recipe[] = [
     description: 'A hearty and comforting plant-based version of the classic casserole, with a savory lentil and vegetable filling topped with creamy mashed sweet potatoes.',
     cookTime: '1 hour 15 minutes',
     servings: '6',
+    calories: 'Approx. 550 kcal',
     ingredients: [
       { name: 'brown lentils', metric: { quantity: 200, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
       { name: 'vegetable broth', metric: { quantity: 720, unit: 'ml' }, us: { quantity: 3, unit: 'cups' } },
@@ -50,6 +52,7 @@ export const newRecipes: Recipe[] = [
     description: 'An indulgent, creamy cheesecake with a graham cracker crust, topped with a rich homemade salted caramel sauce.',
     cookTime: '1 hour 30 minutes (+ chilling)',
     servings: '12',
+    calories: 'Approx. 550 kcal per slice',
     ingredients: [
       { name: 'graham cracker crumbs', metric: { quantity: 150, unit: 'g' }, us: { quantity: '1 1/2', unit: 'cups' } },
       { name: 'melted butter', metric: { quantity: 113, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } },

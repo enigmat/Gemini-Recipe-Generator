@@ -71,6 +71,7 @@ import * as imageStore from './services/imageStore';
 import MealPlanGenerator from './components/MealPlanGenerator';
 import RecipeOfTheDay from './components/RecipeOfTheDay';
 import * as recipeOfTheDayService from './services/recipeOfTheDayService';
+import UnitToggleButton from './components/UnitToggleButton';
 
 const RECIPES_PER_PAGE = 12;
 
@@ -95,7 +96,7 @@ const App: React.FC = () => {
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [pantryIngredients, setPantryIngredients] = useState<string[]>([]);
     const [committedPantryIngredients, setCommittedPantryIngredients] = useState<string[]>([]);
-    const [measurementSystem, setMeasurementSystem] = useState<'metric' | 'us'>('metric');
+    const [measurementSystem, setMeasurementSystem] = useState<'metric' | 'us'>('us');
     const [selectedRecipeIds, setSelectedRecipeIds] = useState<number[]>([]);
     const [cookbookSelectedTag, setCookbookSelectedTag] = useState<string>('All');
     
@@ -1089,6 +1090,7 @@ const App: React.FC = () => {
                             <span className="text-2xl font-bold text-slate-800 tracking-tight">Recipe Extracter</span>
                         </button>
                         <div className="flex items-center gap-4">
+                            <UnitToggleButton system={measurementSystem} onSystemChange={handleSystemChange} />
                             {currentUser ? (
                                 <UserMenu
                                     user={currentUser}

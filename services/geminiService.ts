@@ -70,7 +70,7 @@ export const generateImage = async (prompt: string): Promise<string> => {
 export const generateRecipeDetailsFromTitle = async (title: string): Promise<Omit<Recipe, 'id' | 'image'>> => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const prompt = `Generate a complete, high-quality recipe for "${title}". The recipe must be well-written, easy to follow, and appealing. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing.`;
+        const prompt = `Generate a complete, high-quality recipe for "${title}". The recipe must be well-written, easy to follow, and appealing. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing, and an estimated calorie count per serving.`;
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
@@ -84,6 +84,7 @@ export const generateRecipeDetailsFromTitle = async (title: string): Promise<Omi
                         description: { type: Type.STRING, description: "A brief, enticing description of the dish." },
                         cookTime: { type: Type.STRING, description: "e.g., '45 minutes'" },
                         servings: { type: Type.STRING, description: "e.g., '4 servings' or '4-6'" },
+                        calories: { type: Type.STRING, description: "e.g., 'Approx. 550 kcal'" },
                         ingredients: {
                             type: Type.ARRAY,
                             items: {
@@ -126,7 +127,7 @@ export const generateRecipeDetailsFromTitle = async (title: string): Promise<Omi
                             },
                         }
                     },
-                    required: ['title', 'description', 'cookTime', 'servings', 'ingredients', 'instructions', 'tags']
+                    required: ['title', 'description', 'cookTime', 'servings', 'ingredients', 'instructions', 'tags', 'calories']
                 }
             }
         });
@@ -140,6 +141,7 @@ export const generateRecipeDetailsFromTitle = async (title: string): Promise<Omi
             !recipeData.description || typeof recipeData.description !== 'string' ||
             !recipeData.cookTime || typeof recipeData.cookTime !== 'string' ||
             !recipeData.servings || typeof recipeData.servings !== 'string' ||
+            !recipeData.calories || typeof recipeData.calories !== 'string' ||
             !Array.isArray(recipeData.ingredients) ||
             !Array.isArray(recipeData.instructions) ||
             !Array.isArray(recipeData.tags)
@@ -202,7 +204,7 @@ export const generateRecipeOfTheDay = async (): Promise<Omit<Recipe, 'id' | 'ima
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-        const prompt = `Generate a popular, seasonally appropriate recipe that would be great for today, ${today}. The recipe should be appealing to a wide audience and not overly complex. Provide a complete, high-quality recipe. The recipe must be well-written, easy to follow, and appealing. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing.`;
+        const prompt = `Generate a popular, seasonally appropriate recipe that would be great for today, ${today}. The recipe should be appealing to a wide audience and not overly complex. Provide a complete, high-quality recipe. The recipe must be well-written, easy to follow, and appealing. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing, and an estimated calorie count per serving.`;
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
@@ -216,6 +218,7 @@ export const generateRecipeOfTheDay = async (): Promise<Omit<Recipe, 'id' | 'ima
                         description: { type: Type.STRING, description: "A brief, enticing description of the dish." },
                         cookTime: { type: Type.STRING, description: "e.g., '45 minutes'" },
                         servings: { type: Type.STRING, description: "e.g., '4 servings' or '4-6'" },
+                        calories: { type: Type.STRING, description: "e.g., 'Approx. 550 kcal'" },
                         ingredients: {
                             type: Type.ARRAY,
                             items: {
@@ -258,7 +261,7 @@ export const generateRecipeOfTheDay = async (): Promise<Omit<Recipe, 'id' | 'ima
                             },
                         }
                     },
-                    required: ['title', 'description', 'cookTime', 'servings', 'ingredients', 'instructions', 'tags']
+                    required: ['title', 'description', 'cookTime', 'servings', 'ingredients', 'instructions', 'tags', 'calories']
                 }
             }
         });
@@ -272,6 +275,7 @@ export const generateRecipeOfTheDay = async (): Promise<Omit<Recipe, 'id' | 'ima
             !recipeData.description || typeof recipeData.description !== 'string' ||
             !recipeData.cookTime || typeof recipeData.cookTime !== 'string' ||
             !recipeData.servings || typeof recipeData.servings !== 'string' ||
+            !recipeData.calories || typeof recipeData.calories !== 'string' ||
             !Array.isArray(recipeData.ingredients) ||
             !Array.isArray(recipeData.instructions) ||
             !Array.isArray(recipeData.tags)
@@ -290,7 +294,7 @@ export const generateRecipeOfTheDay = async (): Promise<Omit<Recipe, 'id' | 'ima
 export const generateRecipeFromUrl = async (url: string): Promise<Omit<Recipe, 'id' | 'image'>> => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const prompt = `Analyze the following URL and generate a complete, high-quality recipe based on its title and content theme. The URL is: "${url}". The recipe must be well-written, easy to follow, and appealing. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing.`;
+        const prompt = `Analyze the following URL and generate a complete, high-quality recipe based on its title and content theme. The URL is: "${url}". The recipe must be well-written, easy to follow, and appealing. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing, and an estimated calorie count per serving.`;
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
@@ -304,6 +308,7 @@ export const generateRecipeFromUrl = async (url: string): Promise<Omit<Recipe, '
                         description: { type: Type.STRING, description: "A brief, enticing description of the dish." },
                         cookTime: { type: Type.STRING, description: "e.g., '45 minutes'" },
                         servings: { type: Type.STRING, description: "e.g., '4 servings' or '4-6'" },
+                        calories: { type: Type.STRING, description: "e.g., 'Approx. 550 kcal'" },
                         ingredients: {
                             type: Type.ARRAY,
                             items: {
@@ -346,7 +351,7 @@ export const generateRecipeFromUrl = async (url: string): Promise<Omit<Recipe, '
                             },
                         }
                     },
-                    required: ['title', 'description', 'cookTime', 'servings', 'ingredients', 'instructions', 'tags']
+                    required: ['title', 'description', 'cookTime', 'servings', 'ingredients', 'instructions', 'tags', 'calories']
                 }
             }
         });
@@ -360,6 +365,7 @@ export const generateRecipeFromUrl = async (url: string): Promise<Omit<Recipe, '
             !recipeData.description || typeof recipeData.description !== 'string' ||
             !recipeData.cookTime || typeof recipeData.cookTime !== 'string' ||
             !recipeData.servings || typeof recipeData.servings !== 'string' ||
+            !recipeData.calories || typeof recipeData.calories !== 'string' ||
             !Array.isArray(recipeData.ingredients) ||
             !Array.isArray(recipeData.instructions) ||
             !Array.isArray(recipeData.tags)
@@ -556,7 +562,7 @@ export const generateRecipeFromIngredients = async (ingredients: string[], dieta
         if (dietaryNotes.trim()) {
             prompt += ` Please adhere to these dietary notes: "${dietaryNotes}".`;
         }
-        prompt += ` The user has these ingredients, so prioritize them, but you can assume they have basic pantry staples like oil, salt, pepper, water, and common spices. Provide a creative, appealing title for the dish. The recipe must be well-written, easy to follow, and appealing. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing.`;
+        prompt += ` The user has these ingredients, so prioritize them, but you can assume they have basic pantry staples like oil, salt, pepper, water, and common spices. Provide a creative, appealing title for the dish. The recipe must be well-written, easy to follow, and appealing. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing, and an estimated calorie count per serving.`;
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
@@ -570,6 +576,7 @@ export const generateRecipeFromIngredients = async (ingredients: string[], dieta
                         description: { type: Type.STRING, description: "A brief, enticing description of the dish." },
                         cookTime: { type: Type.STRING, description: "e.g., '45 minutes'" },
                         servings: { type: Type.STRING, description: "e.g., '4 servings' or '4-6'" },
+                        calories: { type: Type.STRING, description: "e.g., 'Approx. 550 kcal'" },
                         ingredients: {
                             type: Type.ARRAY,
                             items: {
@@ -612,7 +619,7 @@ export const generateRecipeFromIngredients = async (ingredients: string[], dieta
                             },
                         }
                     },
-                    required: ['title', 'description', 'cookTime', 'servings', 'ingredients', 'instructions', 'tags']
+                    required: ['title', 'description', 'cookTime', 'servings', 'ingredients', 'instructions', 'tags', 'calories']
                 }
             }
         });
