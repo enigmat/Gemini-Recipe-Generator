@@ -38,6 +38,7 @@ interface AdminDashboardProps {
     onRemoveFromNew: (recipeId: number) => void;
     onAddToNew: (recipeId: number) => void;
     onSaveChanges: () => Promise<void>;
+    onMoveRecipeFromRotdToMain: (recipe: Recipe) => Promise<boolean>;
 }
 
 const PlaceholderPanel: React.FC<{ title: string }> = ({ title }) => (
@@ -104,7 +105,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
             case 'Add Recipe':
                  return <AdminAddRecipe onAddRecipe={props.onAddRecipe} />;
             case 'Recipe of the Day Pool':
-                 return <AdminROTDManagement />;
+                 return <AdminROTDManagement onMoveRecipe={props.onMoveRecipeFromRotdToMain} />;
             case 'Newsletter':
                  return (
                     <AdminNewsletter

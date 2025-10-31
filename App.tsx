@@ -470,6 +470,25 @@ const App: React.FC = () => {
         }
     };
 
+    const handleMoveRecipeFromRotdToMain = async (recipeToMove: Recipe): Promise<boolean> => {
+        const newlyAddedRecipe = await recipeService.addRecipeIfUnique(recipeToMove);
+        
+        if (newlyAddedRecipe) {
+            setAllRecipes(prev => [newlyAddedRecipe, ...prev]);
+    
+            const scheduledRecipes = recipeService.getScheduledRecipes();
+            const updatedScheduledRecipes = scheduledRecipes.filter(r => r.id !== recipeToMove.id);
+            recipeService.saveScheduledRecipes(updatedScheduledRecipes);
+    
+            alert(`Recipe "${newlyAddedRecipe.title}" has been moved to the main recipe list.`);
+            return true;
+        } else {
+            alert(`Could not move "${recipeToMove.title}". It might already exist in the main list.`);
+            return false;
+        }
+    };
+
+
     // Admin panel functions
     const handleAddNewRecipe = async (title: string, addToNew: boolean, addToRecipeOfTheDayPool: boolean): Promise<void> => {
         const recipeDetails = await generateRecipeDetailsFromTitle(title);
@@ -729,6 +748,7 @@ const App: React.FC = () => {
                 onRemoveFromNew={handleRemoveFromNew}
                 onAddToNew={handleAddToNew}
                 onSaveChanges={handleSaveChanges}
+                onMoveRecipeFromRotdToMain={handleMoveRecipeFromRotdToMain}
             />
         );
     }

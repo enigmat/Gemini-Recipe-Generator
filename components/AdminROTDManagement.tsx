@@ -7,11 +7,17 @@ import SparklesIcon from './icons/SparklesIcon';
 import TrophyIcon from './icons/TrophyIcon';
 import * as imageStore from '../services/imageStore';
 import StoredImage from './StoredImage';
+import DownloadIcon from './icons/DownloadIcon';
 
-const AdminROTDManagement: React.FC = () => {
+interface AdminROTDManagementProps {
+    onMoveRecipe: (recipe: Recipe) => Promise<boolean>;
+}
+
+const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe }) => {
     const [scheduledRecipes, setScheduledRecipes] = useState<Recipe[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [movingId, setMovingId] = useState<number | null>(null);
 
     useEffect(() => {
         setScheduledRecipes(recipeService.getScheduledRecipes());
@@ -68,6 +74,16 @@ const AdminROTDManagement: React.FC = () => {
         }
     };
 
+    const handleMove = async (recipe: Recipe) => {
+        setMovingId(recipe.id);
+        const success = await onMoveRecipe(recipe);
+        if (success) {
+            // If move was successful, update local state to remove the item
+            setScheduledRecipes(prev => prev.filter(r => r.id !== recipe.id));
+        }
+        setMovingId(null);
+    };
+
     return (
         <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -98,11 +114,12 @@ const AdminROTDManagement: React.FC = () => {
                             <th className="px-3 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Image</th>
                             <th className="px-3 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
                             <th className="pl-3 pr-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
+                            <th className="pl-3 pr-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
                         {scheduledRecipes.map((recipe, index) => (
-                            <tr key={recipe.id}>
+                            <tr key={recipe.id} className={movingId === recipe.id ? 'opacity-50' : ''}>
                                 <td className="pl-6 pr-3 py-4 whitespace-nowrap text-sm font-semibold text-slate-700">{index + 1}</td>
                                 <td className="px-3 py-4 whitespace-nowrap">
                                     <StoredImage src={recipe.image} alt={recipe.title} className="w-20 h-14 object-cover rounded-md border border-slate-200" />
@@ -111,12 +128,23 @@ const AdminROTDManagement: React.FC = () => {
                                 <td className="pl-3 pr-6 py-4">
                                     <p className="text-sm text-slate-500 line-clamp-2">{recipe.description}</p>
                                 </td>
+                                <td className="pl-3 pr-6 py-4 whitespace-nowrap">
+                                    <button
+                                        onClick={() => handleMove(recipe)}
+                                        disabled={movingId === recipe.id || isLoading}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-100 text-blue-800 font-semibold rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-wait"
+                                        title="Move to Main Recipe List"
+                                    >
+                                        {movingId === recipe.id ? <Spinner size="w-4 h-4" /> : <DownloadIcon className="w-4 h-4" />}
+                                        <span>Move</span>
+                                    </button>
+                                </td>
                             </tr>
                         ))}
 
                         {isLoading && (
                              <tr>
-                                <td colSpan={4} className="text-center p-4">
+                                <td colSpan={5} className="text-center p-4">
                                     <div className="flex items-center justify-center gap-2 text-slate-600">
                                         <Spinner />
                                         <span>Generating recipe {Math.min(scheduledRecipes.length + 1, 30)} of 30...</span>
@@ -127,7 +155,7 @@ const AdminROTDManagement: React.FC = () => {
 
                         {!isLoading && scheduledRecipes.length === 0 && (
                             <tr>
-                                <td colSpan={4} className="text-center py-12 text-slate-500">
+                                <td colSpan={5} className="text-center py-12 text-slate-500">
                                     The recipe pool is empty. Click the "Generate" button to populate it.
                                 </td>
                             </tr>
