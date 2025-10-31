@@ -4,11 +4,14 @@ import TrophyIcon from './icons/TrophyIcon';
 import ClockIcon from './icons/ClockIcon';
 import UsersIcon from './icons/UsersIcon';
 import StoredImage from './StoredImage';
+import CheckCircleIcon from './icons/CheckCircleIcon';
 
 interface RecipeOfTheDayProps {
   recipe: Recipe | null;
   isLoading: boolean;
   onClick: (recipe: Recipe) => void;
+  onArchive: (recipe: Recipe) => void;
+  isArchived: boolean;
 }
 
 const RecipeOfTheDaySkeleton: React.FC = () => (
@@ -32,7 +35,7 @@ const RecipeOfTheDaySkeleton: React.FC = () => (
 );
 
 
-const RecipeOfTheDay: React.FC<RecipeOfTheDayProps> = ({ recipe, isLoading, onClick }) => {
+const RecipeOfTheDay: React.FC<RecipeOfTheDayProps> = ({ recipe, isLoading, onClick, onArchive, isArchived }) => {
     if (isLoading) {
         return <RecipeOfTheDaySkeleton />;
     }
@@ -72,12 +75,28 @@ const RecipeOfTheDay: React.FC<RecipeOfTheDayProps> = ({ recipe, isLoading, onCl
                         </div>
                     </div>
                     <p className="text-slate-600 mb-6">{recipe.description}</p>
-                    <button
-                        onClick={() => onClick(recipe)}
-                        className="self-start px-6 py-3 bg-teal-500 text-white font-bold rounded-lg shadow-md hover:bg-teal-600 transition-colors"
-                    >
-                        View Recipe
-                    </button>
+                    <div className="flex flex-wrap gap-4">
+                        <button
+                            onClick={() => onClick(recipe)}
+                            className="px-6 py-3 bg-teal-500 text-white font-bold rounded-lg shadow-md hover:bg-teal-600 transition-colors"
+                        >
+                            View Recipe
+                        </button>
+                         <button
+                            onClick={() => onArchive(recipe)}
+                            disabled={isArchived}
+                            className="flex items-center gap-2 px-6 py-3 bg-white text-slate-700 font-bold rounded-lg shadow-md border hover:bg-slate-50 transition-colors disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"
+                        >
+                            {isArchived ? (
+                                <>
+                                    <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                                    <span>Added to List</span>
+                                </>
+                            ) : (
+                                'Add to Main List'
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

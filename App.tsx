@@ -147,6 +147,11 @@ const App: React.FC = () => {
     const [recipeOfTheDay, setRecipeOfTheDay] = useState<Recipe | null>(null);
     const [isLoadingRecipeOfTheDay, setIsLoadingRecipeOfTheDay] = useState<boolean>(true);
 
+    const isRecipeOfTheDayArchived = useMemo(() => {
+        if (!recipeOfTheDay) return false;
+        return allRecipes.some(r => r.title.toLowerCase() === recipeOfTheDay.title.toLowerCase());
+    }, [recipeOfTheDay, allRecipes]);
+
 
     const allCategoryTags = useMemo(() => {
         const tags = new Set<string>();
@@ -446,6 +451,23 @@ const App: React.FC = () => {
         recipeService.saveAllRecipes(allRecipes);
         recipeService.saveNewRecipes(newThisMonthRecipes);
         return Promise.resolve();
+    };
+
+    const handleArchiveRecipeOfTheDay = async (recipeToArchive: Recipe) => {
+        if (!recipeToArchive) return;
+
+        if (allRecipes.some(r => r.title.toLowerCase() === recipeToArchive.title.toLowerCase())) {
+            alert(`Recipe "${recipeToArchive.title}" already exists in the main recipe list.`);
+            return;
+        }
+
+        const newlyAddedRecipe = await recipeService.addRecipeIfUnique(recipeToArchive);
+        if (newlyAddedRecipe) {
+            setAllRecipes(prev => [newlyAddedRecipe, ...prev]);
+            alert(`Recipe "${newlyAddedRecipe.title}" has been added to the main recipe list.`);
+        } else {
+            alert(`Could not add "${recipeToArchive.title}". It might already exist.`);
+        }
     };
 
     // Admin panel functions
@@ -933,6 +955,8 @@ const App: React.FC = () => {
                             recipe={recipeOfTheDay} 
                             isLoading={isLoadingRecipeOfTheDay} 
                             onClick={handleCardClick}
+                            onArchive={handleArchiveRecipeOfTheDay}
+                            isArchived={isRecipeOfTheDayArchived}
                         />
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-white p-8 rounded-lg shadow-sm">
