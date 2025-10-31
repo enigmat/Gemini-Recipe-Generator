@@ -1,14 +1,8 @@
 import { User } from '../types';
-import { initialUsers } from '../data/users';
+import { getDatabase, saveDatabase } from './cloudService';
 
 const USER_KEY = 'recipeAppCurrentUser';
-const ALL_USERS_KEY = 'recipeAppAllUsers';
 const ADMIN_EMAIL = 'billhanoman@gmail.com';
-
-// Initialize with default users if none exist
-if (!localStorage.getItem(ALL_USERS_KEY)) {
-    localStorage.setItem(ALL_USERS_KEY, JSON.stringify(initialUsers));
-}
 
 const createDefaultUser = (email: string): User => {
     const name = email.split('@')[0];
@@ -27,21 +21,14 @@ const createDefaultUser = (email: string): User => {
 // --- All Users Management (for Admin) ---
 
 export const getAllUsers = (): User[] => {
-    try {
-        const usersJson = localStorage.getItem(ALL_USERS_KEY);
-        return usersJson ? JSON.parse(usersJson) : [];
-    } catch (error) {
-        console.error('Could not get all users from localStorage', error);
-        return [];
-    }
+    const db = getDatabase();
+    return db.users;
 };
 
 export const saveAllUsers = (users: User[]): void => {
-    try {
-        localStorage.setItem(ALL_USERS_KEY, JSON.stringify(users));
-    } catch (error) {
-        console.error('Could not save all users to localStorage', error);
-    }
+    const db = getDatabase();
+    db.users = users;
+    saveDatabase(db);
 };
 
 export const addUserToList = (newUser: User): void => {

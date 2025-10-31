@@ -1,27 +1,13 @@
 import { AboutUsContent } from '../types';
-import { aboutUsData as initialData } from '../data/aboutUs';
-
-const ABOUT_US_KEY = 'recipeAppAboutUs';
-
-// Initialize with default data if none exists, this allows admin to change it later
-if (!localStorage.getItem(ABOUT_US_KEY)) {
-    localStorage.setItem(ABOUT_US_KEY, JSON.stringify(initialData));
-}
+import { getDatabase, saveDatabase } from './cloudService';
 
 export const getAboutUsContent = (): AboutUsContent => {
-    try {
-        const contentJson = localStorage.getItem(ABOUT_US_KEY);
-        return contentJson ? JSON.parse(contentJson) : initialData;
-    } catch (error) {
-        console.error('Could not get About Us content from localStorage', error);
-        return initialData;
-    }
+    const db = getDatabase();
+    return db.aboutUs;
 };
 
 export const saveAboutUsContent = (content: AboutUsContent): void => {
-    try {
-        localStorage.setItem(ABOUT_US_KEY, JSON.stringify(content));
-    } catch (error) {
-        console.error('Could not save About Us content to localStorage', error);
-    }
+    const db = getDatabase();
+    db.aboutUs = content;
+    saveDatabase(db);
 };

@@ -175,3 +175,29 @@ export interface GeneratedMealPlan {
   }[];
   notes?: string;
 }
+
+// Centralized DB types
+export type RatingsStore = Record<number, { totalScore: number; count: number; userRatings: Record<string, number> }>;
+
+export interface UserData {
+    favorites: number[];
+    shoppingLists: ShoppingList[];
+    cocktails: SavedCocktail[];
+}
+
+export interface AppDatabase {
+    users: User[];
+    recipes: {
+        all: Recipe[];
+        new: Recipe[];
+        scheduled: Recipe[];
+    };
+    products: Product[];
+    aboutUs: AboutUsContent;
+    newsletters: {
+        sent: Newsletter[];
+        leads: Lead[];
+    };
+    ratings: RatingsStore;
+    userData: Record<string, UserData>; // Keyed by user email
+}

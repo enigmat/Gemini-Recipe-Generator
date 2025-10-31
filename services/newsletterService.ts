@@ -1,7 +1,6 @@
 import { Newsletter, User } from '../types';
 import * as userService from './userService';
-
-const NEWSLETTERS_KEY = 'recipeAppNewsletters';
+import { getDatabase, saveDatabase } from './cloudService';
 
 export const subscribeByEmail = (email: string): void => {
     const allUsers = userService.getAllUsers();
@@ -27,13 +26,8 @@ export const subscribeByEmail = (email: string): void => {
 };
 
 export const getSentNewsletters = (): Newsletter[] => {
-    try {
-        const newslettersJson = localStorage.getItem(NEWSLETTERS_KEY);
-        return newslettersJson ? JSON.parse(newslettersJson) : [];
-    } catch (error) {
-        console.error('Could not get newsletters from localStorage', error);
-        return [];
-    }
+    const db = getDatabase();
+    return db.newsletters.sent;
 };
 
 export const sendNewsletter = (newsletterData: Omit<Newsletter, 'id' | 'sentDate'>): Newsletter => {
@@ -43,14 +37,9 @@ export const sendNewsletter = (newsletterData: Omit<Newsletter, 'id' | 'sentDate
         sentDate: new Date().toISOString(),
     };
     
-    const allNewsletters = getSentNewsletters();
-    const updatedNewsletters = [newNewsletter, ...allNewsletters];
-    
-    try {
-        localStorage.setItem(NEWSLETTERS_KEY, JSON.stringify(updatedNewsletters));
-    } catch (error) {
-        console.error('Could not save newsletter to localStorage', error);
-    }
+    const db = getDatabase();
+    db.newsletters.sent = [newNewsletter, ...db.newsletters.sent];
+    saveDatabase(db);
     
     return newNewsletter;
 };

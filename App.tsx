@@ -72,6 +72,7 @@ import MealPlanGenerator from './components/MealPlanGenerator';
 import RecipeOfTheDay from './components/RecipeOfTheDay';
 import * as recipeOfTheDayService from './services/recipeOfTheDayService';
 import UnitToggleButton from './components/UnitToggleButton';
+import { runMigration } from './services/migrationService';
 
 const RECIPES_PER_PAGE = 12;
 
@@ -83,6 +84,9 @@ const applyRatings = (recipes: Recipe[]): Recipe[] => {
 };
 
 const App: React.FC = () => {
+    // Run data migration before any state is initialized
+    runMigration();
+    
     const [allRecipes, setAllRecipes] = useState<Recipe[]>(() => applyRatings(recipeService.getAllRecipes()));
     const [newThisMonthRecipes, setNewThisMonthRecipes] = useState<Recipe[]>(() => applyRatings(recipeService.getNewRecipes()));
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);

@@ -1,35 +1,24 @@
-import { Recipe } from '../types';
-
-const RATINGS_KEY = 'recipeAppRatings';
-
-// Structure for storing ratings: { [recipeId: number]: { totalScore: number; count: number; userRatings: { [userEmail: string]: number } } }
-type RatingsStore = Record<number, { totalScore: number; count: number; userRatings: Record<string, number> }>;
-
-let ratings: RatingsStore = {};
+import { Recipe, RatingsStore } from '../types';
+import { getDatabase, saveDatabase } from './cloudService';
 
 export const loadRatings = (): void => {
-    try {
-        const storedRatings = localStorage.getItem(RATINGS_KEY);
-        if (storedRatings) {
-            ratings = JSON.parse(storedRatings);
-        } else {
-            ratings = {};
-        }
-    } catch (error) {
-        console.error("Could not load ratings from localStorage", error);
-        ratings = {};
-    }
+    // This function is now obsolete as getDatabase handles loading.
+    // Kept for compatibility in case it's called somewhere, but does nothing.
 };
 
-const saveRatings = (): void => {
-    try {
-        localStorage.setItem(RATINGS_KEY, JSON.stringify(ratings));
-    } catch (error) {
-        console.error("Could not save ratings to localStorage", error);
-    }
+const getRatings = (): RatingsStore => {
+    const db = getDatabase();
+    return db.ratings;
+};
+
+const saveRatings = (ratings: RatingsStore): void => {
+    const db = getDatabase();
+    db.ratings = ratings;
+    saveDatabase(db);
 };
 
 export const addRating = (recipeId: number, score: number, userEmail: string): void => {
+    const ratings = getRatings();
     if (!ratings[recipeId]) {
         ratings[recipeId] = { totalScore: 0, count: 0, userRatings: {} };
     }
@@ -47,10 +36,11 @@ export const addRating = (recipeId: number, score: number, userEmail: string): v
     }
     
     recipeRating.userRatings[userEmail] = score;
-    saveRatings();
+    saveRatings(ratings);
 };
 
 export const getRating = (recipeId: number): Recipe['rating'] | undefined => {
+    const ratings = getRatings();
     const ratingData = ratings[recipeId];
     if (!ratingData || ratingData.count === 0) {
         return undefined;

@@ -1,29 +1,25 @@
-const getFavoritesKey = (userEmail: string) => `recipeAppFavorites_${userEmail}`;
+import { getDatabase, saveDatabase, getUserData } from './cloudService';
 
 export const getFavorites = (userEmail: string | null): number[] => {
   if (!userEmail) return [];
-  try {
-    const favoritesKey = getFavoritesKey(userEmail);
-    const favorites = localStorage.getItem(favoritesKey);
-    return favorites ? JSON.parse(favorites) : [];
-  } catch (error) {
-    console.error('Could not get favorites from localStorage', error);
-    return [];
-  }
+  const userData = getUserData(userEmail);
+  return userData.favorites;
 };
 
 export const addFavorite = (recipeId: number, userEmail: string): void => {
-  const favorites = getFavorites(userEmail);
+  const db = getDatabase();
+  const favorites = getUserData(userEmail).favorites;
   if (!favorites.includes(recipeId)) {
-    const newFavorites = [...favorites, recipeId];
-    localStorage.setItem(getFavoritesKey(userEmail), JSON.stringify(newFavorites));
+    db.userData[userEmail].favorites = [...favorites, recipeId];
+    saveDatabase(db);
   }
 };
 
 export const removeFavorite = (recipeId: number, userEmail: string): void => {
-  let favorites = getFavorites(userEmail);
-  favorites = favorites.filter((id) => id !== recipeId);
-  localStorage.setItem(getFavoritesKey(userEmail), JSON.stringify(favorites));
+  const db = getDatabase();
+  const favorites = getUserData(userEmail).favorites;
+  db.userData[userEmail].favorites = favorites.filter((id) => id !== recipeId);
+  saveDatabase(db);
 };
 
 export const isFavorite = (recipeId: number, userEmail: string | null): boolean => {
