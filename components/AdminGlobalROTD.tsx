@@ -75,9 +75,6 @@ const AdminGlobalROTD: React.FC = () => {
     };
 
     const handleUpdateImage = async (recipeToUpdate: Recipe) => {
-        if (!window.confirm(`Are you sure you want to regenerate the image for "${recipeToUpdate.title}"?`)) {
-            return;
-        }
         setUpdatingImageId(recipeToUpdate.id);
         try {
             const image = await geminiService.generateImageFromPrompt(recipeToUpdate.title);

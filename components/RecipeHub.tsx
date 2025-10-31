@@ -9,7 +9,6 @@ import AdminRecipeManagement from './AdminRecipeManagement';
 import AdminAddRecipe from './AdminAddRecipe';
 import AdminBulkImport from './AdminBulkImport';
 import AdminROTDManagement from './AdminROTDManagement';
-import AdminMonthlyDrop from './AdminMonthlyDrop';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import DownloadIcon from './icons/DownloadIcon';
 import Spinner from './Spinner';
@@ -23,6 +22,8 @@ import AdminCookingClasses from './AdminCookingClasses';
 import AdminVideoManagement from './AdminVideoManagement';
 import AdminMarketplace from './AdminMarketplace';
 import AdminAboutUs from './AdminAboutUs';
+import AdminNewRecipeManagement from './AdminNewRecipeManagement';
+import AdminMonthlyDrop from './AdminMonthlyDrop';
 import AdminGlobalROTD from './AdminGlobalROTD';
 
 interface RecipeHubProps {
@@ -75,12 +76,12 @@ const RecipeHub: React.FC<RecipeHubProps> = (props) => {
 
     const adminMenuItems = [
         'User Management', 'API Key Management', 'Leads', 'Newsletter', 'Recipe Management', 
-        'Add Recipe', 'Recipe of the Day Pool', 'Bulk Import', 'Monthly Recipe Drop', 
+        'New This Month', 'Add Recipe', 'Bulk Import', 'Monthly Recipe Drop', 'Recipe of the Day Pool',
         'Cooking Classes', 'Video Management', 'Marketplace Management', 'About Us'
     ];
     
     const userMenuItems = [
-        'Recipe Management', 'Add Recipe', 'Scheduled Recipes', 'Bulk Import'
+        'Recipe Management', 'Add Recipe', 'New This Month', 'Scheduled Recipes', 'Bulk Import'
     ];
 
     const menuItems = isAdmin ? adminMenuItems : userMenuItems;
@@ -93,11 +94,9 @@ const RecipeHub: React.FC<RecipeHubProps> = (props) => {
         recipeService.saveNewRecipes(props.currentUser.email, newRecipes);
         recipeService.saveScheduledRecipes(props.currentUser.email, scheduledRecipes);
         
-        // Save global data if admin
         if (isAdmin) {
             userService.saveAllUsers(allUsers);
             marketplaceService.saveProducts(allProducts);
-            // Other global data is saved directly by their components
         }
         
         props.onSaveChanges().then(() => {
@@ -109,7 +108,6 @@ const RecipeHub: React.FC<RecipeHubProps> = (props) => {
 
     const handleLocalAddRecipe = async (title: string, addToNew: boolean, addToScheduled: boolean) => {
         await props.onAddRecipe(title, addToNew, addToScheduled);
-        // Refresh local state after add
         setAllRecipes(recipeService.getAllRecipes(props.currentUser.email));
         setNewRecipes(recipeService.getNewRecipes(props.currentUser.email));
         setScheduledRecipes(recipeService.getScheduledRecipes(props.currentUser.email));
@@ -145,8 +143,18 @@ const RecipeHub: React.FC<RecipeHubProps> = (props) => {
         alert(`Recipe "${recipe.title}" has been moved to your main recipe list. Click 'Save Changes' to confirm.`);
         return true;
     };
+    
+    const handleRemoveFromNew = (recipeId: number) => {
+        const updatedNewRecipes = newRecipes.filter(r => r.id !== recipeId);
+        setNewRecipes(updatedNewRecipes);
+    };
 
-    // Admin Panel Handlers
+    const handleLocalUpdateRecipeWithAI = async (recipeId: number, title: string) => {
+        await props.onUpdateRecipeWithAI(recipeId, title);
+        setAllRecipes(recipeService.getAllRecipes(props.currentUser.email));
+        setNewRecipes(recipeService.getNewRecipes(props.currentUser.email));
+    };
+
     const handleDeleteUser = (userEmail: string) => {
         userService.deleteUser(userEmail);
         setAllUsers(userService.getAllUsers());
@@ -168,9 +176,24 @@ const RecipeHub: React.FC<RecipeHubProps> = (props) => {
     const renderPanel = () => {
         switch (activePanel) {
             case 'Recipe Management':
-                return <AdminRecipeManagement recipes={allRecipes} newRecipeIds={newRecipes.map(r => r.id)} onDeleteRecipe={props.onDeleteRecipe} onUpdateRecipeWithAI={props.onUpdateRecipeWithAI} onUpdateAllRecipeImages={props.onUpdateAllRecipeImages} isUpdatingAllImages={props.isUpdatingAllImages} onAddToNew={(recipeId) => { const recipe = allRecipes.find(r => r.id === recipeId); if (recipe && !newRecipes.some(r => r.id === recipeId)) setNewRecipes([recipe, ...newRecipes]); }} />;
+                return <AdminRecipeManagement 
+                            recipes={allRecipes} 
+                            newRecipes={newRecipes}
+                            onDeleteRecipe={props.onDeleteRecipe} 
+                            onUpdateRecipeWithAI={props.onUpdateRecipeWithAI} 
+                            onUpdateAllRecipeImages={props.onUpdateAllRecipeImages} 
+                            isUpdatingAllImages={props.isUpdatingAllImages} 
+                            onAddToNew={(recipeId) => { 
+                                const recipe = allRecipes.find(r => r.id === recipeId); 
+                                if (recipe && !newRecipes.some(r => r.id === recipeId)) 
+                                    setNewRecipes([recipe, ...newRecipes]); 
+                            }} 
+                            onRemoveFromNew={handleRemoveFromNew}
+                        />;
             case 'Add Recipe':
                 return <AdminAddRecipe onAddRecipe={handleLocalAddRecipe} />;
+            case 'New This Month':
+                return <AdminNewRecipeManagement recipes={newRecipes} onRemoveFromNew={handleRemoveFromNew} onUpdateRecipeWithAI={handleLocalUpdateRecipeWithAI} />;
             case 'Scheduled Recipes':
                 return <AdminROTDManagement onMoveRecipe={handleMoveRecipeFromScheduledToMain} currentUser={props.currentUser} />;
             case 'Bulk Import':
@@ -184,10 +207,10 @@ const RecipeHub: React.FC<RecipeHubProps> = (props) => {
                 return isAdmin ? <AdminLeadsManagement leads={leads} /> : null;
             case 'Newsletter':
                 return isAdmin ? <AdminNewsletter allRecipes={allRecipes} users={allUsers} sentNewsletters={sentNewsletters} onSendNewsletter={handleSendNewsletter} /> : null;
-            case 'Recipe of the Day Pool':
-                return isAdmin ? <AdminGlobalROTD /> : null;
             case 'Monthly Recipe Drop':
                 return isAdmin ? <AdminMonthlyDrop /> : null;
+            case 'Recipe of the Day Pool':
+                 return isAdmin ? <AdminGlobalROTD /> : null;
             case 'Cooking Classes':
                 return isAdmin ? <AdminCookingClasses /> : null;
             case 'Video Management':
