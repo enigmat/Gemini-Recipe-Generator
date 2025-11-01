@@ -29,6 +29,7 @@ function initializeDatabase(): AppDatabase {
         ratings: {},
         userData: {},
         standardCocktails: [],
+        communityChat: [],
     };
     saveDatabase(newDb);
     return newDb;

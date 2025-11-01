@@ -15,6 +15,7 @@ import InformationCircleIcon from './icons/InformationCircleIcon';
 import ClipboardListIcon from './icons/ClipboardListIcon';
 import HomeIcon from './icons/HomeIcon';
 import BookOpenIcon from './icons/BookOpenIcon';
+import ChatBubbleIcon from './icons/ChatBubbleIcon';
 
 interface MainTabsProps {
   activeTab: string;
@@ -26,6 +27,7 @@ const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser
   const allTabs: any[] = [
     { id: 'Home', name: 'Home', icon: <HomeIcon className="w-5 h-5" />, isLink: true, href: 'https://recipeextracter.com/' },
     { id: 'All Recipes', name: 'All Recipes', icon: null },
+    { id: 'Community Chat', name: 'Community Chat', icon: <ChatBubbleIcon className="w-5 h-5" /> },
     { id: 'Pantry Chef', name: 'Pantry Chef', icon: <RefrigeratorIcon className="w-5 h-5" /> },
     { id: 'AI Meal Planner', name: 'AI Meal Planner', icon: <ClipboardListIcon className="w-5 h-5" /> },
     { id: 'My Cookbook', name: 'My Cookbook', icon: <HeartIcon className="w-5 h-5" /> },

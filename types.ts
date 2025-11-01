@@ -178,6 +178,16 @@ export interface GeneratedMealPlan {
   notes?: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  userId: string; // user email
+  userName: string;
+  userProfileImage?: string;
+  isAdmin: boolean;
+  text: string;
+  timestamp: string; // ISO 8601
+}
+
 // Centralized DB types
 export type RatingsStore = Record<number, { totalScore: number; count: number; userRatings: Record<string, number> }>;
 
@@ -203,4 +213,5 @@ export interface AppDatabase {
     ratings: RatingsStore;
     userData: Record<string, UserData>; // Keyed by user email
     standardCocktails: SavedCocktail[];
+    communityChat: ChatMessage[];
 }

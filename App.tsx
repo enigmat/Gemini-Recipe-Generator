@@ -1,11 +1,12 @@
 
 
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import RecipeCard from './components/RecipeCard';
 import RecipeModal from './components/RecipeModal';
 import TagFilter from './components/TagFilter';
-import { Recipe, User, ShoppingList, MealPlan, Video, CookingClass, Newsletter, Lead, Product, CocktailRecipe, SavedCocktail, ExpertQuestion } from './types';
+import { Recipe, User, ShoppingList, MealPlan, Video, CookingClass, Newsletter, Lead, Product, CocktailRecipe, SavedCocktail, ExpertQuestion, ChatMessage } from './types';
 import * as favoritesService from './services/favoritesService';
 import EmptyState from './components/EmptyState';
 import BookOpenIcon from './components/icons/BookOpenIcon';
@@ -77,6 +78,8 @@ import * as recipeOfTheDayService from './services/recipeOfTheDayService';
 import UnitToggleButton from './components/UnitToggleButton';
 import { runMigration } from './services/migrationService';
 import CocktailMenu from './components/CocktailMenu';
+import CommunityChat from './components/CommunityChat';
+import * as chatService from './services/chatService';
 
 const RECIPES_PER_PAGE = 12;
 
@@ -157,6 +160,9 @@ const App: React.FC = () => {
     const [recipeOfTheDay, setRecipeOfTheDay] = useState<Recipe | null>(null);
     const [isLoadingRecipeOfTheDay, setIsLoadingRecipeOfTheDay] = useState<boolean>(true);
 
+    // Community Chat state
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+
     const isRecipeOfTheDayArchived = useMemo(() => {
         if (!recipeOfTheDay) return false;
         return allRecipes.some(r => r.title.toLowerCase() === recipeOfTheDay.title.toLowerCase());
@@ -187,6 +193,7 @@ const App: React.FC = () => {
         ratingService.loadRatings();
         setProducts(marketplaceService.getProducts());
         setStandardCocktails(cocktailService.getStandardCocktails());
+        setChatMessages(chatService.getChatMessages());
 
         const initializeDailyFeatures = async () => {
             setIsLoadingRecipeOfTheDay(true);
@@ -345,7 +352,7 @@ const App: React.FC = () => {
     };
     
     const handleSelectTab = (tab: string) => {
-        if (['My Cookbook', 'Shopping List', 'My Bar', 'AI Meal Planner', 'Cocktail Menu'].includes(tab)) {
+        if (['My Cookbook', 'Shopping List', 'My Bar', 'AI Meal Planner', 'Cocktail Menu', 'Community Chat'].includes(tab)) {
             if (!currentUser) {
                 setIsLoginModalOpen(true);
                 return;
@@ -493,6 +500,20 @@ const App: React.FC = () => {
             submittedDate: new Date().toISOString(),
         };
         setExpertQuestions(prev => [newQuestion, ...prev]);
+    };
+
+    const handleSendMessage = (text: string) => {
+        if (!currentUser) return;
+        const messageData = {
+            userId: currentUser.email,
+            userName: currentUser.name,
+            userProfileImage: currentUser.profileImage,
+            isAdmin: !!currentUser.isAdmin,
+            text,
+            timestamp: new Date().toISOString(),
+        };
+        const newMessage = chatService.addChatMessage(messageData);
+        setChatMessages(prev => [...prev, newMessage]);
     };
 
     const handleSaveChanges = () => {
@@ -933,6 +954,25 @@ const App: React.FC = () => {
                     );
                 }
                 return <MyBar savedCocktails={savedCocktails} onDelete={handleDeleteCocktail} onGoToBartender={() => handleSelectTab('Bartender Helper')} />;
+            case 'Community Chat':
+                if (!currentUser) {
+                    // This is handled by onSelectTab, but as a fallback
+                     return (
+                        <PremiumContent
+                            isPremium={false}
+                            onUpgradeClick={() => setIsLoginModalOpen(true)}
+                            featureTitle="Join the Community Chat"
+                            featureDescription="Log in to chat with other home cooks and professional chefs."
+                        />
+                    );
+                }
+                return (
+                    <CommunityChat
+                        messages={chatMessages}
+                        currentUser={currentUser}
+                        onSendMessage={handleSendMessage}
+                    />
+                );
             case 'Meal Plans':
                 if (!currentUser?.isPremium) {
                     return (
