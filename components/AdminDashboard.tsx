@@ -23,6 +23,7 @@ import AdminCocktailManagement from './AdminCocktailManagement';
 import AdminCocktailDistribution from './AdminCocktailDistribution';
 
 interface AdminDashboardProps {
+    currentUser: User;
     allRecipes: Recipe[];
     newRecipes: Recipe[];
     users: User[];
@@ -190,7 +191,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
             case 'Cocktail Management':
                 return <AdminCocktailManagement standardCocktails={props.standardCocktails} onUpdateStandardCocktails={props.onUpdateStandardCocktails} />;
             case 'Cocktail Distribution':
-                return <AdminCocktailDistribution users={props.users} />;
+                return <AdminCocktailDistribution users={props.users} currentUser={props.currentUser} />;
             case 'Newsletter':
                  return (
                     <AdminNewsletter

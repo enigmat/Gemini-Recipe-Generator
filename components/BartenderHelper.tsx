@@ -3,14 +3,16 @@ import { CocktailRecipe, SavedCocktail, User } from '../types';
 import { generateCocktailRecipe, generateImageFromPrompt } from '../services/geminiService';
 import Spinner from './Spinner';
 import SparklesIcon from './icons/SparklesIcon';
+import CrownIcon from './icons/CrownIcon';
 
 interface BartenderHelperProps {
-  currentUser: User | null;
+  currentUser: User;
   savedCocktails: SavedCocktail[];
   onSaveCocktail: (recipe: CocktailRecipe, image: string) => void;
+  onUpgradeRequest: () => void;
 }
 
-const BartenderHelper: React.FC<BartenderHelperProps> = ({ currentUser, savedCocktails, onSaveCocktail }) => {
+const BartenderHelper: React.FC<BartenderHelperProps> = ({ currentUser, savedCocktails, onSaveCocktail, onUpgradeRequest }) => {
   const [prompt, setPrompt] = useState('');
   const [recipe, setRecipe] = useState<CocktailRecipe | null>(null);
   const [image, setImage] = useState<string | null>(null);
@@ -51,6 +53,16 @@ const BartenderHelper: React.FC<BartenderHelperProps> = ({ currentUser, savedCoc
     setError(null);
   };
 
+  const handleSaveClick = () => {
+    if (!currentUser.isPremium) {
+        onUpgradeRequest();
+        return;
+    }
+    if (recipe && image) {
+        onSaveCocktail(recipe, image);
+    }
+  };
+
   if (recipe && image) {
     return (
       <div className="bg-white rounded-2xl shadow-xl w-full md:max-w-4xl mx-auto my-8 animate-fade-in">
@@ -87,11 +99,25 @@ const BartenderHelper: React.FC<BartenderHelperProps> = ({ currentUser, savedCoc
             
             <div className="mt-8 space-y-3">
               <button
-                onClick={() => recipe && image && onSaveCocktail(recipe, image)}
+                onClick={handleSaveClick}
                 disabled={isAlreadySaved}
-                className="w-full py-3 px-4 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition-colors disabled:bg-green-300 disabled:cursor-not-allowed"
+                className={`w-full py-3 px-4 font-bold rounded-lg shadow-md transition-colors flex items-center justify-center gap-2 ${
+                    isAlreadySaved 
+                        ? 'bg-green-300 text-white cursor-not-allowed'
+                        : currentUser.isPremium 
+                            ? 'bg-green-500 text-white hover:bg-green-600'
+                            : 'bg-amber-400 text-slate-900 hover:bg-amber-500'
+                }`}
               >
-                {isAlreadySaved ? 'Saved in My Bar' : 'Save Drink'}
+                {isAlreadySaved 
+                    ? 'Saved in My Bar' 
+                    : currentUser.isPremium 
+                        ? 'Save Drink'
+                        : <>
+                            <CrownIcon className="w-5 h-5" />
+                            <span>Save to My Bar (Premium)</span>
+                          </>
+                }
               </button>
               <button 
                 onClick={handleReset} 

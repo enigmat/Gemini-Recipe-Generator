@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import RecipeCard from './components/RecipeCard';
 import RecipeModal from './components/RecipeModal';
@@ -352,7 +348,7 @@ const App: React.FC = () => {
     };
     
     const handleSelectTab = (tab: string) => {
-        if (['My Cookbook', 'Shopping List', 'My Bar', 'AI Meal Planner', 'Cocktail Menu', 'Community Chat'].includes(tab)) {
+        if (['My Cookbook', 'Shopping List', 'My Bar', 'AI Meal Planner', 'Cocktail Menu', 'Community Chat', 'Bartender Helper'].includes(tab)) {
             if (!currentUser) {
                 setIsLoginModalOpen(true);
                 return;
@@ -813,6 +809,7 @@ const App: React.FC = () => {
     if (activeTab === 'Admin Dashboard' && currentUser?.isAdmin) {
         return (
             <AdminDashboard
+                currentUser={currentUser}
                 allRecipes={allRecipes}
                 newRecipes={newThisMonthRecipes}
                 users={allUsers}
@@ -1039,23 +1036,12 @@ const App: React.FC = () => {
                     </>
                 );
             case 'Bartender Helper':
-                if (!currentUser?.isPremium) {
-                    return (
-                        <PremiumContent
-                            isPremium={false}
-                            onUpgradeClick={() => setIsUpgradeModalOpen(true)}
-                            featureTitle="AI-Powered Bartender Helper"
-                            featureDescription="Feeling creative? Describe any drink you can imagine, and our AI mixologist will invent a recipe for you on the spot."
-                            features={[
-                                "Generate unique cocktail recipes from a description",
-                                "Get AI-generated images of your creations",
-                                "Save your best drinks to 'My Bar'",
-                                "Impress your friends with custom drinks"
-                            ]}
-                        />
-                    );
-                }
-                return <BartenderHelper currentUser={currentUser} savedCocktails={savedCocktails} onSaveCocktail={handleSaveCocktail} />;
+                return <BartenderHelper 
+                    currentUser={currentUser!}
+                    savedCocktails={savedCocktails} 
+                    onSaveCocktail={handleSaveCocktail} 
+                    onUpgradeRequest={() => setIsUpgradeModalOpen(true)}
+                />;
             case 'Ask an Expert':
                 if (!currentUser?.isPremium) {
                     return <ExpertQAPremiumOffer onUpgradeClick={() => setIsUpgradeModalOpen(true)} />;

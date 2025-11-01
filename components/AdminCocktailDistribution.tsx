@@ -5,9 +5,10 @@ import Spinner from './Spinner';
 
 interface AdminCocktailDistributionProps {
     users: User[];
+    currentUser: User;
 }
 
-const AdminCocktailDistribution: React.FC<AdminCocktailDistributionProps> = ({ users }) => {
+const AdminCocktailDistribution: React.FC<AdminCocktailDistributionProps> = ({ users, currentUser }) => {
     const [sourceUser, setSourceUser] = useState('');
     const [targetUsers, setTargetUsers] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -58,9 +59,18 @@ const AdminCocktailDistribution: React.FC<AdminCocktailDistributionProps> = ({ u
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Source User Selection */}
                 <div>
-                    <label htmlFor="source-user" className="block text-sm font-medium text-slate-700 mb-2 font-semibold">
-                        Step 1: Select Source User
-                    </label>
+                    <div className="flex justify-between items-baseline mb-2">
+                        <label htmlFor="source-user" className="block text-sm font-medium text-slate-700 font-semibold">
+                            Step 1: Select Source User
+                        </label>
+                        <button
+                            onClick={() => setSourceUser(currentUser.email)}
+                            disabled={sourceUser === currentUser.email}
+                            className="text-xs font-semibold text-teal-600 hover:text-teal-800 disabled:text-slate-400 disabled:cursor-not-allowed"
+                        >
+                            Use My Account as Source
+                        </button>
+                    </div>
                     <select
                         id="source-user"
                         value={sourceUser}
