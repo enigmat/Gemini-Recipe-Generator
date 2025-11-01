@@ -20,6 +20,7 @@ import AdminROTDManagement from './AdminROTDManagement';
 import AdminBulkImport from './AdminBulkImport';
 import AdminDataExport from './AdminDataExport';
 import AdminCocktailManagement from './AdminCocktailManagement';
+import AdminCocktailDistribution from './AdminCocktailDistribution';
 
 interface AdminDashboardProps {
     allRecipes: Recipe[];
@@ -63,7 +64,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
 
     const menuItems = [
         'User Management', 'API Key Management', 'Leads', 'Newsletter', 'Recipe Management', 
-        'Add Recipe', 'Recipe of the Day Pool', 'Bulk Import', 'Data Export', 'Cocktail Management', 'Cooking Classes', 'Video Management', 'Marketplace Management', 'About Us'
+        'Add Recipe', 'Recipe of the Day Pool', 'Bulk Import', 'Data Export', 'Cocktail Management', 'Cocktail Distribution', 'Cooking Classes', 'Video Management', 'Marketplace Management', 'About Us'
     ];
 
     const handleSave = () => {
@@ -188,6 +189,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                 return <AdminDataExport allRecipes={props.allRecipes} />;
             case 'Cocktail Management':
                 return <AdminCocktailManagement standardCocktails={props.standardCocktails} onUpdateStandardCocktails={props.onUpdateStandardCocktails} />;
+            case 'Cocktail Distribution':
+                return <AdminCocktailDistribution users={props.users} />;
             case 'Newsletter':
                  return (
                     <AdminNewsletter
