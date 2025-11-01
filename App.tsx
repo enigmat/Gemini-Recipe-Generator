@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import RecipeCard from './components/RecipeCard';
 import RecipeModal from './components/RecipeModal';
@@ -75,6 +76,7 @@ import RecipeOfTheDay from './components/RecipeOfTheDay';
 import * as recipeOfTheDayService from './services/recipeOfTheDayService';
 import UnitToggleButton from './components/UnitToggleButton';
 import { runMigration } from './services/migrationService';
+import CocktailMenu from './components/CocktailMenu';
 
 const RECIPES_PER_PAGE = 12;
 
@@ -146,6 +148,7 @@ const App: React.FC = () => {
     
     // My Bar state
     const [savedCocktails, setSavedCocktails] = useState<SavedCocktail[]>([]);
+    const [standardCocktails, setStandardCocktails] = useState<SavedCocktail[]>([]);
 
     // Expert Q&A state
     const [expertQuestions, setExpertQuestions] = useState<ExpertQuestion[]>(initialExpertQuestions);
@@ -183,6 +186,7 @@ const App: React.FC = () => {
         setCollectedLeads(leadService.getLeads());
         ratingService.loadRatings();
         setProducts(marketplaceService.getProducts());
+        setStandardCocktails(cocktailService.getStandardCocktails());
 
         const initializeDailyFeatures = async () => {
             setIsLoadingRecipeOfTheDay(true);
@@ -341,7 +345,7 @@ const App: React.FC = () => {
     };
     
     const handleSelectTab = (tab: string) => {
-        if (['My Cookbook', 'Shopping List', 'My Bar', 'AI Meal Planner'].includes(tab)) {
+        if (['My Cookbook', 'Shopping List', 'My Bar', 'AI Meal Planner', 'Cocktail Menu'].includes(tab)) {
             if (!currentUser) {
                 setIsLoginModalOpen(true);
                 return;
@@ -435,9 +439,42 @@ const App: React.FC = () => {
             setIsLoginModalOpen(true);
             return;
         }
+        if (!currentUser.isPremium) {
+            setIsUpgradeModalOpen(true);
+            return;
+        }
         const newCocktail = cocktailService.saveCocktail(recipe, image, currentUser.email);
         if (newCocktail) {
             setSavedCocktails(prev => [newCocktail, ...prev]);
+        }
+    };
+
+    const handleSaveStandardCocktail = async (cocktail: SavedCocktail) => {
+        if (!currentUser) {
+            setIsLoginModalOpen(true);
+            return;
+        }
+        if (!currentUser.isPremium) {
+            setIsUpgradeModalOpen(true);
+            return;
+        }
+
+        let imageBase64 = cocktail.image;
+        if (cocktail.image.startsWith('indexeddb:')) {
+            const imageId = cocktail.image.split(':')[1];
+            const imageData = await imageStore.getImage(imageId);
+            if (!imageData) {
+                alert("Sorry, there was an error saving this cocktail's image.");
+                return;
+            }
+            imageBase64 = imageData;
+        }
+
+        const newCocktail = cocktailService.saveCocktail(cocktail, imageBase64, currentUser.email);
+        if (newCocktail) {
+            setSavedCocktails(prev => [newCocktail, ...prev]);
+        } else {
+            alert(`${cocktail.title} is already in your bar!`);
         }
     };
 
@@ -619,6 +656,11 @@ const App: React.FC = () => {
         marketplaceService.saveProducts(updatedProducts);
     };
 
+    const handleUpdateStandardCocktails = (cocktails: SavedCocktail[]) => {
+        setStandardCocktails(cocktails);
+        cocktailService.saveStandardCocktails(cocktails);
+    };
+
     // --- Extractor & Generator functions ---
     const handleExtractFromUrl = async (url: string) => {
         if (!currentUser?.isPremium) {
@@ -756,6 +798,7 @@ const App: React.FC = () => {
                 sentNewsletters={sentNewsletters}
                 collectedLeads={collectedLeads}
                 products={products}
+                standardCocktails={standardCocktails}
                 onAddRecipe={handleAddNewRecipe}
                 onDeleteRecipe={handleDeleteRecipe}
                 onUpdateRecipeWithAI={handleUpdateRecipeWithAI}
@@ -765,6 +808,7 @@ const App: React.FC = () => {
                 onDeleteUser={handleDeleteUser}
                 onSendNewsletter={handleSendNewsletter}
                 onUpdateProducts={handleUpdateProducts}
+                onUpdateStandardCocktails={handleUpdateStandardCocktails}
                 onExit={() => handleSelectTab('All Recipes')}
                 onRemoveFromNew={handleRemoveFromNew}
                 onAddToNew={handleAddToNew}
@@ -862,6 +906,15 @@ const App: React.FC = () => {
                         </div>
                     </div>
                 );
+            case 'Cocktail Menu':
+                return <CocktailMenu 
+                    standardCocktails={standardCocktails} 
+                    savedCocktails={savedCocktails}
+                    currentUser={currentUser}
+                    onSave={handleSaveStandardCocktail}
+                    onLoginRequest={() => setIsLoginModalOpen(true)}
+                    onUpgradeRequest={() => setIsUpgradeModalOpen(true)}
+                />;
             case 'My Bar':
                 if (!currentUser?.isPremium) {
                     return (

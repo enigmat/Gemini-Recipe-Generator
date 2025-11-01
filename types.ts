@@ -202,4 +202,5 @@ export interface AppDatabase {
     };
     ratings: RatingsStore;
     userData: Record<string, UserData>; // Keyed by user email
+    standardCocktails: SavedCocktail[];
 }

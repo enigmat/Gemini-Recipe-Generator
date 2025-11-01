@@ -14,6 +14,7 @@ import RefrigeratorIcon from './icons/RefrigeratorIcon';
 import InformationCircleIcon from './icons/InformationCircleIcon';
 import ClipboardListIcon from './icons/ClipboardListIcon';
 import HomeIcon from './icons/HomeIcon';
+import BookOpenIcon from './icons/BookOpenIcon';
 
 interface MainTabsProps {
   activeTab: string;
@@ -28,6 +29,7 @@ const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser
     { id: 'Pantry Chef', name: 'Pantry Chef', icon: <RefrigeratorIcon className="w-5 h-5" /> },
     { id: 'AI Meal Planner', name: 'AI Meal Planner', icon: <ClipboardListIcon className="w-5 h-5" /> },
     { id: 'My Cookbook', name: 'My Cookbook', icon: <HeartIcon className="w-5 h-5" /> },
+    { id: 'Cocktail Menu', name: 'Cocktail Menu', icon: <BookOpenIcon className="w-5 h-5" /> },
     { id: 'My Bar', name: 'My Bar', icon: <CocktailIcon className="w-5 h-5" /> },
     { id: 'Shopping List', name: 'Shopping List', icon: <ShoppingCartIcon className="w-5 h-5" /> },
     { id: 'Marketplace', name: 'Marketplace', icon: <StoreIcon className="w-5 h-5" /> },

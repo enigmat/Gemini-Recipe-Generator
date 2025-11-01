@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Recipe, User, Newsletter, Lead, Product } from '../types';
+import { Recipe, User, Newsletter, Lead, Product, SavedCocktail } from '../types';
 import AdminRecipeManagement from './AdminRecipeManagement';
 import AdminUserManagement from './AdminUserManagement';
 import AdminNewsletter from './AdminNewsletter';
@@ -18,6 +18,8 @@ import CheckIcon from './icons/CheckIcon';
 import DownloadIcon from './icons/DownloadIcon';
 import AdminROTDManagement from './AdminROTDManagement';
 import AdminBulkImport from './AdminBulkImport';
+import AdminDataExport from './AdminDataExport';
+import AdminCocktailManagement from './AdminCocktailManagement';
 
 interface AdminDashboardProps {
     allRecipes: Recipe[];
@@ -26,6 +28,7 @@ interface AdminDashboardProps {
     sentNewsletters: Newsletter[];
     collectedLeads: Lead[];
     products: Product[];
+    standardCocktails: SavedCocktail[];
     onAddRecipe: (title: string, addToNew: boolean, addToRecipeOfTheDayPool: boolean) => Promise<void>;
     onDeleteRecipe: (recipeId: number) => void;
     onUpdateRecipeWithAI: (recipeId: number, title: string) => Promise<void>;
@@ -35,6 +38,7 @@ interface AdminDashboardProps {
     onDeleteUser: (userEmail: string) => void;
     onSendNewsletter: (newsletter: Omit<Newsletter, 'id' | 'sentDate'>) => void;
     onUpdateProducts: (updatedProducts: Product[]) => void;
+    onUpdateStandardCocktails: (cocktails: SavedCocktail[]) => void;
     onExit: () => void;
     onRemoveFromNew: (recipeId: number) => void;
     onAddToNew: (recipeId: number) => void;
@@ -59,7 +63,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
 
     const menuItems = [
         'User Management', 'API Key Management', 'Leads', 'Newsletter', 'Recipe Management', 
-        'Add Recipe', 'Recipe of the Day Pool', 'Bulk Import', 'Cooking Classes', 'Video Management', 'Marketplace Management', 'About Us'
+        'Add Recipe', 'Recipe of the Day Pool', 'Bulk Import', 'Data Export', 'Cocktail Management', 'Cooking Classes', 'Video Management', 'Marketplace Management', 'About Us'
     ];
 
     const handleSave = () => {
@@ -80,12 +84,45 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(htmlContent, 'text/html');
             
-            const titles = Array.from(doc.querySelectorAll('.recipe-card h1.recipe-title, .recipe h1.fn'))
-                .map(el => (el as HTMLElement).innerText.trim())
-                .filter(title => title);
+            const titleSelectors = [
+                // For individual recipe pages or rich snippets
+                '.recipe h1.fn',                 
+                '.recipe-title',                 
+                'h1.recipe-title',
+                'h2.recipe-title',
+                '[itemprop="name"]',             
+                'h1[class*="recipe-title"]',     
+                'h1.fn',                         
+                '.fn',                           
+                '.recipe-name',
+                '.recipe_name',
+                'h1.recipe-name',
+                'h2.recipe-name',
+                '[class*="recipe"] [class*="title"]',
+
+                // For index/list pages (like Recipe Keeper's recipes.html)
+                '.recipe-index a',               
+                '.rk-recipe-card a h2',          
+                'div.recipe-list a',             
+                'ul.recipe-list li a',           
+                'body > ul > li > a',            
+                '#toc a',                        
+                'table td a',                    
+                'td.recipe a',
+                '.recipe a',                     
+                "a[href*='recipe']",             
+                "a[title*='recipe']"             
+            ].join(', ');
+
+
+            const titleElements = doc.querySelectorAll(titleSelectors);
+            const titles = [...new Set(Array.from(titleElements)
+                .map(el => (el as HTMLElement).innerText.trim()))]
+                .filter(Boolean); // Filter out any empty strings
+
 
             if (titles.length === 0) {
-                throw new Error("Could not find any recipe titles in the provided HTML. Please ensure you copied the entire file content. The tool looks for elements like `<div class='recipe-card'><h1 class='recipe-title'>...</h1></div>`.");
+                throw new Error("Could not find any recipe titles. Please ensure you have copied the entire content of the HTML file. The tool looks for recipe titles within common HTML structures like lists of links (e.g., from a Recipe Keeper index file) or individual recipe markups (e.g., <h1 class='recipe-title'>...</h1>).");
             }
             
             setImportProgress(`Found ${titles.length} recipes. Starting AI generation...`);
@@ -94,6 +131,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                 const title = titles[i];
                 setImportProgress(`(${i + 1}/${titles.length}) Generating recipe for "${title}"...`);
                 await props.onAddRecipe(title, false, false);
+                // Add a small delay to avoid hitting API rate limits
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
 
@@ -146,6 +184,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                  return <AdminROTDManagement onMoveRecipe={props.onMoveRecipeFromRotdToMain} />;
             case 'Bulk Import':
                 return <AdminBulkImport onImport={handleBulkImport} isImporting={isImporting} importProgress={importProgress} />;
+            case 'Data Export':
+                return <AdminDataExport allRecipes={props.allRecipes} />;
+            case 'Cocktail Management':
+                return <AdminCocktailManagement standardCocktails={props.standardCocktails} onUpdateStandardCocktails={props.onUpdateStandardCocktails} />;
             case 'Newsletter':
                  return (
                     <AdminNewsletter
