@@ -22,7 +22,7 @@ const StoredImage: React.FC<StoredImageProps> = ({ src, ...props }) => {
       }
 
       if (src.startsWith('indexeddb:')) {
-        const id = src.split(':')[1];
+        const id = src.split(':')[1].split('?')[0];
         try {
           const imageData = await imageStore.getImage(id);
           if (isMounted) {

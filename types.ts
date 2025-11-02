@@ -205,7 +205,6 @@ export interface AppDatabase {
         scheduled: Recipe[];
     };
     products: Product[];
-    aboutUs: AboutUsContent;
     newsletters: {
         sent: Newsletter[];
         leads: Lead[];
@@ -214,4 +213,6 @@ export interface AppDatabase {
     userData: Record<string, UserData>; // Keyed by user email
     standardCocktails: SavedCocktail[];
     communityChat: ChatMessage[];
+    // FIX: Added missing 'aboutUs' property to the AppDatabase interface.
+    aboutUs: AboutUsContent;
 }

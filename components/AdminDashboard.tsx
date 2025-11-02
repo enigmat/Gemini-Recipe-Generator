@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Recipe, User, Newsletter, Lead, Product, SavedCocktail } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { Recipe, User, Newsletter, Lead, Product, SavedCocktail, AppDatabase } from '../types';
 import AdminRecipeManagement from './AdminRecipeManagement';
 import AdminUserManagement from './AdminUserManagement';
 import AdminNewsletter from './AdminNewsletter';
@@ -8,7 +8,6 @@ import AdminAddRecipe from './AdminAddRecipe';
 import AdminLeadsManagement from './AdminLeadsManagement';
 import AdminCookingClasses from './AdminCookingClasses';
 import AdminVideoManagement from './AdminVideoManagement';
-import AdminAboutUs from './AdminAboutUs';
 import AdminMarketplace from './AdminMarketplace';
 import EditUserModal from './EditUserModal';
 import AdminApiKeyManagement from './AdminApiKeyManagement';
@@ -21,6 +20,9 @@ import AdminBulkImport from './AdminBulkImport';
 import AdminDataExport from './AdminDataExport';
 import AdminCocktailManagement from './AdminCocktailManagement';
 import AdminCocktailDistribution from './AdminCocktailDistribution';
+import AdminAboutUs from './AdminAboutUs';
+import ChevronDownIcon from './icons/ChevronDownIcon';
+import AdminDataSync from './AdminDataSync';
 
 interface AdminDashboardProps {
     currentUser: User;
@@ -40,12 +42,14 @@ interface AdminDashboardProps {
     onDeleteUser: (userEmail: string) => void;
     onSendNewsletter: (newsletter: Omit<Newsletter, 'id' | 'sentDate'>) => void;
     onUpdateProducts: (updatedProducts: Product[]) => void;
+    onDeleteProduct: (productId: string) => void;
     onUpdateStandardCocktails: (cocktails: SavedCocktail[]) => void;
     onExit: () => void;
     onRemoveFromNew: (recipeId: number) => void;
     onAddToNew: (recipeId: number) => void;
     onSaveChanges: () => Promise<void>;
     onMoveRecipeFromRotdToMain: (recipe: Recipe) => Promise<boolean>;
+    onImportData: (db: AppDatabase) => Promise<void>;
 }
 
 const PlaceholderPanel: React.FC<{ title: string }> = ({ title }) => (
@@ -55,6 +59,37 @@ const PlaceholderPanel: React.FC<{ title: string }> = ({ title }) => (
     </div>
 );
 
+const menuStructure = [
+    {
+        title: 'User Management',
+        items: ['User Management', 'API Key Management']
+    },
+    {
+        title: 'Marketing',
+        items: ['Leads', 'Newsletter']
+    },
+    {
+        title: 'Recipe Management',
+        items: ['Recipe Management', 'Add Recipe', 'Recipe of the Day Pool']
+    },
+    {
+        title: 'Import/Export',
+        items: ['Bulk Import', 'Export Recipes (CSV)', 'Application Data Sync']
+    },
+    {
+        title: 'Cocktail',
+        items: ['Cocktail Management', 'Cocktail Distribution']
+    },
+    {
+        title: 'Classes',
+        items: ['Cooking Classes', 'Video Management']
+    },
+    {
+        title: 'Management',
+        items: ['Marketplace Management', 'About Us Management']
+    }
+];
+
 const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
     const [activePanel, setActivePanel] = useState('User Management');
     const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -62,11 +97,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [importProgress, setImportProgress] = useState('');
+    const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+    const navRef = useRef<HTMLDivElement>(null);
 
-    const menuItems = [
-        'User Management', 'API Key Management', 'Leads', 'Newsletter', 'Recipe Management', 
-        'Add Recipe', 'Recipe of the Day Pool', 'Bulk Import', 'Data Export', 'Cocktail Management', 'Cocktail Distribution', 'Cooking Classes', 'Video Management', 'Marketplace Management', 'About Us'
-    ];
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (navRef.current && !navRef.current.contains(event.target as Node)) {
+                setOpenDropdown(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleSave = () => {
         setIsSaving(true);
@@ -87,44 +129,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
             const doc = parser.parseFromString(htmlContent, 'text/html');
             
             const titleSelectors = [
-                // For individual recipe pages or rich snippets
-                '.recipe h1.fn',                 
-                '.recipe-title',                 
-                'h1.recipe-title',
-                'h2.recipe-title',
-                '[itemprop="name"]',             
-                'h1[class*="recipe-title"]',     
-                'h1.fn',                         
-                '.fn',                           
-                '.recipe-name',
-                '.recipe_name',
-                'h1.recipe-name',
-                'h2.recipe-name',
-                '[class*="recipe"] [class*="title"]',
-
-                // For index/list pages (like Recipe Keeper's recipes.html)
-                '.recipe-index a',               
-                '.rk-recipe-card a h2',          
-                'div.recipe-list a',             
-                'ul.recipe-list li a',           
-                'body > ul > li > a',            
-                '#toc a',                        
-                'table td a',                    
-                'td.recipe a',
-                '.recipe a',                     
-                "a[href*='recipe']",             
-                "a[title*='recipe']"             
+                '.recipe h1.fn', '.recipe-title', 'h1.recipe-title', 'h2.recipe-title',
+                '[itemprop="name"]', 'h1[class*="recipe-title"]', 'h1.fn', '.fn',
+                '.recipe-name', '.recipe_name', 'h1.recipe-name', 'h2.recipe-name',
+                '[class*="recipe"] [class*="title"]', '.recipe-index a', '.rk-recipe-card a h2',
+                'div.recipe-list a', 'ul.recipe-list li a', 'body > ul > li > a', '#toc a',
+                'table td a', 'td.recipe a', '.recipe a', "a[href*='recipe']", "a[title*='recipe']"
             ].join(', ');
 
-
             const titleElements = doc.querySelectorAll(titleSelectors);
-            const titles = [...new Set(Array.from(titleElements)
-                .map(el => (el as HTMLElement).innerText.trim()))]
-                .filter(Boolean); // Filter out any empty strings
-
+            const titles = [...new Set(Array.from(titleElements).map(el => (el as HTMLElement).innerText.trim()))].filter(Boolean);
 
             if (titles.length === 0) {
-                throw new Error("Could not find any recipe titles. Please ensure you have copied the entire content of the HTML file. The tool looks for recipe titles within common HTML structures like lists of links (e.g., from a Recipe Keeper index file) or individual recipe markups (e.g., <h1 class='recipe-title'>...</h1>).");
+                throw new Error("Could not find any recipe titles. Please ensure you have copied the entire content of the HTML file.");
             }
             
             setImportProgress(`Found ${titles.length} recipes. Starting AI generation...`);
@@ -133,7 +150,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                 const title = titles[i];
                 setImportProgress(`(${i + 1}/${titles.length}) Generating recipe for "${title}"...`);
                 await props.onAddRecipe(title, false, false);
-                // Add a small delay to avoid hitting API rate limits
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
 
@@ -150,13 +166,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
     const renderPanel = () => {
         switch (activePanel) {
             case 'User Management':
-                return (
-                    <AdminUserManagement
-                        users={props.users}
-                        onDeleteUser={props.onDeleteUser}
-                        onEditUser={setEditingUser}
-                    />
-                );
+                return <AdminUserManagement users={props.users} onDeleteUser={props.onDeleteUser} onEditUser={setEditingUser} />;
             case 'API Key Management':
                 return <AdminApiKeyManagement />;
             case 'Leads':
@@ -164,20 +174,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
             case 'Recipe Management':
                  return (
                     <div className="space-y-8">
-                        <AdminNewRecipeManagement
-                            recipes={props.newRecipes}
-                            onRemoveFromNew={props.onRemoveFromNew}
-                            onUpdateRecipeWithAI={props.onUpdateRecipeWithAI}
-                        />
-                        <AdminRecipeManagement
-                            recipes={props.allRecipes}
-                            newRecipeIds={props.newRecipes.map(r => r.id)}
-                            onDeleteRecipe={props.onDeleteRecipe}
-                            onUpdateRecipeWithAI={props.onUpdateRecipeWithAI}
-                            onUpdateAllRecipeImages={props.onUpdateAllRecipeImages}
-                            isUpdatingAllImages={props.isUpdatingAllImages}
-                            onAddToNew={props.onAddToNew}
-                        />
+                        <AdminNewRecipeManagement recipes={props.newRecipes} onRemoveFromNew={props.onRemoveFromNew} onUpdateRecipeWithAI={props.onUpdateRecipeWithAI} />
+                        <AdminRecipeManagement {...props} newRecipeIds={props.newRecipes.map(r => r.id)} recipes={props.allRecipes} />
                     </div>
                 );
             case 'Add Recipe':
@@ -186,28 +184,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                  return <AdminROTDManagement onMoveRecipe={props.onMoveRecipeFromRotdToMain} />;
             case 'Bulk Import':
                 return <AdminBulkImport onImport={handleBulkImport} isImporting={isImporting} importProgress={importProgress} />;
-            case 'Data Export':
+            case 'Export Recipes (CSV)':
                 return <AdminDataExport allRecipes={props.allRecipes} />;
+            case 'Application Data Sync':
+                return <AdminDataSync onImportData={props.onImportData} />;
             case 'Cocktail Management':
                 return <AdminCocktailManagement standardCocktails={props.standardCocktails} onUpdateStandardCocktails={props.onUpdateStandardCocktails} />;
             case 'Cocktail Distribution':
                 return <AdminCocktailDistribution users={props.users} currentUser={props.currentUser} />;
             case 'Newsletter':
-                 return (
-                    <AdminNewsletter
-                        allRecipes={props.allRecipes}
-                        users={props.users}
-                        sentNewsletters={props.sentNewsletters}
-                        onSendNewsletter={props.onSendNewsletter}
-                    />
-                );
+                 return <AdminNewsletter {...props} />;
             case 'Cooking Classes':
                 return <AdminCookingClasses />;
             case 'Video Management':
                 return <AdminVideoManagement />;
             case 'Marketplace Management':
-                return <AdminMarketplace products={props.products} onUpdateProducts={props.onUpdateProducts} />;
-            case 'About Us':
+                return <AdminMarketplace products={props.products} onUpdateProducts={props.onUpdateProducts} onDeleteProduct={props.onDeleteProduct} />;
+            case 'About Us Management':
                 return <AdminAboutUs />;
             default:
                 return <PlaceholderPanel title={activePanel} />;
@@ -239,21 +232,41 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
 
             <main className="container mx-auto">
                 <div className="border-b border-slate-200 mb-6">
-                    <nav className="-mb-px flex space-x-6 overflow-x-auto scrollbar-hide" aria-label="Admin Panels">
-                        {menuItems.map(item => (
-                            <button
-                                key={item}
-                                onClick={() => setActivePanel(item)}
-                                className={`flex-shrink-0 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none ${
-                                    activePanel === item 
-                                        ? 'border-teal-500 text-teal-600' 
-                                        : 'border-transparent text-slate-500 hover:text-teal-600 hover:border-teal-400'
-                                }`}
-                                aria-current={activePanel === item ? 'page' : undefined}
-                            >
-                                {item}
-                            </button>
-                        ))}
+                    <nav className="flex flex-wrap gap-2 pb-2" ref={navRef} aria-label="Admin Panels">
+                        {menuStructure.map(group => {
+                            const isGroupActive = group.items.includes(activePanel);
+                            return (
+                                <div key={group.title} className="relative">
+                                    <button
+                                        onClick={() => setOpenDropdown(openDropdown === group.title ? null : group.title)}
+                                        className={`flex items-center gap-1.5 px-4 py-2 rounded-md shadow-sm text-sm font-medium border transition-colors ${
+                                            isGroupActive
+                                            ? 'bg-teal-50 text-teal-700 border-teal-200'
+                                            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        <span>{group.title}</span>
+                                        <ChevronDownIcon className={`w-4 h-4 transition-transform ${openDropdown === group.title ? 'rotate-180' : ''}`} />
+                                    </button>
+                                    {openDropdown === group.title && (
+                                        <div className="absolute mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 py-1">
+                                            {group.items.map(item => (
+                                                <button
+                                                    key={item}
+                                                    onClick={() => { setActivePanel(item); setOpenDropdown(null); }}
+                                                    className={`block w-full text-left px-4 py-2 text-sm ${
+                                                        activePanel === item ? 'bg-teal-100 text-teal-800' : 'text-slate-700 hover:bg-slate-100'
+                                                    }`}
+                                                    aria-current={activePanel === item ? 'page' : undefined}
+                                                >
+                                                    {item}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </nav>
                 </div>
                 <div className="w-full animate-fade-in">

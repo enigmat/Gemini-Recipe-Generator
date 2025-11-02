@@ -8,16 +8,20 @@ interface CocktailCardProps {
   cocktail: SavedCocktail;
   isSaved: boolean;
   onSave: () => void;
+  onView: (cocktail: SavedCocktail) => void;
 }
 
-const CocktailCard: React.FC<CocktailCardProps> = ({ cocktail, isSaved, onSave }) => {
+const CocktailCard: React.FC<CocktailCardProps> = ({ cocktail, isSaved, onSave, onView }) => {
   const handleSaveClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onSave();
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden transform hover:scale-105 transition-all duration-300 relative group flex flex-col">
+    <div
+      className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transform hover:scale-105 transition-all duration-300 relative group flex flex-col"
+      onClick={() => onView(cocktail)}
+    >
         <div className="relative">
             <StoredImage src={cocktail.image} alt={cocktail.title} className="w-full h-48 object-cover" />
             <button

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import RecipeCard from './components/RecipeCard';
 import RecipeModal from './components/RecipeModal';
 import TagFilter from './components/TagFilter';
-import { Recipe, User, ShoppingList, MealPlan, Video, CookingClass, Newsletter, Lead, Product, CocktailRecipe, SavedCocktail, ExpertQuestion, ChatMessage } from './types';
+import { Recipe, User, ShoppingList, MealPlan, Video, CookingClass, Newsletter, Lead, Product, CocktailRecipe, SavedCocktail, ExpertQuestion, ChatMessage, AppDatabase } from './types';
 import * as favoritesService from './services/favoritesService';
 import EmptyState from './components/EmptyState';
 import BookOpenIcon from './components/icons/BookOpenIcon';
@@ -76,6 +76,7 @@ import { runMigration } from './services/migrationService';
 import CocktailMenu from './components/CocktailMenu';
 import CommunityChat from './components/CommunityChat';
 import * as chatService from './services/chatService';
+import { importDatabaseWithImages } from './services/dataSyncService';
 
 const RECIPES_PER_PAGE = 12;
 
@@ -613,7 +614,7 @@ const App: React.FC = () => {
             const updatedRecipe: Recipe = {
                 ...originalRecipe,
                 ...recipeDetails,
-                image: `indexeddb:${recipeId}`,
+                image: `indexeddb:${recipeId}?t=${Date.now()}`, // Add cache-buster
             };
             
             const newRecipes = [...prevRecipes];
@@ -634,7 +635,7 @@ const App: React.FC = () => {
                     const imageData = await generateImageFromPrompt(recipeToUpdate.title);
                     await imageStore.setImage(recipeToUpdate.id.toString(), imageData);
                     
-                    const newImageSrc = `indexeddb:${recipeToUpdate.id}`;
+                    const newImageSrc = `indexeddb:${recipeToUpdate.id}?t=${Date.now()}`; // Add cache-buster
 
                     // Update state incrementally for better feedback and stability.
                     const updateRecipeInList = (recipes: Recipe[]) => recipes.map(r => 
@@ -673,9 +674,26 @@ const App: React.FC = () => {
         marketplaceService.saveProducts(updatedProducts);
     };
 
+    const handleDeleteProduct = async (productId: string) => {
+        const updatedProducts = await marketplaceService.deleteProduct(productId);
+        setProducts(updatedProducts);
+    };
+
     const handleUpdateStandardCocktails = (cocktails: SavedCocktail[]) => {
         setStandardCocktails(cocktails);
         cocktailService.saveStandardCocktails(cocktails);
+    };
+
+    const handleImportData = async (db: AppDatabase) => {
+        try {
+            await importDatabaseWithImages(db);
+            alert("Data imported successfully! The application will now reload to apply the changes.");
+            window.location.reload();
+        } catch (error: any) {
+            console.error("Failed to import data:", error);
+            // This error will be caught and displayed by the AdminDataSync component
+            throw error;
+        }
     };
 
     // --- Extractor & Generator functions ---
@@ -826,12 +844,14 @@ const App: React.FC = () => {
                 onDeleteUser={handleDeleteUser}
                 onSendNewsletter={handleSendNewsletter}
                 onUpdateProducts={handleUpdateProducts}
+                onDeleteProduct={handleDeleteProduct}
                 onUpdateStandardCocktails={handleUpdateStandardCocktails}
                 onExit={() => handleSelectTab('All Recipes')}
                 onRemoveFromNew={handleRemoveFromNew}
                 onAddToNew={handleAddToNew}
                 onSaveChanges={handleSaveChanges}
                 onMoveRecipeFromRotdToMain={handleMoveRecipeFromRotdToMain}
+                onImportData={handleImportData}
             />
         );
     }
@@ -932,6 +952,7 @@ const App: React.FC = () => {
                     onSave={handleSaveStandardCocktail}
                     onLoginRequest={() => setIsLoginModalOpen(true)}
                     onUpgradeRequest={() => setIsUpgradeModalOpen(true)}
+                    onGoToBartender={() => handleSelectTab('Bartender Helper')}
                 />;
             case 'My Bar':
                 if (!currentUser?.isPremium) {

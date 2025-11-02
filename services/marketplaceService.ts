@@ -27,7 +27,7 @@ export const updateProduct = (updatedProduct: Product): Product => {
     return updatedProduct;
 };
 
-export const deleteProduct = (productId: string): void => {
+export const deleteProduct = async (productId: string): Promise<Product[]> => {
     const products = getProducts();
     const productToDelete = products.find(p => p.id === productId);
     const updatedProducts = products.filter(p => p.id !== productId);
@@ -35,6 +35,7 @@ export const deleteProduct = (productId: string): void => {
 
     // Also delete the image from IndexedDB if it's stored there
     if (productToDelete && productToDelete.imageUrl.startsWith('indexeddb:')) {
-        imageStore.deleteImage(productId);
+        await imageStore.deleteImage(productId);
     }
+    return updatedProducts;
 };

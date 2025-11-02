@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAboutUsContent } from '../services/aboutUsService';
+import * as aboutUsService from '../services/aboutUsService';
 import { AboutUsContent } from '../types';
 import ChefHatIcon from './icons/ChefHatIcon';
 import Spinner from './Spinner';
@@ -8,8 +8,9 @@ const AboutUsPage: React.FC = () => {
   const [content, setContent] = useState<AboutUsContent | null>(null);
 
   useEffect(() => {
-    setContent(getAboutUsContent());
+    setContent(aboutUsService.getAboutUsContent());
   }, []);
+
 
   if (!content) {
     return (

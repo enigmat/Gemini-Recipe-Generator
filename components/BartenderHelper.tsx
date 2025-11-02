@@ -4,6 +4,7 @@ import { generateCocktailRecipe, generateImageFromPrompt } from '../services/gem
 import Spinner from './Spinner';
 import SparklesIcon from './icons/SparklesIcon';
 import CrownIcon from './icons/CrownIcon';
+import IngredientInput from './IngredientInput';
 
 interface BartenderHelperProps {
   currentUser: User;
@@ -13,7 +14,8 @@ interface BartenderHelperProps {
 }
 
 const BartenderHelper: React.FC<BartenderHelperProps> = ({ currentUser, savedCocktails, onSaveCocktail, onUpgradeRequest }) => {
-  const [prompt, setPrompt] = useState('');
+  const [ingredients, setIngredients] = useState<string[]>([]);
+  const [notes, setNotes] = useState('');
   const [recipe, setRecipe] = useState<CocktailRecipe | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +27,15 @@ const BartenderHelper: React.FC<BartenderHelperProps> = ({ currentUser, savedCoc
   }, [recipe, savedCocktails]);
 
   const handleCreateDrink = async () => {
-    if (!prompt.trim()) return;
+    let finalPrompt = '';
+    if (ingredients.length > 0) {
+      finalPrompt += `Create a cocktail recipe using these ingredients: ${ingredients.join(', ')}. `;
+    }
+    if (notes.trim()) {
+      finalPrompt += `Additional request: ${notes.trim()}`;
+    }
+
+    if (!finalPrompt.trim()) return;
     
     setIsLoading(true);
     setError(null);
@@ -33,7 +43,7 @@ const BartenderHelper: React.FC<BartenderHelperProps> = ({ currentUser, savedCoc
     setImage(null);
 
     try {
-      const generatedRecipe = await generateCocktailRecipe(prompt);
+      const generatedRecipe = await generateCocktailRecipe(finalPrompt);
       setRecipe(generatedRecipe);
       
       const generatedImage = await generateImageFromPrompt(generatedRecipe.imagePrompt);
@@ -47,7 +57,8 @@ const BartenderHelper: React.FC<BartenderHelperProps> = ({ currentUser, savedCoc
   };
 
   const handleReset = () => {
-    setPrompt('');
+    setIngredients([]);
+    setNotes('');
     setRecipe(null);
     setImage(null);
     setError(null);
@@ -133,33 +144,46 @@ const BartenderHelper: React.FC<BartenderHelperProps> = ({ currentUser, savedCoc
   }
 
   return (
-    <div className="max-w-2xl mx-auto mt-8">
+    <div className="max-w-3xl mx-auto mt-8">
       <div className="bg-white rounded-2xl shadow-xl p-8 text-center animate-fade-in">
-        <h2 className="text-3xl font-bold text-gray-800">Bartender Helper</h2>
-        <p className="text-gray-600 mt-2 mb-6 max-w-md mx-auto">Describe the kind of drink you're in the mood for, and I'll mix up a recipe for you.</p>
+        <h2 className="text-3xl font-bold text-gray-800">AI Bartender</h2>
+        <p className="text-gray-600 mt-2 mb-8 max-w-lg mx-auto">
+          Create a unique cocktail from ingredients you have, or just describe the drink you're craving.
+        </p>
         
-        <div className="relative">
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="e.g., a refreshing gin cocktail with cucumber and elderflower"
-            className="w-full h-28 p-4 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-shadow text-base text-gray-900 placeholder-gray-500 resize-none"
-            aria-label="Describe your drink mood"
-            disabled={isLoading}
-          />
+        <div className="space-y-6 text-left">
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ingredients You Have (Optional)
+                </label>
+                <IngredientInput ingredients={ingredients} onChange={setIngredients} />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Describe Your Mood or Request (Optional)
+                </label>
+                 <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="e.g., something refreshing for a summer day, or a non-alcoholic version"
+                    className="w-full h-24 p-4 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-shadow text-base text-gray-900 placeholder-gray-500 resize-none"
+                    aria-label="Describe your drink mood"
+                    disabled={isLoading}
+                />
+            </div>
         </div>
         
         <button 
           onClick={handleCreateDrink} 
-          disabled={isLoading || !prompt.trim()}
-          className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 bg-teal-500 text-white font-bold rounded-lg shadow-md hover:bg-teal-600 transition-colors disabled:bg-teal-300 disabled:cursor-wait"
+          disabled={isLoading || (ingredients.length === 0 && !notes.trim())}
+          className="w-full mt-8 flex items-center justify-center gap-2 py-3 px-4 bg-teal-500 text-white font-bold rounded-lg shadow-md hover:bg-teal-600 transition-colors disabled:bg-teal-300 disabled:cursor-wait"
         >
           {isLoading ? (
             <Spinner size="w-5 h-5" />
           ) : (
             <SparklesIcon className="w-5 h-5" />
           )}
-          <span>{isLoading ? 'Creating Your Drink...' : 'Create My Drink'}</span>
+          <span>{isLoading ? 'Mixing Your Drink...' : 'Create My Drink'}</span>
         </button>
         {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
       </div>

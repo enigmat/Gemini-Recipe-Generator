@@ -17,6 +17,7 @@ const AdminCocktailManagement: React.FC<AdminCocktailManagementProps> = ({ stand
     const [isImporting, setIsImporting] = useState(false);
     const [progress, setProgress] = useState('');
     const [error, setError] = useState('');
+    const [updatingImageId, setUpdatingImageId] = useState<string | null>(null);
 
     const handleDelete = (cocktailId: string) => {
         if (window.confirm("Are you sure you want to delete this cocktail from the standard list?")) {
@@ -83,6 +84,33 @@ const AdminCocktailManagement: React.FC<AdminCocktailManagementProps> = ({ stand
         setTimeout(() => setProgress(''), 5000);
     };
 
+    const handleRegenerateImage = async (cocktail: SavedCocktail) => {
+        if (!window.confirm(`Are you sure you want to regenerate the image for "${cocktail.title}" using its image prompt?`)) {
+            return;
+        }
+
+        setUpdatingImageId(cocktail.id);
+        try {
+            const newImageBase64 = await geminiService.generateImageFromPrompt(cocktail.imagePrompt);
+
+            // The image is stored with the cocktail's ID as the key.
+            await imageStore.setImage(cocktail.id, newImageBase64);
+
+            // The new image is in IndexedDB, so the source must be updated to point there.
+            // We add a timestamp for cache-busting to ensure React re-renders the component with the new image.
+            const newImageSrc = `indexeddb:${cocktail.id}?t=${Date.now()}`;
+            const updatedCocktail = { ...cocktail, image: newImageSrc };
+            const updatedCocktails = standardCocktails.map(c => c.id === cocktail.id ? updatedCocktail : c);
+            onUpdateStandardCocktails(updatedCocktails);
+
+        } catch (error) {
+            console.error("Failed to regenerate image:", error);
+            alert(`Failed to regenerate image for "${cocktail.title}". Please check the console.`);
+        } finally {
+            setUpdatingImageId(null);
+        }
+    };
+
     return (
         <div className="space-y-8">
             <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md">
@@ -110,7 +138,15 @@ const AdminCocktailManagement: React.FC<AdminCocktailManagementProps> = ({ stand
                         <div key={cocktail.id} className="flex items-center gap-4 p-2 bg-slate-50 rounded-md border">
                             <StoredImage src={cocktail.image} alt={cocktail.title} className="w-12 h-12 object-cover rounded-md flex-shrink-0" />
                             <p className="font-semibold text-slate-800 flex-grow">{cocktail.title}</p>
-                            <button onClick={() => handleDelete(cocktail.id)} className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50">
+                            <button
+                                onClick={() => handleRegenerateImage(cocktail)}
+                                disabled={updatingImageId !== null}
+                                className="text-blue-500 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50 disabled:opacity-50"
+                                title="Regenerate Image with AI"
+                            >
+                                {updatingImageId === cocktail.id ? <Spinner size="w-5 h-5" /> : <SparklesIcon className="w-5 h-5" />}
+                            </button>
+                            <button onClick={() => handleDelete(cocktail.id)} disabled={updatingImageId !== null} className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 disabled:opacity-50">
                                 <TrashIcon className="w-5 h-5" />
                             </button>
                         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Product } from '../types';
 import * as imageStore from '../services/imageStore';
 import { generateProductFromPrompt, generateImage } from '../services/geminiService';
@@ -14,9 +14,10 @@ import StoreIcon from './icons/StoreIcon';
 interface AdminMarketplaceProps {
     products: Product[];
     onUpdateProducts: (updatedProducts: Product[]) => void;
+    onDeleteProduct: (productId: string) => void;
 }
 
-const AdminMarketplace: React.FC<AdminMarketplaceProps> = ({ products, onUpdateProducts }) => {
+const AdminMarketplace: React.FC<AdminMarketplaceProps> = ({ products, onUpdateProducts, onDeleteProduct }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [formData, setFormData] = useState<Omit<Product, 'id'>>({
@@ -29,6 +30,42 @@ const AdminMarketplace: React.FC<AdminMarketplaceProps> = ({ products, onUpdateP
 
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+    const [filterCategory, setFilterCategory] = useState('All');
+    const [sortBy, setSortBy] = useState('name-asc');
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const categories = useMemo(() => {
+        const uniqueCategories = [...new Set(products.map(p => p.category))].sort();
+        return ['All', ...uniqueCategories];
+    }, [products]);
+
+    const filteredAndSortedProducts = useMemo(() => {
+        let filtered = [...products];
+
+        if (filterCategory !== 'All') {
+            filtered = filtered.filter(p => p.category === filterCategory);
+        }
+
+        if (searchTerm) {
+            const lowercasedTerm = searchTerm.toLowerCase();
+            filtered = filtered.filter(p => 
+                p.name.toLowerCase().includes(lowercasedTerm) ||
+                p.brand.toLowerCase().includes(lowercasedTerm)
+            );
+        }
+
+        const sortFunctions: { [key: string]: (a: Product, b: Product) => number } = {
+            'name-asc': (a, b) => a.name.localeCompare(b.name),
+            'name-desc': (a, b) => b.name.localeCompare(a.name),
+            'brand-asc': (a, b) => a.brand.localeCompare(b.brand),
+            'brand-desc': (a, b) => b.brand.localeCompare(a.brand),
+        };
+        
+        filtered.sort(sortFunctions[sortBy]);
+
+        return filtered;
+    }, [products, filterCategory, sortBy, searchTerm]);
 
     const handleOpenModal = (product: Product | null) => {
         setEditingProduct(product);
@@ -114,12 +151,7 @@ const AdminMarketplace: React.FC<AdminMarketplaceProps> = ({ products, onUpdateP
 
     const handleDelete = (productId: string) => {
         if (window.confirm("Are you sure you want to delete this product?")) {
-            const productToDelete = products.find(p => p.id === productId);
-            if (productToDelete && productToDelete.imageUrl.startsWith('indexeddb:')) {
-                imageStore.deleteImage(productId);
-            }
-            const updatedProducts = products.filter(p => p.id !== productId);
-            onUpdateProducts(updatedProducts);
+            onDeleteProduct(productId);
         }
     };
 
@@ -165,7 +197,8 @@ const AdminMarketplace: React.FC<AdminMarketplaceProps> = ({ products, onUpdateP
 
             await imageStore.setImage(product.id, newImageUrl_base64);
 
-            const updatedProduct = { ...product, imageUrl: `indexeddb:${product.id}` };
+            // Add cache-buster to ensure the image component re-renders
+            const updatedProduct = { ...product, imageUrl: `indexeddb:${product.id}?t=${Date.now()}` };
             const updatedProducts = products.map(p => p.id === product.id ? updatedProduct : p);
             onUpdateProducts(updatedProducts);
         } catch (error) {
@@ -217,6 +250,45 @@ const AdminMarketplace: React.FC<AdminMarketplaceProps> = ({ products, onUpdateP
                 {generateError && <p className="text-red-500 text-sm mt-2">{generateError}</p>}
             </div>
 
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-slate-50/50">
+                <div>
+                    <label htmlFor="search-product" className="block text-sm font-medium text-slate-700">Search</label>
+                    <input
+                        type="text"
+                        id="search-product"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        placeholder="Search by name or brand..."
+                        className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500"
+                    />
+                </div>
+                <div>
+                    <label htmlFor="filter-category" className="block text-sm font-medium text-slate-700">Category</label>
+                    <select
+                        id="filter-category"
+                        value={filterCategory}
+                        onChange={e => setFilterCategory(e.target.value)}
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm rounded-md"
+                    >
+                        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label htmlFor="sort-by" className="block text-sm font-medium text-slate-700">Sort By</label>
+                    <select
+                        id="sort-by"
+                        value={sortBy}
+                        onChange={e => setSortBy(e.target.value)}
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm rounded-md"
+                    >
+                        <option value="name-asc">Name (A-Z)</option>
+                        <option value="name-desc">Name (Z-A)</option>
+                        <option value="brand-asc">Brand (A-Z)</option>
+                        <option value="brand-desc">Brand (Z-A)</option>
+                    </select>
+                </div>
+            </div>
+
             <div className="overflow-x-auto">
                 <table className="min-w-full">
                     <thead className="bg-slate-50">
@@ -227,7 +299,7 @@ const AdminMarketplace: React.FC<AdminMarketplaceProps> = ({ products, onUpdateP
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
-                        {products.map(product => (
+                        {filteredAndSortedProducts.map(product => (
                             <tr key={product.id}>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
