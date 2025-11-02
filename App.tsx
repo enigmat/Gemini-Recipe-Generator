@@ -438,7 +438,7 @@ const App: React.FC = () => {
         setPlayingVideo(null);
     };
     
-    const handleSaveCocktail = (recipe: CocktailRecipe, image: string) => {
+    const handleSaveCocktail = async (recipe: CocktailRecipe, image: string) => {
         if (!currentUser) {
             setIsLoginModalOpen(true);
             return;
@@ -447,7 +447,7 @@ const App: React.FC = () => {
             setIsUpgradeModalOpen(true);
             return;
         }
-        const newCocktail = cocktailService.saveCocktail(recipe, image, currentUser.email);
+        const newCocktail = await cocktailService.saveCocktail(recipe, image, currentUser.email);
         if (newCocktail) {
             setSavedCocktails(prev => [newCocktail, ...prev]);
         }
@@ -465,7 +465,7 @@ const App: React.FC = () => {
 
         let imageBase64 = cocktail.image;
         if (cocktail.image.startsWith('indexeddb:')) {
-            const imageId = cocktail.image.split(':')[1];
+            const imageId = cocktail.image.split(':')[1].split('?')[0];
             const imageData = await imageStore.getImage(imageId);
             if (!imageData) {
                 alert("Sorry, there was an error saving this cocktail's image.");
@@ -474,7 +474,7 @@ const App: React.FC = () => {
             imageBase64 = imageData;
         }
 
-        const newCocktail = cocktailService.saveCocktail(cocktail, imageBase64, currentUser.email);
+        const newCocktail = await cocktailService.saveCocktail(cocktail, imageBase64, currentUser.email);
         if (newCocktail) {
             setSavedCocktails(prev => [newCocktail, ...prev]);
         } else {
