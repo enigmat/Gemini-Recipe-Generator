@@ -1,72 +1,153 @@
 import { getSupabaseClient } from './supabaseClient';
 import { AppDatabase, Recipe, UserData, User, Product, Newsletter, Lead, RatingsStore, SavedCocktail, ChatMessage, AboutUsContent } from '../types';
 
-// NOTE: This function fetches the entire database state from Supabase.
-// In a production app, this would be heavily optimized to fetch only necessary data.
-export const getDatabase = async (): Promise<AppDatabase> => {
+const checkError = (response: any, tableName: string) => {
+    if (response.error) throw new Error(`Failed to fetch ${tableName}: ${response.error.message}`);
+    return response.data;
+};
+
+// This function gets public data on app startup.
+export const getPublicData = async (): Promise<Partial<AppDatabase>> => {
     const supabase = getSupabaseClient();
-    console.log("Fetching initial database state from Supabase...");
+    console.log("Fetching initial public database state...");
     
     const [
         recipes,
         newRecipes,
         scheduledRecipes,
         products,
-        sentNewsletters,
-        leads,
-        ratings,
         standardCocktails,
-        communityChat,
-        aboutUs,
-        users
+        aboutUs
     ] = await Promise.all([
         supabase.from('recipes').select('*'),
         supabase.from('new_recipes').select('*'),
         supabase.from('scheduled_recipes').select('*'),
         supabase.from('products').select('*'),
-        supabase.from('sent_newsletters').select('*'),
-        supabase.from('leads').select('*'),
-        supabase.from('ratings').select('*'),
         supabase.from('standard_cocktails').select('*'),
-        supabase.from('community_chat').select('*'),
         supabase.from('about_us').select('*').maybeSingle(),
-        supabase.from('user_profiles').select('*'), // This is for admin user list, not sensitive auth data
     ]);
 
-    const checkError = (response: any, tableName: string) => {
-        if (response.error) throw new Error(`Failed to fetch ${tableName}: ${response.error.message}`);
-        return response.data;
-    };
-
-    // A simple representation. Does not fetch userData for all users for security/performance.
-    const db: AppDatabase = {
+    const publicDb: Partial<AppDatabase> = {
         recipes: {
             all: checkError(recipes, 'recipes') || [],
             new: checkError(newRecipes, 'new_recipes') || [],
             scheduled: checkError(scheduledRecipes, 'scheduled_recipes') || [],
         },
         products: checkError(products, 'products') || [],
-        newsletters: {
-            sent: checkError(sentNewsletters, 'sent_newsletters') || [],
-            leads: checkError(leads, 'leads') || [],
-        },
+        standardCocktails: checkError(standardCocktails, 'standard_cocktails') || [],
+        aboutUs: checkError(aboutUs, 'about_us') || { companyName: '', missionStatement: '', companyHistory: '', contactEmail: '', address: '' },
+        // These are not public, will be fetched later
+        users: [],
+        newsletters: { sent: [], leads: [] },
+        ratings: {},
+        communityChat: [],
+        userData: {}
+    };
+    
+    console.log("Public data loaded.");
+    return publicDb;
+};
+
+// This function gets data available to any logged-in user.
+export const getAuthenticatedData = async (): Promise<Partial<AppDatabase>> => {
+    const supabase = getSupabaseClient();
+    console.log("Fetching data for authenticated user...");
+
+    const [ratings, communityChat] = await Promise.all([
+        supabase.from('ratings').select('*'),
+        supabase.from('community_chat').select('*').order('timestamp', { ascending: true }),
+    ]);
+
+    return {
         ratings: (checkError(ratings, 'ratings') || []).reduce((acc: RatingsStore, r: any) => {
             acc[r.recipe_id] = { totalScore: r.total_score, count: r.count, userRatings: r.user_ratings };
             return acc;
         }, {}),
-        standardCocktails: checkError(standardCocktails, 'standard_cocktails') || [],
         communityChat: checkError(communityChat, 'community_chat') || [],
-        aboutUs: checkError(aboutUs, 'about_us') || { companyName: '', missionStatement: '', companyHistory: '', contactEmail: '', address: '' },
-        users: checkError(users, 'user_profiles') || [],
-        userData: {}, // This will be fetched on a per-user basis after login.
     };
-    
-    console.log("Initial database state loaded.");
-    return db;
+};
+
+export const getAdminData = async (): Promise<Partial<AppDatabase>> => {
+    const supabase = getSupabaseClient();
+    console.log("Fetching admin-only data...");
+
+    const [users, sentNewsletters, leads] = await Promise.all([
+        supabase.from('user_profiles').select('*'),
+        supabase.from('sent_newsletters').select('*'),
+        supabase.from('leads').select('*'),
+    ]);
+
+    return {
+        users: checkError(users, 'user_profiles') || [],
+        newsletters: {
+            sent: checkError(sentNewsletters, 'sent_newsletters') || [],
+            leads: checkError(leads, 'leads') || [],
+        },
+    };
 };
 
 
-// The single saveDatabase function is now replaced by granular async functions.
+// FIX: Add the missing getDatabase function that several services depend on.
+// A cached instance of the database to avoid multiple fetches per page load.
+let dbInstance: AppDatabase | null = null;
+let dbPromise: Promise<AppDatabase> | null = null;
+
+/**
+ * This function fetches the entire application state. It's intended for services
+ * from the older architecture that expect a full DB object. It's less efficient
+ * than granular fetches but necessary for compatibility during migration.
+ * It uses a simple cache to avoid re-fetching on subsequent calls within the same app lifecycle.
+ */
+export const getDatabase = async (): Promise<AppDatabase> => {
+    if (dbInstance) {
+        return dbInstance;
+    }
+    if (dbPromise) {
+        return dbPromise;
+    }
+
+    dbPromise = (async () => {
+        const supabase = getSupabaseClient();
+        console.log("Fetching entire database state for service compatibility...");
+
+        // Fetch all data in parallel. RLS policies will ensure users only get what they're allowed to see.
+        const [
+            publicData,
+            authenticatedData,
+        ] = await Promise.all([
+            getPublicData(),
+            getAuthenticatedData(),
+        ]);
+
+        const { data: { session } } = await supabase.auth.getSession();
+        const userId = session?.user?.id;
+        let currentUserData: UserData = { favorites: [], shoppingLists: [], cocktails: [] };
+        if (userId) {
+            currentUserData = await getUserData(userId);
+        }
+
+        const fullDb: AppDatabase = {
+            recipes: publicData.recipes || { all: [], new: [], scheduled: [] },
+            products: publicData.products || [],
+            standardCocktails: publicData.standardCocktails || [],
+            aboutUs: publicData.aboutUs || { companyName: '', missionStatement: '', companyHistory: '', contactEmail: '', address: '' },
+            ratings: authenticatedData.ratings || {},
+            communityChat: authenticatedData.communityChat || [],
+            users: [], // Admin data removed
+            newsletters: { sent: [], leads: [] }, // Admin data removed
+            // The userData object in AppDatabase holds data for multiple users, but for client-side
+            // services, we only need and can only fetch the current user's data.
+            userData: userId ? { [userId]: currentUserData } : {},
+        };
+
+        dbInstance = fullDb;
+        dbPromise = null; // Clear promise once resolved
+        console.log("Full database state loaded for services.");
+        return dbInstance;
+    })();
+
+    return dbPromise;
+};
 
 export const saveAllRecipes = async (recipes: Recipe[]) => {
     const supabase = getSupabaseClient();

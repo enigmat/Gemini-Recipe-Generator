@@ -1,8 +1,6 @@
 import { User } from '../types';
 import { getSupabaseClient } from './supabaseClient';
 
-const ADMIN_EMAIL = 'billhanoman@gmail.com';
-
 // Helper function to get a user profile, and enforce admin roles.
 // It relies on the database trigger to create the profile on signup,
 // but now includes a robust server-side RPC fallback to prevent race conditions.
@@ -61,22 +59,12 @@ const _getUserProfile = async (authUser: { id: string, email?: string }): Promis
         console.log("Successfully retrieved user profile via RPC fallback.");
         userProfile = rpcProfile as User;
     }
-    
-    // Admin role enforcement: Ensure admin user always has admin/premium rights
-    if (authUser.email.toLowerCase() === ADMIN_EMAIL && (!userProfile.isAdmin || !userProfile.isPremium)) {
-        console.log("Admin user detected. Ensuring admin and premium roles are set.");
-        const { data: updatedProfile, error: updateError } = await supabase
-            .from('user_profiles')
-            .update({ is_admin: true, is_premium: true })
-            .eq('id', authUser.id)
-            .select()
-            .single();
 
-        if (updateError) {
-            console.error("Failed to update admin roles on sign-in:", updateError.message);
-        } else {
-            userProfile = updatedProfile as User; // Use the updated profile
-        }
+    // TEMPORARY: Grant admin privileges to a specific user to bootstrap access.
+    // This allows the user to access the admin dashboard and permanently set their role.
+    if (userProfile && userProfile.email === 'billhanoman@gmail.com') {
+        console.log("Applying temporary admin privileges for billhanoman@gmail.com");
+        userProfile.isAdmin = true;
     }
     
     return userProfile;
@@ -172,24 +160,4 @@ export const updateUser = async (user: User): Promise<User | null> => {
         return null;
     }
     return data as User;
-};
-
-// Admin functions - Note: these require RLS policies on the Supabase side to work correctly.
-export const getAllUsers = async (): Promise<User[]> => {
-    const supabase = getSupabaseClient();
-    const { data, error } = await supabase.from('user_profiles').select('*');
-    if (error) {
-        console.error("Error getting all users:", error.message);
-        return [];
-    }
-    return data as User[];
-};
-
-export const deleteUser = async (userId: string): Promise<void> => {
-    const supabase = getSupabaseClient();
-    // This would require a server-side function in Supabase to delete an auth user.
-    // For now, we'll just delete their profile.
-    console.warn("Deleting user from `user_profiles` table, but not from `auth.users`. This requires a Supabase Edge Function for security.");
-    const { error } = await supabase.from('user_profiles').delete().eq('id', userId);
-    if (error) console.error("Error deleting user profile:", error.message);
 };

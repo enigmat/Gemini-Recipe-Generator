@@ -4,25 +4,46 @@ import * as userService from './userService';
 import { getDatabase } from './cloudService';
 // FIX: use supabase client for saving since cloudService is missing a saver
 import { getSupabaseClient } from './supabaseClient';
+import { addLead } from './leadService';
 
 
 // FIX: This function was heavily flawed. It is now async, uses correct userService functions, and handles user creation safely.
 export const subscribeByEmail = async (email: string): Promise<void> => {
-    // FIX: await async call
-    const allUsers = await userService.getAllUsers();
-    // FIX: .find() on array, not promise
-    const existingUser = allUsers.find(u => u.email === email);
+    // FIX: Replaced a call to the non-existent `userService.getAllUsers` with a more performant
+    // direct Supabase query to fetch a single user by email.
+    const supabase = getSupabaseClient();
+    const { data: userFromDb, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('email', email)
+        .single();
 
-    if (existingUser) {
-        if (!existingUser.isSubscribed) {
-            const updatedUser = { ...existingUser, isSubscribed: true };
-            // FIX: 'updateUserInList' does not exist, use 'updateUser'
+    // A 'PGRST116' error code from Supabase means no rows were found, which is a valid case here (a non-user is subscribing).
+    if (error && error.code !== 'PGRST116') {
+        console.error(`Error checking user for subscription: ${error.message}`);
+        return;
+    }
+
+    if (userFromDb) {
+        if (!userFromDb.is_subscribed) {
+            // Map from snake_case (DB) to camelCase (app type) before updating.
+            const userForApp: User = {
+                id: userFromDb.id,
+                email: userFromDb.email,
+                name: userFromDb.name,
+                profileImage: userFromDb.profile_image,
+                isPremium: userFromDb.is_premium,
+                isAdmin: userFromDb.is_admin,
+                isSubscribed: userFromDb.is_subscribed,
+                planEndDate: userFromDb.plan_end_date,
+                foodPreferences: userFromDb.food_preferences,
+            };
+            const updatedUser = { ...userForApp, isSubscribed: true };
             await userService.updateUser(updatedUser);
         }
     } else {
-        // This function should not create a user. The old logic was flawed as it created a user object without an ID.
-        // For non-users, leadService.addLead should be used from the UI.
-        console.warn(`Attempted to subscribe a non-existent user via newsletterService: ${email}. This should be handled by leadService.`);
+        // If the user does not exist in the profiles table, add them as a lead.
+        await addLead(email);
     }
 };
 

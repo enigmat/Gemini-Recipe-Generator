@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { Recipe, CocktailRecipe, RecipeVariation, ProductAnalysis, Product, GeneratedMealPlan } from "../types";
+import { Recipe, CocktailRecipe, RecipeVariation, ProductAnalysis, Product, GeneratedMealPlan, DishInfo } from "../types";
 
 export const generateImageFromPrompt = async (prompt: string): Promise<string> => {
     try {
@@ -881,5 +881,48 @@ export const generateCookbookIntroduction = async (title: string, recipeTitles: 
     } catch (error) {
         console.error("Error generating cookbook introduction with Gemini:", error);
         throw new Error("Failed to generate a cookbook introduction. Please try again.");
+    }
+};
+
+export const identifyDishFromImage = async (base64Image: string, mimeType: string): Promise<DishInfo> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        
+        const imagePart = {
+            inlineData: {
+                data: base64Image,
+                mimeType: mimeType,
+            },
+        };
+        
+        const textPart = {
+            text: "Analyze the attached image of a food dish. Identify the name of the dish, its country or region of origin (e.g., 'Valencia, Spain'), and provide a short, interesting description or fun fact about its history or ingredients. Your response must be in JSON format."
+        };
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: { parts: [imagePart, textPart] },
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        dishName: { type: Type.STRING, description: "The common name of the dish." },
+                        origin: { type: Type.STRING, description: "The country or region of origin." },
+                        description: { type: Type.STRING, description: "A brief, interesting description of the dish." }
+                    },
+                    required: ['dishName', 'origin', 'description']
+                }
+            }
+        });
+        
+        const jsonText = response.text;
+        const dishData = JSON.parse(jsonText);
+
+        return dishData;
+
+    } catch (error) {
+        console.error("Error identifying dish from image with Gemini:", error);
+        throw new Error("Failed to identify the dish from the image. The AI couldn't recognize it. Please try a clearer photo or a different dish.");
     }
 };

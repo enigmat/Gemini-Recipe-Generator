@@ -34,8 +34,6 @@ import { cookingClasses } from './data/cookingClasses';
 import CookingClassCard from './components/CookingClassCard';
 import CookingClassDetail from './components/CookingClassDetail';
 import MortarPestleIcon from './components/icons/MortarPestleIcon';
-import AdminDashboard from './components/AdminDashboard';
-import LayoutDashboardIcon from './components/icons/LayoutDashboardIcon';
 import XIcon from './components/icons/XIcon';
 import { generateImageFromPrompt, generateRecipeDetailsFromTitle, generateRecipeFromUrl } from './services/geminiService';
 import * as newsletterService from './services/newsletterService';
@@ -80,6 +78,8 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config';
 import SupabaseConfigError from './components/SupabaseConfigError';
 import SupabaseConnectionError from './components/SupabaseConnectionError';
 import SupabaseSchemaError from './components/SupabaseSchemaError';
+import DishIdentifier from './components/DishIdentifier';
+import AdminDashboard from './components/AdminDashboard';
 
 
 const RECIPES_PER_PAGE = 12;
@@ -97,7 +97,7 @@ const App: React.FC = () => {
     const [appState, setAppState] = useState<AppState>('loading');
     const [connectionErrorDetails, setConnectionErrorDetails] = useState<string>('');
     
-    const [appData, setAppData] = useState<AppDatabase | null>(null);
+    const [appData, setAppData] = useState<Partial<AppDatabase> | null>(null);
 
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [previewRecipe, setPreviewRecipe] = useState<Recipe | null>(null);
@@ -148,6 +148,7 @@ const App: React.FC = () => {
     const [isLoadingRecipeOfTheDay, setIsLoadingRecipeOfTheDay] = useState<boolean>(true);
 
     const [isCookbookMakerOpen, setIsCookbookMakerOpen] = useState(false);
+    const [isAdminView, setIsAdminView] = useState(false);
     
     // --- Data Loading and Auth ---
     useEffect(() => {
@@ -162,18 +163,21 @@ const App: React.FC = () => {
 
             // 2. Try to connect and fetch data
             try {
-                // The seed service check is a good first query to test connection and schema.
                 await seedService.seedDatabaseIfEmpty();
                 
-                const db = await cloudService.getDatabase();
-                setAppData(db);
+                const publicDb = await cloudService.getPublicData();
                 
-                // Recipe of the day logic
-                const newlyArchivedRecipe = await recipeOfTheDayService.archiveYesterdaysRecipe();
+                const newlyArchivedRecipe = await recipeOfTheDayService.archiveYesterdaysRecipe(publicDb.recipes?.scheduled || []);
                 if (newlyArchivedRecipe) {
-                     setAppData(prev => prev ? { ...prev, recipes: { ...prev.recipes, all: [newlyArchivedRecipe, ...prev.recipes.all] } } : null);
+                    const all = publicDb.recipes?.all || [];
+                    publicDb.recipes = {
+                        ...(publicDb.recipes as AppDatabase['recipes']),
+                        all: [newlyArchivedRecipe, ...all],
+                    };
                 }
-                const recipe = await recipeOfTheDayService.getTodaysRecipe();
+                setAppData(publicDb);
+                
+                const recipe = recipeOfTheDayService.getTodaysRecipe(publicDb.recipes?.scheduled || []);
                 setRecipeOfTheDay(recipe);
 
                 setAppState('ready'); // Success!
@@ -203,10 +207,32 @@ const App: React.FC = () => {
             setCurrentUser(user);
             if (user) {
                 setIsLoginModalOpen(false); // Close login modal on successful auth change
-                const data = await cloudService.getUserData(user.id);
-                setUserData(data);
+                
+                // Fetch user-specific data and general authenticated data
+                const [userData, authenticatedData] = await Promise.all([
+                    cloudService.getUserData(user.id),
+                    cloudService.getAuthenticatedData(),
+                ]);
+
+                setUserData(userData);
+
+                if (user.isAdmin) {
+                    const adminData = await cloudService.getAdminData();
+                    setAppData(prev => ({...prev, ...authenticatedData, ...adminData}));
+                } else {
+                    setAppData(prev => ({...prev, ...authenticatedData}));
+                }
+
             } else {
                 setUserData({ favorites: [], shoppingLists: [], cocktails: [] });
+                // Clear authenticated data from state on logout
+                setAppData(prev => ({
+                    ...prev,
+                    ratings: {},
+                    communityChat: [],
+                    users: [],
+                    newsletters: { sent: [], leads: [] },
+                }));
             }
         });
 
@@ -219,8 +245,8 @@ const App: React.FC = () => {
         return () => unsubscribe();
     }, []);
 
-    const allRecipes = useMemo(() => appData?.recipes.all || [], [appData]);
-    const newThisMonthRecipes = useMemo(() => appData?.recipes.new || [], [appData]);
+    const allRecipes = useMemo(() => appData?.recipes?.all || [], [appData]);
+    const newThisMonthRecipes = useMemo(() => appData?.recipes?.new || [], [appData]);
     
     // Reset recipe pagination when filters change
     useEffect(() => {
@@ -301,6 +327,7 @@ const App: React.FC = () => {
 
     const handleLogout = async () => {
         await userService.signOut();
+        setIsAdminView(false);
         // onAuthStateChange will handle cleanup
         setActiveTab('All Recipes');
         setSelectedTag('All'); 
@@ -311,7 +338,10 @@ const App: React.FC = () => {
         if (savedUser && currentUser && currentUser.id === savedUser.id) {
             setCurrentUser(savedUser);
         }
-        // Admin list will refresh on its own
+        setAppData(prev => ({
+            ...prev,
+            users: prev?.users?.map(u => u.id === savedUser?.id ? savedUser : u)
+        }));
     };
 
     const handleUpgradeUser = async (preferences: string[]) => {
@@ -349,6 +379,12 @@ const App: React.FC = () => {
     };
     
     const handleSelectTab = (tab: string) => {
+        if (tab === 'Admin Dashboard') {
+            setIsAdminView(true);
+            return;
+        }
+        setIsAdminView(false);
+
         if (['My Cookbook', 'Shopping List', 'Cocktail Book', 'AI Meal Planner', 'Community Chat', 'Bartender Helper'].includes(tab)) {
             if (!currentUser) {
                 setIsLoginModalOpen(true);
@@ -451,11 +487,10 @@ const App: React.FC = () => {
             setIsUpgradeModalOpen(true);
             return;
         }
-        // const newCocktail = await cocktailService.saveCocktail(recipe, image, currentUser.email);
-        // if (newCocktail) {
-        //     setSavedCocktails(prev => [newCocktail, ...prev]);
-        // }
-        console.log("Save cocktail needs migration")
+        const newCocktail = await cocktailService.saveCocktail(recipe, image, currentUser.id);
+        if (newCocktail) {
+            setUserData(prev => ({ ...prev, cocktails: [newCocktail, ...prev.cocktails] }));
+        }
     };
 
     const handleSaveStandardCocktail = async (cocktail: SavedCocktail) => {
@@ -467,12 +502,17 @@ const App: React.FC = () => {
             setIsUpgradeModalOpen(true);
             return;
         }
-        console.log("Save standard cocktail needs migration")
+        // This is saving a standard cocktail to a user's personal bar
+        const newCocktail = await cocktailService.saveCocktail(cocktail, cocktail.image, currentUser.id);
+        if (newCocktail) {
+            setUserData(prev => ({ ...prev, cocktails: [newCocktail, ...prev.cocktails]}));
+        }
     };
 
-    const handleDeleteCocktail = (cocktailId: string) => {
+    const handleDeleteCocktail = async (cocktailId: string) => {
         if (!currentUser) return;
-        console.log("Delete cocktail needs migration")
+        await cocktailService.deleteCocktail(cocktailId, currentUser.id);
+        setUserData(prev => ({ ...prev, cocktails: prev.cocktails.filter(c => c.id !== cocktailId)}));
     };
 
     const handleAddExpertQuestion = (question: string, topic: string) => {
@@ -486,23 +526,18 @@ const App: React.FC = () => {
         setExpertQuestions(prev => [newQuestion, ...prev]);
     };
 
-    const handleSendMessage = (text: string) => {
+    const handleSendMessage = async (text: string) => {
         if (!currentUser) return;
-        // ... chat service migration needed
+        const newMessage = await chatService.addChatMessage({
+            userId: currentUser.email,
+            userName: currentUser.name,
+            userProfileImage: currentUser.profileImage,
+            isAdmin: !!currentUser.isAdmin,
+            text,
+            timestamp: new Date().toISOString()
+        });
+        setAppData(prev => ({ ...prev, communityChat: [...(prev?.communityChat || []), newMessage]}));
     };
-
-    // --- Admin Functions ---
-    // Note: Most of these would need to be re-wired to update state via setAppData
-    // and call the new async cloudService functions.
-    const handleSaveChanges = async () => {
-        if (!appData) return;
-        await Promise.all([
-            cloudService.saveAllRecipes(appData.recipes.all),
-            cloudService.saveNewRecipes(appData.recipes.new),
-        ]);
-    };
-
-    // ... other admin functions would need similar async/state-update refactoring ...
 
     // --- Extractor & Generator functions ---
     const handleExtractFromUrl = async (url: string) => {
@@ -510,11 +545,24 @@ const App: React.FC = () => {
     };
 
     const handleRecipeGenerated = async (recipeDetails: Omit<Recipe, 'id' | 'image'>, image: string) => {
-       // ... (this logic is largely independent of db)
+       const newId = Date.now();
+       const newRecipe: Recipe = {
+         id: newId,
+         image: image,
+         ...recipeDetails,
+       };
+       setPreviewRecipe(newRecipe);
     };
     
     const handleSaveNewRecipe = (recipe: Recipe) => {
-        // Needs refactoring for new state management
+        setAppData(prev => ({
+            ...prev,
+            recipes: {
+                ...(prev?.recipes as AppDatabase['recipes']),
+                all: [recipe, ...allRecipes]
+            }
+        }));
+        setPreviewRecipe(null);
     };
 
     const handleDiscardNewRecipe = (recipe: Recipe) => {
@@ -525,7 +573,201 @@ const App: React.FC = () => {
     };
 
     const handleSubscribe = (email: string) => {
-        // needs migration
+        newsletterService.subscribeByEmail(email);
+    };
+    
+    const handleSearchForDish = (dishName: string) => {
+        setActiveTab('All Recipes');
+        setSearchQuery(dishName);
+    };
+
+    // --- Admin Dashboard Handlers ---
+
+    const handleSaveChangesAdmin = async () => {
+        if (!appData) return;
+        await Promise.all([
+            cloudService.saveAllRecipes(appData.recipes?.all || []),
+            cloudService.saveNewRecipes(appData.recipes?.new || []),
+            cloudService.saveScheduledRecipes(appData.recipes?.scheduled || []),
+            cloudService.saveProducts(appData.products || []),
+            cocktailService.saveStandardCocktails(appData.standardCocktails || []),
+        ]);
+    };
+    
+    const handleAddRecipeAdmin = async (title: string, addToNew: boolean, addToRotd: boolean) => {
+        const recipeDetails = await generateRecipeDetailsFromTitle(title);
+        const image = await generateImageFromPrompt(recipeDetails.title);
+        const newId = Date.now();
+        await imageStore.setImage(String(newId), image);
+
+        const newRecipe: Recipe = {
+            id: newId,
+            image: `indexeddb:${newId}`,
+            ...recipeDetails,
+        };
+
+        setAppData(prev => {
+            if (!prev) return prev;
+            const all = [newRecipe, ...(prev.recipes?.all || [])];
+            let newRecipesList = prev.recipes?.new || [];
+            if (addToNew) {
+                newRecipesList = [newRecipe, ...newRecipesList];
+            }
+            let scheduled = prev.recipes?.scheduled || [];
+            if (addToRotd) {
+                scheduled = [newRecipe, ...scheduled];
+            }
+            return {
+                ...prev,
+                recipes: {
+                    all: all,
+                    new: newRecipesList,
+                    scheduled: scheduled,
+                }
+            };
+        });
+    };
+
+    const handleDeleteRecipeAdmin = (recipeId: number) => {
+        imageStore.deleteImage(String(recipeId));
+        setAppData(prev => {
+            if (!prev || !prev.recipes) return prev;
+            return {
+                ...prev,
+                recipes: {
+                    ...prev.recipes,
+                    all: prev.recipes.all.filter(r => r.id !== recipeId),
+                    new: prev.recipes.new.filter(r => r.id !== recipeId),
+                    scheduled: prev.recipes.scheduled.filter(r => r.id !== recipeId),
+                }
+            };
+        });
+    };
+
+    const handleUpdateRecipeAdmin = async (recipeId: number, title: string) => {
+        const recipeDetails = await generateRecipeDetailsFromTitle(title);
+        const image = await generateImageFromPrompt(recipeDetails.title);
+        await imageStore.setImage(String(recipeId), image);
+        const updatedRecipe: Recipe = { ...recipeDetails, id: recipeId, image: `indexeddb:${recipeId}?t=${Date.now()}` };
+
+        setAppData(prev => {
+             if (!prev || !prev.recipes) return prev;
+            return {
+                ...prev,
+                recipes: {
+                    ...prev.recipes,
+                    all: prev.recipes.all.map(r => r.id === recipeId ? updatedRecipe : r),
+                    new: prev.recipes.new.map(r => r.id === recipeId ? updatedRecipe : r),
+                    scheduled: prev.recipes.scheduled.map(r => r.id === recipeId ? updatedRecipe : r),
+                }
+            }
+        });
+    };
+    
+    const handleUpdateAllRecipeImagesAdmin = async () => {
+        setIsUpdatingAllImages(true);
+        const recipesToUpdate = appData?.recipes?.all || [];
+        const updatedRecipes: Recipe[] = [];
+
+        for (const recipe of recipesToUpdate) {
+            try {
+                const image = await generateImageFromPrompt(recipe.title);
+                await imageStore.setImage(String(recipe.id), image);
+                updatedRecipes.push({ ...recipe, image: `indexeddb:${recipe.id}?t=${Date.now()}` });
+            } catch (e) {
+                console.error(`Failed to update image for ${recipe.title}`, e);
+                updatedRecipes.push(recipe); // Keep old one if it fails
+            }
+             setAppData(prev => ({
+                ...prev,
+                recipes: {
+                    ...(prev?.recipes as AppDatabase['recipes']),
+                    all: prev?.recipes?.all.map(r => updatedRecipes.find(ur => ur.id === r.id) || r) || []
+                }
+            }));
+        }
+        setIsUpdatingAllImages(false);
+    };
+
+    const handleDeleteUserAdmin = (userEmail: string) => {
+        console.warn(`Simulating deletion for user ${userEmail}. In a real app, this would require a secure server-side call.`);
+        setAppData(prev => ({
+            ...prev,
+            users: prev?.users?.filter(u => u.email !== userEmail)
+        }));
+    };
+    
+    const handleSendNewsletterAdmin = (newsletter: Omit<Newsletter, 'id' | 'sentDate'>) => {
+        const newNewsletter: Newsletter = {
+            id: Date.now().toString(),
+            sentDate: new Date().toISOString(),
+            ...newsletter
+        };
+        setAppData(prev => ({
+            ...prev,
+            newsletters: {
+                ...(prev?.newsletters as AppDatabase['newsletters']),
+                sent: [newNewsletter, ...(prev?.newsletters?.sent || [])]
+            }
+        }));
+    };
+
+    const handleUpdateProductsAdmin = (updatedProducts: Product[]) => {
+         setAppData(prev => ({ ...prev, products: updatedProducts }));
+    };
+
+    const handleDeleteProductAdmin = (productId: string) => {
+        setAppData(prev => ({...prev, products: prev?.products?.filter(p => p.id !== productId)}));
+        imageStore.deleteImage(productId);
+    };
+
+    const handleUpdateStandardCocktailsAdmin = (cocktails: SavedCocktail[]) => {
+         setAppData(prev => ({ ...prev, standardCocktails: cocktails }));
+    };
+
+    const handleRemoveFromNewAdmin = (recipeId: number) => {
+        setAppData(prev => ({
+            ...prev,
+            recipes: {
+                ...(prev?.recipes as AppDatabase['recipes']),
+                new: prev?.recipes?.new.filter(r => r.id !== recipeId) || []
+            }
+        }));
+    };
+
+    const handleAddToNewAdmin = (recipeId: number) => {
+        const recipeToAdd = allRecipes.find(r => r.id === recipeId);
+        if (recipeToAdd && !newThisMonthRecipes.some(r => r.id === recipeId)) {
+            setAppData(prev => ({
+                ...prev,
+                recipes: {
+                     ...(prev?.recipes as AppDatabase['recipes']),
+                    new: [recipeToAdd, ...newThisMonthRecipes]
+                }
+            }));
+        }
+    };
+    
+    const handleMoveRecipeFromRotdToMainAdmin = async (recipe: Recipe) => {
+        const newlyAddedRecipe = await recipeService.addRecipeIfUnique(recipe);
+        if (newlyAddedRecipe) {
+            setAppData(prev => ({
+                ...prev,
+                recipes: {
+                    ...(prev?.recipes as AppDatabase['recipes']),
+                    all: [newlyAddedRecipe, ...(prev?.recipes?.all || [])],
+                    scheduled: prev?.recipes?.scheduled.filter(r => r.id !== recipe.id) || [],
+                }
+            }));
+            return true;
+        }
+        return false;
+    };
+    
+    const handleImportDataAdmin = async (db: AppDatabase) => {
+        await importDatabaseWithImages(db);
+        alert("Import successful! The application will now reload to apply all changes.");
+        window.location.reload();
     };
 
 
@@ -607,41 +849,39 @@ const App: React.FC = () => {
     if (appState === 'connection_error') {
         return <SupabaseConnectionError details={connectionErrorDetails} />;
     }
+
+    if (isAdminView && currentUser?.isAdmin && appData) {
+        return <AdminDashboard 
+            currentUser={currentUser}
+            allRecipes={allRecipes}
+            newRecipes={newThisMonthRecipes}
+            users={appData.users || []}
+            sentNewsletters={appData.newsletters?.sent || []}
+            collectedLeads={appData.newsletters?.leads || []}
+            products={appData.products || []}
+            standardCocktails={appData.standardCocktails || []}
+            onAddRecipe={handleAddRecipeAdmin}
+            onDeleteRecipe={handleDeleteRecipeAdmin}
+            onUpdateRecipeWithAI={handleUpdateRecipeAdmin}
+            onUpdateAllRecipeImages={handleUpdateAllRecipeImagesAdmin}
+            isUpdatingAllImages={isUpdatingAllImages}
+            onUpdateUserRoles={handleUpdateUser}
+            onDeleteUser={handleDeleteUserAdmin}
+            onSendNewsletter={handleSendNewsletterAdmin}
+            onUpdateProducts={handleUpdateProductsAdmin}
+            onDeleteProduct={handleDeleteProductAdmin}
+            onUpdateStandardCocktails={handleUpdateStandardCocktailsAdmin}
+            onExit={() => setIsAdminView(false)}
+            onRemoveFromNew={handleRemoveFromNewAdmin}
+            onAddToNew={handleAddToNewAdmin}
+            onSaveChanges={handleSaveChangesAdmin}
+            onMoveRecipeFromRotdToMain={handleMoveRecipeFromRotdToMainAdmin}
+            onImportData={handleImportDataAdmin}
+        />
+    }
     
     if (cookModeRecipe) {
         return <CookMode recipe={cookModeRecipe} onExit={handleExitCookMode} measurementSystem={measurementSystem} />;
-    }
-    
-    if (activeTab === 'Admin Dashboard' && currentUser?.isAdmin && appData) {
-        return (
-            <AdminDashboard
-                currentUser={currentUser}
-                allRecipes={appData.recipes.all}
-                newRecipes={appData.recipes.new}
-                users={appData.users}
-                sentNewsletters={appData.newsletters.sent}
-                collectedLeads={appData.newsletters.leads}
-                products={appData.products}
-                standardCocktails={appData.standardCocktails}
-                onAddRecipe={async (title: string, addToNew: boolean, addToRecipeOfTheDayPool: boolean) => { /* migration needed */ }}
-                onDeleteRecipe={(id: number) => { /* migration needed */ }}
-                onUpdateRecipeWithAI={async (id: number, title: string) => { /* migration needed */ }}
-                onUpdateAllRecipeImages={async () => { /* migration needed */ }}
-                isUpdatingAllImages={isUpdatingAllImages}
-                onUpdateUserRoles={handleUpdateUser}
-                onDeleteUser={async (email: string) => { /* migration needed */ }}
-                onSendNewsletter={(data) => { /* migration needed */ }}
-                onUpdateProducts={(prods) => { /* migration needed */ }}
-                onDeleteProduct={async (id) => { /* migration needed */ }}
-                onUpdateStandardCocktails={(cocktails) => { /* migration needed */ }}
-                onExit={() => handleSelectTab('All Recipes')}
-                onRemoveFromNew={(id) => { /* migration needed */ }}
-                onAddToNew={(id) => { /* migration needed */ }}
-                onSaveChanges={handleSaveChanges}
-                onMoveRecipeFromRotdToMain={async (recipe: Recipe) => { return false; /* migration needed */ }}
-                onImportData={async (db) => { /* migration needed */ }}
-            />
-        );
     }
     
     const renderContent = () => {
@@ -657,6 +897,8 @@ const App: React.FC = () => {
         switch(activeTab) {
             case 'Pantry Chef':
                 return <PantryChef onRecipeGenerated={handleRecipeGenerated} />;
+            case "Where's This From?":
+                return <DishIdentifier onSearchForDish={handleSearchForDish} />;
             case 'AI Meal Planner':
                  if (!currentUser?.isPremium) {
                     return (
@@ -739,7 +981,7 @@ const App: React.FC = () => {
                 );
             case 'Cocktail Book':
                 return <CocktailBook 
-                    standardCocktails={appData.standardCocktails}
+                    standardCocktails={appData.standardCocktails || []}
                     savedCocktails={userData.cocktails}
                     currentUser={currentUser}
                     onSaveStandard={handleSaveStandardCocktail}
@@ -761,7 +1003,7 @@ const App: React.FC = () => {
                 }
                 return (
                     <CommunityChat
-                        messages={appData.communityChat}
+                        messages={appData.communityChat || []}
                         currentUser={currentUser}
                         onSendMessage={handleSendMessage}
                     />
@@ -853,7 +1095,6 @@ const App: React.FC = () => {
                                     onShowFavorites={() => handleSelectTab('My Cookbook')}
                                     onOpenProfile={() => setIsProfileModalOpen(true)}
                                     onOpenLists={() => handleSelectTab('Shopping List')}
-                                    onOpenAdmin={() => handleSelectTab('Admin Dashboard')}
                                 />
                             ) : (
                                 <button

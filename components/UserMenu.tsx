@@ -14,10 +14,9 @@ interface UserMenuProps {
   onShowFavorites: () => void;
   onOpenProfile: () => void;
   onOpenLists: () => void;
-  onOpenAdmin: () => void;
 }
 
-const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout, onShowFavorites, onOpenProfile, onOpenLists, onOpenAdmin }) => {
+const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout, onShowFavorites, onOpenProfile, onOpenLists }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -88,18 +87,6 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout, onShowFavorites, on
             <ListIcon className="w-5 h-5" />
             My Shopping Lists
           </button>
-          {user.isAdmin && (
-            <button
-              onClick={() => {
-                onOpenAdmin();
-                setIsOpen(false);
-              }}
-              className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-            >
-              <LayoutDashboardIcon className="w-5 h-5" />
-              Admin Dashboard
-            </button>
-          )}
           <div className="border-t my-1"></div>
           <button
             onClick={() => {

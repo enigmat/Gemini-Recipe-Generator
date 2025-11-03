@@ -194,6 +194,12 @@ export interface UserCookbook {
   recipes: Recipe[];
 }
 
+export interface DishInfo {
+  dishName: string;
+  origin: string;
+  description: string;
+}
+
 // Centralized DB types
 export type RatingsStore = Record<number, { totalScore: number; count: number; userRatings: Record<string, number> }>;
 

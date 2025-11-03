@@ -16,6 +16,8 @@ import ClipboardListIcon from './icons/ClipboardListIcon';
 import HomeIcon from './icons/HomeIcon';
 import BookOpenIcon from './icons/BookOpenIcon';
 import ChatBubbleIcon from './icons/ChatBubbleIcon';
+import GlobeAltIcon from './icons/GlobeAltIcon';
+import LayoutDashboardIcon from './icons/LayoutDashboardIcon';
 
 interface MainTabsProps {
   activeTab: string;
@@ -26,6 +28,7 @@ interface MainTabsProps {
 const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser }) => {
   const allTabs: any[] = [
     { id: 'All Recipes', name: 'Home', icon: <HomeIcon className="w-5 h-5" /> },
+    { id: "Where's This From?", name: "Where's This From?", icon: <GlobeAltIcon className="w-5 h-5" /> },
     { id: 'Community Chat', name: 'Community Chat', icon: <ChatBubbleIcon className="w-5 h-5" /> },
     { id: 'Pantry Chef', name: 'Pantry Chef', icon: <RefrigeratorIcon className="w-5 h-5" /> },
     { id: 'AI Meal Planner', name: 'AI Meal Planner', icon: <ClipboardListIcon className="w-5 h-5" /> },
@@ -40,6 +43,10 @@ const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser
     { id: 'Ask an Expert', name: 'Ask an Expert', icon: <QuestionMarkCircleIcon className="w-5 h-5" /> },
     { id: 'About Us', name: 'About Us', icon: <InformationCircleIcon className="w-5 h-5" /> },
   ];
+
+  if (currentUser?.isAdmin) {
+      allTabs.push({ id: 'Admin Dashboard', name: 'Admin', icon: <LayoutDashboardIcon className="w-5 h-5" /> });
+  }
 
   const premiumTabs = ['Cooking Classes', 'Ask an Expert', 'AI Meal Planner'];
 

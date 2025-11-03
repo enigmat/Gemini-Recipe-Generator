@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import ServerStackIcon from './icons/ServerStackIcon';
-import CodeBracketIcon from './icons/CodeBracketIcon';
 import ClipboardIcon from './icons/ClipboardIcon';
 import CheckCircleIcon from './icons/CheckCircleIcon';
+import ExternalLinkIcon from './icons/ExternalLinkIcon';
+import ChevronRightIcon from './icons/ChevronRightIcon';
+import ChevronLeftIcon from './icons/ChevronLeftIcon';
+import CheckIcon from './icons/CheckIcon';
 
 const sqlSchema = `--
 -- ULTIMATE RESET SCRIPT - Drop and recreate the entire 'public' schema.
@@ -74,7 +77,6 @@ CREATE TABLE public.recipes (
 );
 ALTER TABLE public.recipes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read access to recipes" ON public.recipes FOR SELECT USING (true);
-CREATE POLICY "Allow admin full access to recipes" ON public.recipes FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 CREATE POLICY "Allow anon to seed recipes if table is empty" ON public.recipes FOR INSERT TO anon WITH CHECK (public.is_recipes_table_empty());
 
 CREATE TABLE public.new_recipes (
@@ -83,7 +85,6 @@ CREATE TABLE public.new_recipes (
 );
 ALTER TABLE public.new_recipes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read access to new_recipes" ON public.new_recipes FOR SELECT USING (true);
-CREATE POLICY "Allow admin full access to new_recipes" ON public.new_recipes FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 CREATE POLICY "Allow anon to seed new_recipes if table is empty" ON public.new_recipes FOR INSERT TO anon WITH CHECK (public.is_new_recipes_table_empty());
 
 CREATE TABLE public.scheduled_recipes (
@@ -92,33 +93,29 @@ CREATE TABLE public.scheduled_recipes (
 );
 ALTER TABLE public.scheduled_recipes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read access to scheduled_recipes" ON public.scheduled_recipes FOR SELECT USING (true);
-CREATE POLICY "Allow admin full access to scheduled_recipes" ON public.scheduled_recipes FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
 CREATE TABLE public.products (
     id TEXT PRIMARY KEY, name TEXT, brand TEXT, description TEXT, image_url TEXT, affiliate_url TEXT, category TEXT
 );
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read access to products" ON public.products FOR SELECT USING (true);
-CREATE POLICY "Allow admin full access to products" ON public.products FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 CREATE POLICY "Allow anon to seed products if table is empty" ON public.products FOR INSERT TO anon WITH CHECK (public.is_products_table_empty());
 
 CREATE TABLE public.sent_newsletters (
     id TEXT PRIMARY KEY, subject TEXT, message TEXT, recipe_ids INTEGER[], target TEXT, sent_date TEXT
 );
 ALTER TABLE public.sent_newsletters ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow admin full access to sent_newsletters" ON public.sent_newsletters FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+-- No policies by default, only service_role can access
 
 CREATE TABLE public.leads ( email TEXT PRIMARY KEY, date_collected TEXT );
 ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow anon insert to leads" ON public.leads FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow admin read access to leads" ON public.leads FOR SELECT USING (auth.role() = 'service_role');
 
 CREATE TABLE public.ratings (
     recipe_id INTEGER PRIMARY KEY, total_score INTEGER, count INTEGER, user_ratings JSONB
 );
 ALTER TABLE public.ratings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow authenticated read on ratings" ON public.ratings FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow admin full access to ratings" ON public.ratings FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
 CREATE TABLE public.standard_cocktails (
     id TEXT PRIMARY KEY, title TEXT, description TEXT, image_prompt TEXT, glassware TEXT,
@@ -126,7 +123,6 @@ CREATE TABLE public.standard_cocktails (
 );
 ALTER TABLE public.standard_cocktails ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read access to standard_cocktails" ON public.standard_cocktails FOR SELECT USING (true);
-CREATE POLICY "Allow admin full access to standard_cocktails" ON public.standard_cocktails FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 CREATE POLICY "Allow anon to seed standard_cocktails if table is empty" ON public.standard_cocktails FOR INSERT TO anon WITH CHECK (public.is_standard_cocktails_table_empty());
 
 CREATE TABLE public.community_chat (
@@ -142,7 +138,6 @@ CREATE TABLE public.about_us (
 );
 ALTER TABLE public.about_us ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read access to about_us" ON public.about_us FOR SELECT USING (true);
-CREATE POLICY "Allow admin full access to about_us" ON public.about_us FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 CREATE POLICY "Allow anon to seed about_us if table is empty" ON public.about_us FOR INSERT TO anon WITH CHECK (public.is_about_us_table_empty());
 
 
@@ -150,47 +145,39 @@ CREATE POLICY "Allow anon to seed about_us if table is empty" ON public.about_us
 -- STEP 5: RECREATE FUNCTIONS AND TRIGGERS.
 -- ---------------------------------------------------------------------
 
--- Specific, non-dynamic plpgsql functions to check if seedable tables are empty.
--- Using plpgsql and STABLE ensures the check is performed once per statement,
--- correctly handling bulk inserts for seeding.
+-- Functions to check if seedable tables are empty. Using LANGUAGE sql with STABLE
+-- and SECURITY DEFINER is the correct combination to handle bulk inserts for seeding.
+-- STABLE ensures the result is cached for the entire duration of the INSERT statement.
+-- SECURITY DEFINER ensures the function runs with owner privileges, bypassing RLS and
+-- seeing a consistent snapshot of the table before the transaction started.
 
 CREATE OR REPLACE FUNCTION public.is_recipes_table_empty()
-RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
-BEGIN
-  RETURN NOT EXISTS (SELECT 1 FROM public.recipes);
-END;
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT NOT EXISTS (SELECT 1 FROM public.recipes);
 $$;
 GRANT EXECUTE ON FUNCTION public.is_recipes_table_empty() TO anon;
 
 CREATE OR REPLACE FUNCTION public.is_new_recipes_table_empty()
-RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
-BEGIN
-  RETURN NOT EXISTS (SELECT 1 FROM public.new_recipes);
-END;
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT NOT EXISTS (SELECT 1 FROM public.new_recipes);
 $$;
 GRANT EXECUTE ON FUNCTION public.is_new_recipes_table_empty() TO anon;
 
 CREATE OR REPLACE FUNCTION public.is_products_table_empty()
-RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
-BEGIN
-  RETURN NOT EXISTS (SELECT 1 FROM public.products);
-END;
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT NOT EXISTS (SELECT 1 FROM public.products);
 $$;
 GRANT EXECUTE ON FUNCTION public.is_products_table_empty() TO anon;
 
 CREATE OR REPLACE FUNCTION public.is_standard_cocktails_table_empty()
-RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
-BEGIN
-  RETURN NOT EXISTS (SELECT 1 FROM public.standard_cocktails);
-END;
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT NOT EXISTS (SELECT 1 FROM public.standard_cocktails);
 $$;
 GRANT EXECUTE ON FUNCTION public.is_standard_cocktails_table_empty() TO anon;
 
 CREATE OR REPLACE FUNCTION public.is_about_us_table_empty()
-RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
-BEGIN
-  RETURN NOT EXISTS (SELECT 1 FROM public.about_us);
-END;
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT NOT EXISTS (SELECT 1 FROM public.about_us);
 $$;
 GRANT EXECUTE ON FUNCTION public.is_about_us_table_empty() TO anon;
 
@@ -246,72 +233,153 @@ GRANT EXECUTE ON FUNCTION public.get_or_create_user_profile(TEXT) TO authenticat
 -- End of script
 `;
 
-const SupabaseSchemaError: React.FC = () => {
-    const [copyButtonText, setCopyButtonText] = useState('Copy SQL Script');
+const StepIndicator = ({ current, total }: { current: number, total: number }) => (
+    <div className="flex items-center justify-center">
+        {Array.from({ length: total }).map((_, index) => {
+            const step = index + 1;
+            const isCompleted = step < current;
+            const isCurrent = step === current;
+            return (
+                <React.Fragment key={step}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors duration-300 ${
+                        isCurrent ? 'bg-blue-500 text-white ring-4 ring-blue-200' : isCompleted ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-500'
+                    }`}>
+                        {isCompleted ? <CheckIcon className="w-6 h-6" /> : step}
+                    </div>
+                    {step < total && <div className={`flex-1 h-1 transition-colors duration-300 ${isCompleted ? 'bg-green-500' : 'bg-slate-200'}`}></div>}
+                </React.Fragment>
+            )
+        })}
+    </div>
+);
+
+const Step1 = ({ onNext }: { onNext: () => void }) => (
+  <div className="text-center animate-fade-in">
+    <h2 className="text-xl font-semibold text-slate-700 flex items-center justify-center gap-2">
+      <ExternalLinkIcon className="w-6 h-6" />
+      Open Supabase
+    </h2>
+    <p className="text-slate-600 mt-2">
+      First, open your Supabase project dashboard in a new tab. You'll need to find the <strong>SQL Editor</strong>.
+    </p>
+    <div className="mt-6 flex flex-col sm:flex-row justify-center gap-4">
+       <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow-md hover:bg-green-700 transition-colors">
+            Open Supabase Dashboard
+       </a>
+       <button onClick={onNext} className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition-colors">
+            Next Step <ChevronRightIcon className="w-5 h-5" />
+       </button>
+    </div>
+  </div>
+);
+
+const Step2 = ({ onNext, onBack }: { onNext: () => void, onBack: () => void }) => {
+    const [copyButtonText, setCopyButtonText] = useState('Copy Script');
 
     const handleCopy = () => {
         navigator.clipboard.writeText(sqlSchema).then(() => {
             setCopyButtonText('Copied!');
-            setTimeout(() => setCopyButtonText('Copy SQL Script'), 2000);
-        }, (err) => {
-            console.error('Could not copy text: ', err);
+            setTimeout(() => {
+                onNext();
+                // Reset for next time
+                setTimeout(() => setCopyButtonText('Copy Script'), 500);
+            }, 1000);
+        }, () => {
             setCopyButtonText('Copy Failed');
-            setTimeout(() => setCopyButtonText('Copy SQL Script'), 2000);
+            setTimeout(() => setCopyButtonText('Copy Script'), 2000);
         });
     };
+    return (
+      <div className="animate-fade-in">
+        <h2 className="text-xl font-semibold text-slate-700 flex items-center justify-center gap-2 mb-2">
+            <ClipboardIcon className="w-6 h-6" />
+            Copy the Setup Script
+        </h2>
+        <p className="text-slate-600 mt-2 text-center">Click the button below to copy the entire script. It will reset your database to ensure a clean setup.</p>
+        <div className="mt-4 text-center">
+            <button
+                onClick={handleCopy}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 bg-slate-700 text-white font-bold rounded-lg shadow-md hover:bg-slate-800 transition-colors"
+            >
+                {copyButtonText === 'Copied!' ? <CheckCircleIcon className="w-6 h-6" /> : <ClipboardIcon className="w-6 h-6" />}
+                {copyButtonText}
+            </button>
+        </div>
+        <div className="mt-6 flex justify-center">
+            <button onClick={onBack} className="inline-flex items-center gap-2 px-4 py-2 bg-transparent text-slate-600 font-semibold rounded-lg hover:bg-slate-200 transition-colors">
+                <ChevronLeftIcon className="w-5 h-5" /> Back
+            </button>
+        </div>
+      </div>
+    );
+};
 
+const Step3 = ({ onNext, onBack }: { onNext: () => void, onBack: () => void }) => (
+    <div className="text-center animate-fade-in">
+        <h2 className="text-xl font-semibold text-slate-700 flex items-center justify-center gap-2">
+            Paste and Run
+        </h2>
+        <p className="text-slate-600 mt-2 max-w-xl mx-auto">
+            In the Supabase SQL Editor, click <strong>"+ New query"</strong>, paste the script you just copied, and click the green <strong>"RUN"</strong> button.
+        </p>
+        <div className="mt-6 flex flex-col sm:flex-row justify-center gap-4">
+            <button onClick={onBack} className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-slate-700 font-bold rounded-lg shadow-md border hover:bg-slate-100 transition-colors">
+                <ChevronLeftIcon className="w-5 h-5" /> Back
+            </button>
+            <button onClick={onNext} className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition-colors">
+                I've Run the Script <ChevronRightIcon className="w-5 h-5" />
+            </button>
+        </div>
+    </div>
+);
+
+const Step4 = () => (
+    <div className="text-center animate-fade-in">
+        <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto" />
+        <h2 className="text-2xl font-semibold text-slate-700 mt-4">
+            Setup Complete!
+        </h2>
+        <p className="text-slate-600 mt-2">
+            Your database is ready. Click the button below to launch the application.
+        </p>
+        <div className="mt-6 flex justify-center">
+            <button onClick={() => window.location.reload()} className="inline-flex items-center gap-2 px-8 py-3 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition-colors">
+                Reload Application
+            </button>
+        </div>
+    </div>
+);
+
+const SupabaseSchemaError: React.FC = () => {
+    const [step, setStep] = useState(1);
+
+    const renderStep = () => {
+        switch (step) {
+            case 1: return <Step1 onNext={() => setStep(2)} />;
+            case 2: return <Step2 onNext={() => setStep(3)} onBack={() => setStep(1)} />;
+            case 3: return <Step3 onNext={() => setStep(4)} onBack={() => setStep(2)} />;
+            case 4: return <Step4 />;
+            default: return <Step1 onNext={() => setStep(2)} />;
+        }
+    };
+    
     return (
         <div className="bg-slate-100 min-h-screen flex items-center justify-center p-4">
-            <div className="max-w-4xl w-full bg-white rounded-xl shadow-2xl p-8 border-t-8 border-blue-500">
+            <div className="max-w-3xl w-full bg-white rounded-xl shadow-2xl p-6 sm:p-8 border-t-8 border-blue-500">
                 <div className="flex flex-col items-center text-center">
                     <ServerStackIcon className="w-16 h-16 text-blue-500" />
                     <h1 className="text-3xl font-bold text-slate-800 mt-4">Database Setup Required</h1>
                     <p className="text-lg text-slate-600 mt-2">
-                        Your database is connected, but the required tables are missing or incomplete. Please run the provided SQL script to set up your database schema.
+                        Your database is connected, but the tables are missing. Let's fix that.
                     </p>
                 </div>
 
-                <div className="mt-8 space-y-6">
-                    <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
-                        <h2 className="text-xl font-semibold text-slate-700 flex items-center gap-2">
-                            <CodeBracketIcon className="w-6 h-6" />
-                            Step 1: Go to the SQL Editor
-                        </h2>
-                        <p className="text-slate-600 mt-2">
-                            In your Supabase project dashboard, navigate to the <strong className="text-slate-800">SQL Editor</strong> section.
-                        </p>
+                <div className="mt-8">
+                    <div className="px-4 sm:px-8">
+                        <StepIndicator current={step} total={4} />
                     </div>
-                    
-                    <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
-                        <h2 className="text-xl font-semibold text-slate-700 flex items-center gap-2">
-                            <ClipboardIcon className="w-6 h-6" />
-                            Step 2: Copy & Paste the Schema
-                        </h2>
-                        <p className="text-slate-600 mt-2">
-                            Click the button below to copy the entire SQL script. This script will reset your tables to ensure a clean setup. Then, paste it into a new query in the Supabase SQL Editor.
-                        </p>
-                        <div className="mt-4 relative">
-                             <pre className="bg-slate-800 text-white p-4 rounded-md text-xs overflow-x-auto max-h-40">
-                                <code>{sqlSchema.substring(0, 400)}...</code>
-                            </pre>
-                            <button
-                                onClick={handleCopy}
-                                className="absolute top-2 right-2 flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 text-white text-xs font-semibold rounded-md hover:bg-slate-700"
-                            >
-                                {copyButtonText === 'Copied!' ? <CheckCircleIcon className="w-4 h-4" /> : <ClipboardIcon className="w-4 h-4" />}
-                                {copyButtonText}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-                        <h2 className="text-xl font-semibold text-green-700 flex items-center gap-2">
-                            <CheckCircleIcon className="w-6 h-6" />
-                            Step 3: Run the Query
-                        </h2>
-                        <p className="text-green-800 mt-2">
-                            Click the "RUN" button in the SQL Editor. Once it completes successfully, refresh this application page.
-                        </p>
+                    <div className="mt-6 bg-slate-50 p-6 rounded-lg border border-slate-200 min-h-[15rem] flex flex-col justify-center">
+                        {renderStep()}
                     </div>
                 </div>
             </div>

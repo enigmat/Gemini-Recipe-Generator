@@ -10,11 +10,8 @@ const getDayOfYear = (date: Date): number => {
     return Math.floor(diff / oneDay);
 };
 
-export const getTodaysRecipe = async (): Promise<Recipe | null> => {
+export const getTodaysRecipe = (scheduledRecipes: Recipe[]): Recipe | null => {
     try {
-        // FIX: Await the promise to get the array of recipes.
-        const scheduledRecipes = await recipeService.getScheduledRecipes();
-        
         if (scheduledRecipes.length === 0) {
             console.warn("Recipe of the Day pool is empty. Admin needs to generate recipes.");
             return null;
@@ -31,7 +28,7 @@ export const getTodaysRecipe = async (): Promise<Recipe | null> => {
     }
 };
 
-export const archiveYesterdaysRecipe = async (): Promise<Recipe | null> => {
+export const archiveYesterdaysRecipe = async (scheduledRecipes: Recipe[]): Promise<Recipe | null> => {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const lastArchiveDate = localStorage.getItem(LAST_ARCHIVE_KEY);
 
@@ -41,8 +38,6 @@ export const archiveYesterdaysRecipe = async (): Promise<Recipe | null> => {
     }
 
     try {
-        // FIX: Await the promise to get the array of recipes.
-        const scheduledRecipes = await recipeService.getScheduledRecipes();
         if (scheduledRecipes.length === 0) {
             localStorage.setItem(LAST_ARCHIVE_KEY, today);
             return null; // No recipes to archive
