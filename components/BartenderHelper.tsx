@@ -9,7 +9,7 @@ import IngredientInput from './IngredientInput';
 interface BartenderHelperProps {
   currentUser: User;
   savedCocktails: SavedCocktail[];
-  onSaveCocktail: (recipe: CocktailRecipe, image: string) => void;
+  onSaveCocktail: (recipe: CocktailRecipe, image: string) => Promise<void>;
   onUpgradeRequest: () => void;
 }
 
@@ -64,13 +64,13 @@ const BartenderHelper: React.FC<BartenderHelperProps> = ({ currentUser, savedCoc
     setError(null);
   };
 
-  const handleSaveClick = () => {
+  const handleSaveClick = async () => {
     if (!currentUser.isPremium) {
         onUpgradeRequest();
         return;
     }
     if (recipe && image) {
-        onSaveCocktail(recipe, image);
+        await onSaveCocktail(recipe, image);
     }
   };
 

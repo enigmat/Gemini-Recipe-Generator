@@ -1,42 +1,48 @@
 import { Recipe } from '../types';
 import * as imageStore from './imageStore';
-import { getDatabase, saveDatabase } from './cloudService';
+// FIX: saveDatabase is removed, use granular async savers
+import { getDatabase, saveAllRecipes as saveAllRecipesToCloud, saveNewRecipes as saveNewRecipesToCloud, saveScheduledRecipes as saveScheduledRecipesToCloud } from './cloudService';
 
-export const getAllRecipes = (): Recipe[] => {
-    const db = getDatabase();
+// FIX: make async
+export const getAllRecipes = async (): Promise<Recipe[]> => {
+    // FIX: await promise
+    const db = await getDatabase();
     return db.recipes.all;
 };
 
-export const saveAllRecipes = (recipes: Recipe[]): void => {
-    const db = getDatabase();
-    db.recipes.all = recipes;
-    saveDatabase(db);
+// FIX: make async
+export const saveAllRecipes = async (recipes: Recipe[]): Promise<void> => {
+    await saveAllRecipesToCloud(recipes);
 };
 
-export const getNewRecipes = (): Recipe[] => {
-    const db = getDatabase();
+// FIX: make async
+export const getNewRecipes = async (): Promise<Recipe[]> => {
+    // FIX: await promise
+    const db = await getDatabase();
     return db.recipes.new;
 };
 
-export const saveNewRecipes = (recipes: Recipe[]): void => {
-    const db = getDatabase();
-    db.recipes.new = recipes;
-    saveDatabase(db);
+// FIX: make async
+export const saveNewRecipes = async (recipes: Recipe[]): Promise<void> => {
+    await saveNewRecipesToCloud(recipes);
 };
 
-export const getScheduledRecipes = (): Recipe[] => {
-    const db = getDatabase();
+// FIX: make async
+export const getScheduledRecipes = async (): Promise<Recipe[]> => {
+    // FIX: await promise
+    const db = await getDatabase();
     return db.recipes.scheduled;
 };
 
-export const saveScheduledRecipes = (recipes: Recipe[]): void => {
-    const db = getDatabase();
-    db.recipes.scheduled = recipes;
-    saveDatabase(db);
+// FIX: make async
+export const saveScheduledRecipes = async (recipes: Recipe[]): Promise<void> => {
+    await saveScheduledRecipesToCloud(recipes);
 };
 
+// FIX: make async
 export const addRecipeIfUnique = async (recipe: Recipe): Promise<Recipe | null> => {
-    const allRecipes = getAllRecipes();
+    // FIX: await promise
+    const allRecipes = await getAllRecipes();
     const existingRecipe = allRecipes.find(r => r.title.toLowerCase() === recipe.title.toLowerCase());
 
     if (existingRecipe) {
@@ -68,7 +74,8 @@ export const addRecipeIfUnique = async (recipe: Recipe): Promise<Recipe | null> 
     };
 
     const updatedRecipes = [newRecipe, ...allRecipes];
-    saveAllRecipes(updatedRecipes);
+    // FIX: await promise
+    await saveAllRecipes(updatedRecipes);
     
     console.log(`Archived new recipe: "${newRecipe.title}"`);
     return newRecipe;

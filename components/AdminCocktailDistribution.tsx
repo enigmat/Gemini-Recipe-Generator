@@ -15,7 +15,7 @@ const AdminCocktailDistribution: React.FC<AdminCocktailDistributionProps> = ({ u
     const [status, setStatus] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
 
-    const handleDistribute = () => {
+    const handleDistribute = async () => {
         if (!sourceUser || targetUsers.length === 0) return;
 
         if (!window.confirm(`Are you sure you want to send cocktails from ${sourceUser}'s 'My Bar' to ${targetUsers.length} user(s)? This will add cocktails and cannot be undone.`)) {
@@ -25,7 +25,8 @@ const AdminCocktailDistribution: React.FC<AdminCocktailDistributionProps> = ({ u
         setIsLoading(true);
         setStatus('');
         try {
-            const { successCount, newCocktails } = adminService.distributeCocktails(sourceUser, targetUsers);
+            // FIX: The function call is async, so it must be awaited before destructuring.
+            const { successCount, newCocktails } = await adminService.distributeCocktails(sourceUser, targetUsers);
             setStatus(`Successfully distributed cocktails to ${successCount} user(s). A total of ${newCocktails} new cocktails were added across all users.`);
             setTargetUsers([]); // Clear selection after success
         } catch (e: any) {

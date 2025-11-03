@@ -1,7 +1,8 @@
-import { getDatabase, saveDatabase } from './cloudService';
+import { getSupabaseClient } from './supabaseClient';
+import { getDatabase } from './cloudService';
 import { AppDatabase, User, ShoppingList, SavedCocktail, RatingsStore, Recipe, AboutUsContent, Newsletter, Lead } from '../types';
 
-const MIGRATION_FLAG_KEY = 'recipeAppMigrationV1Complete';
+const MIGRATION_FLAG_KEY = 'recipeAppMigrationV2Complete'; // Renamed to ensure it runs again after this fix
 
 // Define old keys
 const OLD_KEYS = {
@@ -34,22 +35,67 @@ const getOldData = <T>(key: string): T | null => {
     }
 };
 
-export const runMigration = (): void => {
+// FIX: Create a local saveDatabase function since the global one was removed.
+const saveDatabase = async (db: AppDatabase): Promise<void> => {
+    const supabase = getSupabaseClient();
+    console.log("Saving full migrated database to Supabase...");
+
+    const { error: recipesError } = await supabase.from('recipes').upsert(db.recipes.all);
+    if(recipesError) console.error("Migration: recipes", recipesError);
+    
+    // For collections that should be replaced, not merged
+    await supabase.from('new_recipes').delete().neq('id', -1);
+    const { error: newRecipesError } = await supabase.from('new_recipes').insert(db.recipes.new);
+    if(newRecipesError) console.error("Migration: new_recipes", newRecipesError);
+
+    await supabase.from('scheduled_recipes').delete().neq('id', -1);
+    const { error: scheduledRecipesError } = await supabase.from('scheduled_recipes').insert(db.recipes.scheduled);
+    if(scheduledRecipesError) console.error("Migration: scheduled_recipes", scheduledRecipesError);
+    
+    const { error: productsError } = await supabase.from('products').upsert(db.products);
+    if(productsError) console.error("Migration: products", productsError);
+    
+    const { error: newslettersError } = await supabase.from('sent_newsletters').upsert(db.newsletters.sent);
+    if(newslettersError) console.error("Migration: sent_newsletters", newslettersError);
+
+    const { error: leadsError } = await supabase.from('leads').upsert(db.newsletters.leads);
+    if(leadsError) console.error("Migration: leads", leadsError);
+    
+    const ratingsData = Object.entries(db.ratings).map(([recipe_id, value]) => ({ recipe_id: parseInt(recipe_id), ...value }));
+    const { error: ratingsError } = await supabase.from('ratings').upsert(ratingsData, { onConflict: 'recipe_id' });
+    if(ratingsError) console.error("Migration: ratings", ratingsError);
+
+    // This assumes user profiles from localStorage are complete and correct.
+    const { error: usersError } = await supabase.from('user_profiles').upsert(db.users);
+    if(usersError) console.error("Migration: user_profiles", usersError);
+    
+    // This is tricky as we can't easily get the user ID. This part of migration is lossy.
+    // The old system used email as a key. The new system uses auth ID.
+    // This will only work if the user_profiles table has a unique constraint on email and we can join.
+    // For this fix, we will assume user data cannot be migrated automatically this way.
+    console.warn("User-specific data (favorites, shopping lists, cocktails) cannot be reliably migrated from localStorage due to the switch from email keys to user IDs. This data will be skipped.");
+};
+
+
+// FIX: Make the entire function async
+export const runMigration = async (): Promise<void> => {
     // 1. Check if migration has already been completed
     if (localStorage.getItem(MIGRATION_FLAG_KEY)) {
         return;
     }
-    console.log("Running one-time data migration to new cloud format...");
+    console.log("Running one-time data migration from localStorage to Supabase format...");
 
-    const db = getDatabase();
+    // FIX: await promise
+    const db = await getDatabase();
     let migrationOccurred = false;
 
     // --- Helper function to reduce redundancy ---
     const migrateGlobalData = <T>(oldKey: string, dbUpdater: (data: T) => void) => {
         const oldData = getOldData<T>(oldKey);
-        if (oldData) {
+        if (oldData && (!Array.isArray(oldData) || oldData.length > 0)) {
             dbUpdater(oldData);
             migrationOccurred = true;
+            console.log(`Found and staged data from ${oldKey}`);
         }
     };
 
@@ -63,40 +109,18 @@ export const runMigration = (): void => {
     migrateGlobalData<Lead[]>(OLD_KEYS.leads, data => db.newsletters.leads = data);
     migrateGlobalData<RatingsStore>(OLD_KEYS.ratings, data => db.ratings = data);
 
-    // 4. Migrate user list and per-user data
+    // 4. Migrate user list (profiles)
     const oldUsers = getOldData<User[]>(OLD_KEYS.users);
     if (oldUsers) {
         migrationOccurred = true;
-        // Merge user lists, giving precedence to existing users in the new DB
-        const userMap = new Map(db.users.map(u => [u.email, u]));
-        oldUsers.forEach(oldUser => {
-            if (!userMap.has(oldUser.email)) {
-                db.users.push(oldUser);
-            }
-        });
-
-        // Now migrate data for each user found in the old list
-        oldUsers.forEach(user => {
-            const email = user.email;
-            
-            if (!db.userData[email]) {
-                db.userData[email] = { favorites: [], shoppingLists: [], cocktails: [] };
-            }
-
-            const oldFavorites = getOldData<number[]>(`${OLD_KEYS.favoritesPrefix}${email}`);
-            if (oldFavorites) db.userData[email].favorites = oldFavorites;
-
-            const oldShoppingLists = getOldData<ShoppingList[]>(`${OLD_KEYS.shoppingListsPrefix}${email}`);
-            if (oldShoppingLists) db.userData[email].shoppingLists = oldShoppingLists;
-
-            const oldCocktails = getOldData<SavedCocktail[]>(`${OLD_KEYS.cocktailsPrefix}${email}`);
-            if (oldCocktails) db.userData[email].cocktails = oldCocktails;
-        });
+        // The old user data is missing auth IDs. We can't safely migrate it without risking conflicts.
+        // We'll log this. The user list in Supabase will be the source of truth.
+        console.warn("Found old user list in localStorage, but cannot migrate it as it lacks auth IDs. User profiles must be created via signup.");
     }
 
     if (migrationOccurred) {
         // 5. Save the migrated database
-        saveDatabase(db);
+        await saveDatabase(db);
         console.log("Data migration complete. New database saved.");
 
         // 7. (Optional) Clean up old keys

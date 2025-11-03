@@ -1,42 +1,41 @@
-import { getDatabase, saveDatabase } from './cloudService';
+import { getUserData, saveUserData } from './cloudService';
 
-export const distributeCocktails = (sourceUserEmail: string, targetUserEmails: string[]): { successCount: number; newCocktails: number } => {
-    if (!sourceUserEmail || !targetUserEmails || targetUserEmails.length === 0) {
+// FIX: make async and use userId instead of email
+export const distributeCocktails = async (sourceUserId: string, targetUserIds: string[]): Promise<{ successCount: number; newCocktails: number }> => {
+    if (!sourceUserId || !targetUserIds || targetUserIds.length === 0) {
         throw new Error("Source user and at least one target user must be selected.");
     }
-
-    const db = getDatabase();
-
-    const sourceUserData = db.userData[sourceUserEmail];
+    
+    // FIX: await promise
+    const sourceUserData = await getUserData(sourceUserId);
     if (!sourceUserData || !sourceUserData.cocktails || sourceUserData.cocktails.length === 0) {
-        throw new Error(`Source user '${sourceUserEmail}' has no saved cocktails in 'My Bar'.`);
+        throw new Error(`Source user with ID '${sourceUserId}' has no saved cocktails in 'My Bar'.`);
     }
 
     const sourceCocktails = sourceUserData.cocktails;
     let newCocktailsCount = 0;
+    let successCount = 0;
 
-    targetUserEmails.forEach(targetEmail => {
+    for (const targetId of targetUserIds) {
         // Don't copy to self
-        if (targetEmail === sourceUserEmail) return;
+        if (targetId === sourceUserId) continue;
 
-        // Ensure target user data object exists
-        if (!db.userData[targetEmail]) {
-            db.userData[targetEmail] = { favorites: [], shoppingLists: [], cocktails: [] };
-        }
-        const targetCocktails = db.userData[targetEmail].cocktails;
-        const targetCocktailTitles = new Set(targetCocktails.map(c => c.title.toLowerCase()));
+        // FIX: await promise
+        const targetUserData = await getUserData(targetId);
+        const targetCocktailTitles = new Set(targetUserData.cocktails.map(c => c.title.toLowerCase()));
 
         const cocktailsToAdd = sourceCocktails.filter(sourceCocktail =>
             !targetCocktailTitles.has(sourceCocktail.title.toLowerCase())
         );
 
         if (cocktailsToAdd.length > 0) {
-            db.userData[targetEmail].cocktails.push(...cocktailsToAdd);
+            targetUserData.cocktails.push(...cocktailsToAdd);
+            // FIX: await save
+            await saveUserData(targetId, targetUserData);
             newCocktailsCount += cocktailsToAdd.length;
         }
-    });
+        successCount++;
+    }
 
-    saveDatabase(db);
-
-    return { successCount: targetUserEmails.filter(e => e !== sourceUserEmail).length, newCocktails: newCocktailsCount };
+    return { successCount, newCocktails: newCocktailsCount };
 };

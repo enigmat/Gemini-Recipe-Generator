@@ -85,10 +85,6 @@ const AdminCocktailManagement: React.FC<AdminCocktailManagementProps> = ({ stand
     };
 
     const handleRegenerateImage = async (cocktail: SavedCocktail) => {
-        if (!window.confirm(`Are you sure you want to regenerate the image for "${cocktail.title}" using its image prompt?`)) {
-            return;
-        }
-
         setUpdatingImageId(cocktail.id);
         try {
             const newImageBase64 = await geminiService.generateImageFromPrompt(cocktail.imagePrompt);

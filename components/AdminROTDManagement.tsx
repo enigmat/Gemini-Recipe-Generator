@@ -20,7 +20,12 @@ const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe 
     const [movingId, setMovingId] = useState<number | null>(null);
 
     useEffect(() => {
-        setScheduledRecipes(recipeService.getScheduledRecipes());
+        // FIX: Await promise from async service call before setting state.
+        const fetchRecipes = async () => {
+            const recipes = await recipeService.getScheduledRecipes();
+            setScheduledRecipes(recipes);
+        };
+        fetchRecipes();
     }, []);
 
     const handleGenerateNewPool = async () => {

@@ -1,13 +1,14 @@
 import { AppDatabase } from '../types';
-import { getDatabase, saveDatabase } from './cloudService';
+import { getDatabase, saveAllRecipes, saveNewRecipes, saveScheduledRecipes, saveProducts, saveRatings, saveAboutUsContent, saveUserData } from './cloudService';
 import * as imageStore from './imageStore';
+import { getSupabaseClient } from './supabaseClient';
 
 // Helper to process a list of items with images
 const embedImages = async (items: any[] | undefined, imageKey: string) => {
     if (!items) return;
     for (const item of items) {
         if (item && item[imageKey] && typeof item[imageKey] === 'string' && item[imageKey].startsWith('indexeddb:')) {
-            const imageId = item[imageKey].split(':')[1];
+            const imageId = item[imageKey].split(':')[1].split('?')[0]; // Handle cache-buster
             const imageData = await imageStore.getImage(imageId);
             if (imageData) {
                 item[imageKey] = imageData;
@@ -17,7 +18,8 @@ const embedImages = async (items: any[] | undefined, imageKey: string) => {
 };
 
 export const exportDatabaseWithImages = async (): Promise<AppDatabase> => {
-    const db = getDatabase();
+    // FIX: await promise
+    const db = await getDatabase();
     // Create a deep copy to avoid mutating the live database object
     const exportDb: AppDatabase = JSON.parse(JSON.stringify(db));
 
@@ -64,6 +66,7 @@ const extractAndStoreImages = async (items: any[] | undefined, imageKey: string,
 };
 
 export const importDatabaseWithImages = async (importedDb: AppDatabase): Promise<void> => {
+    const supabase = getSupabaseClient();
     // Basic validation
     if (!importedDb.recipes || !importedDb.users) {
         throw new Error("Invalid or corrupted backup file. It's missing essential data sections.");
@@ -81,15 +84,40 @@ export const importDatabaseWithImages = async (importedDb: AppDatabase): Promise
     await extractAndStoreImages(importedDb.standardCocktails, 'image', 'id');
 
     // Process user-specific data
-    if (importedDb.userData) {
-        for (const userEmail in importedDb.userData) {
-            const userData = importedDb.userData[userEmail];
-            await extractAndStoreImages(userData.cocktails, 'image', 'id');
-        }
-    }
-    
-    // User profile images are stored as base64, so they are fine.
+    // The keys for userData in the JSON are emails, but we need to save by user ID.
+    // This is a complex mapping problem. For now, we assume user data is not imported or requires manual mapping.
+    // The most robust way is to just save the global data.
+    console.warn("Importing user-specific data is not supported in this version of sync.");
 
-    // Save the processed database
-    saveDatabase(importedDb);
+
+    // Save the processed database using granular savers and direct supabase calls
+    await saveAllRecipes(importedDb.recipes.all || []);
+    await saveNewRecipes(importedDb.recipes.new || []);
+    await saveScheduledRecipes(importedDb.recipes.scheduled || []);
+    await saveProducts(importedDb.products || []);
+    await saveRatings(importedDb.ratings || {});
+    await saveAboutUsContent(importedDb.aboutUs);
+
+    // Save parts not covered by cloudService directly via supabase
+    if (importedDb.standardCocktails) {
+        const { error } = await supabase.from('standard_cocktails').upsert(importedDb.standardCocktails);
+        if (error) console.error("Import: standard_cocktails", error);
+    }
+    if (importedDb.newsletters?.sent) {
+        const { error } = await supabase.from('sent_newsletters').upsert(importedDb.newsletters.sent);
+        if (error) console.error("Import: sent_newsletters", error);
+    }
+     if (importedDb.newsletters?.leads) {
+        const { error } = await supabase.from('leads').upsert(importedDb.newsletters.leads);
+        if (error) console.error("Import: leads", error);
+    }
+    if (importedDb.communityChat) {
+        await supabase.from('community_chat').delete().neq('id', 'placeholder-to-delete-all');
+        const { error } = await supabase.from('community_chat').insert(importedDb.communityChat);
+        if (error) console.error("Import: community_chat", error);
+    }
+     if (importedDb.users) {
+        const { error } = await supabase.from('user_profiles').upsert(importedDb.users);
+        if (error) console.error("Import: user_profiles", error);
+    }
 };

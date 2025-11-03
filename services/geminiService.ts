@@ -635,6 +635,178 @@ export const generateRecipeFromIngredients = async (ingredients: string[], dieta
     }
 };
 
+export const generateRecipeFromImage = async (base64Image: string, mimeType: string): Promise<Omit<Recipe, 'id' | 'image'>> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        
+        const imagePart = {
+            inlineData: {
+                data: base64Image,
+                mimeType: mimeType,
+            },
+        };
+        
+        const textPart = {
+            text: "Identify the dish in this image. Then, generate a complete, high-quality recipe for it. The recipe must be well-written, easy to follow, and appealing. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing, and an estimated calorie count per serving."
+        };
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: { parts: [imagePart, textPart] },
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING, description: "The final, polished title of the recipe." },
+                        description: { type: Type.STRING, description: "A brief, enticing description of the dish." },
+                        cookTime: { type: Type.STRING, description: "e.g., '45 minutes'" },
+                        servings: { type: Type.STRING, description: "e.g., '4 servings' or '4-6'" },
+                        calories: { type: Type.STRING, description: "e.g., 'Approx. 550 kcal'" },
+                        ingredients: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    name: { type: Type.STRING },
+                                    metric: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            quantity: { type: Type.STRING },
+                                            unit: { type: Type.STRING }
+                                        },
+                                        required: ['quantity', 'unit']
+                                    },
+                                    us: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            quantity: { type: Type.STRING },
+                                            unit: { type: Type.STRING }
+                                        },
+                                        required: ['quantity', 'unit']
+                                    }
+                                },
+                                required: ['name', 'metric', 'us']
+                            }
+                        },
+                        instructions: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        },
+                        tags: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        },
+                        winePairing: {
+                            type: Type.OBJECT,
+                            properties: {
+                                suggestion: { type: Type.STRING },
+                                description: { type: Type.STRING }
+                            },
+                        }
+                    },
+                    required: ['title', 'description', 'cookTime', 'servings', 'ingredients', 'instructions', 'tags', 'calories']
+                }
+            }
+        });
+        
+        const jsonText = response.text;
+        const recipeData = JSON.parse(jsonText);
+
+        return recipeData;
+
+    } catch (error) {
+        console.error("Error generating recipe from image with Gemini:", error);
+        throw new Error("Failed to generate a recipe from the image. The AI couldn't identify a dish. Please try a clearer photo.");
+    }
+};
+
+export const generateRecipeFromIngredientsImage = async (base64Image: string, mimeType: string): Promise<Omit<Recipe, 'id' | 'image'>> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        
+        const imagePart = {
+            inlineData: {
+                data: base64Image,
+                mimeType: mimeType,
+            },
+        };
+        
+        const textPart = {
+            text: "First, identify the main food ingredients in this image (e.g., chicken breasts, broccoli, bell peppers). Then, using those identified ingredients, generate a complete, high-quality recipe. Assume the user has basic pantry staples like oil, salt, pepper, and common spices. The recipe must be well-written and easy to follow. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing, and an estimated calorie count per serving."
+        };
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: { parts: [imagePart, textPart] },
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING, description: "The final, polished title of the recipe." },
+                        description: { type: Type.STRING, description: "A brief, enticing description of the dish." },
+                        cookTime: { type: Type.STRING, description: "e.g., '45 minutes'" },
+                        servings: { type: Type.STRING, description: "e.g., '4 servings' or '4-6'" },
+                        calories: { type: Type.STRING, description: "e.g., 'Approx. 550 kcal'" },
+                        ingredients: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    name: { type: Type.STRING },
+                                    metric: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            quantity: { type: Type.STRING },
+                                            unit: { type: Type.STRING }
+                                        },
+                                        required: ['quantity', 'unit']
+                                    },
+                                    us: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            quantity: { type: Type.STRING },
+                                            unit: { type: Type.STRING }
+                                        },
+                                        required: ['quantity', 'unit']
+                                    }
+                                },
+                                required: ['name', 'metric', 'us']
+                            }
+                        },
+                        instructions: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        },
+                        tags: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        },
+                        winePairing: {
+                            type: Type.OBJECT,
+                            properties: {
+                                suggestion: { type: Type.STRING },
+                                description: { type: Type.STRING }
+                            },
+                        }
+                    },
+                    required: ['title', 'description', 'cookTime', 'servings', 'ingredients', 'instructions', 'tags', 'calories']
+                }
+            }
+        });
+        
+        const jsonText = response.text;
+        const recipeData = JSON.parse(jsonText);
+
+        return recipeData;
+
+    } catch (error) {
+        console.error("Error generating recipe from ingredients image with Gemini:", error);
+        throw new Error("Failed to generate a recipe from the image. The AI couldn't identify ingredients. Please try a clearer photo.");
+    }
+};
+
 export const generateMealPlan = async (prompt: string, recipeTitles: string[]): Promise<GeneratedMealPlan> => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -687,5 +859,27 @@ export const generateMealPlan = async (prompt: string, recipeTitles: string[]): 
     } catch (error) {
         console.error("Error generating meal plan with Gemini:", error);
         throw new Error("Failed to generate a meal plan. The AI might be busy! Please try a different request.");
+    }
+};
+
+export const generateCookbookIntroduction = async (title: string, recipeTitles: string[]): Promise<string> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const prompt = `Act as a cookbook editor. A user has created a personal cookbook titled "${title}" featuring the following recipes: ${recipeTitles.join(', ')}. Write a short, warm, and personal introduction for this cookbook. It should be 2-3 paragraphs long and have an encouraging and celebratory tone. Do not use markdown.`;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+        });
+        
+        const introText = response.text;
+        if (!introText) {
+            throw new Error("AI failed to generate an introduction.");
+        }
+        return introText.trim();
+
+    } catch (error) {
+        console.error("Error generating cookbook introduction with Gemini:", error);
+        throw new Error("Failed to generate a cookbook introduction. Please try again.");
     }
 };

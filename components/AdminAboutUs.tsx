@@ -7,7 +7,12 @@ const AdminAboutUs: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        setContent(aboutUsService.getAboutUsContent());
+        // FIX: Await promise from async service call before setting state.
+        const fetchContent = async () => {
+            const data = await aboutUsService.getAboutUsContent();
+            setContent(data);
+        };
+        fetchContent();
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

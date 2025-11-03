@@ -78,7 +78,7 @@ const CookMode: React.FC<CookModeProps> = ({ recipe, onExit, measurementSystem }
 
   const goToPrevStep = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep + 1);
+      setCurrentStep(currentStep - 1);
     }
   };
 

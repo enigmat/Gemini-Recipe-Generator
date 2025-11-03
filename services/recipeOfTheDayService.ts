@@ -12,7 +12,8 @@ const getDayOfYear = (date: Date): number => {
 
 export const getTodaysRecipe = async (): Promise<Recipe | null> => {
     try {
-        const scheduledRecipes = recipeService.getScheduledRecipes();
+        // FIX: Await the promise to get the array of recipes.
+        const scheduledRecipes = await recipeService.getScheduledRecipes();
         
         if (scheduledRecipes.length === 0) {
             console.warn("Recipe of the Day pool is empty. Admin needs to generate recipes.");
@@ -40,7 +41,8 @@ export const archiveYesterdaysRecipe = async (): Promise<Recipe | null> => {
     }
 
     try {
-        const scheduledRecipes = recipeService.getScheduledRecipes();
+        // FIX: Await the promise to get the array of recipes.
+        const scheduledRecipes = await recipeService.getScheduledRecipes();
         if (scheduledRecipes.length === 0) {
             localStorage.setItem(LAST_ARCHIVE_KEY, today);
             return null; // No recipes to archive

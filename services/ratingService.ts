@@ -1,24 +1,28 @@
 import { Recipe, RatingsStore } from '../types';
-import { getDatabase, saveDatabase } from './cloudService';
+// FIX: saveDatabase is removed, use granular async savers.
+import { getDatabase, saveRatings as saveRatingsToCloud } from './cloudService';
 
 export const loadRatings = (): void => {
     // This function is now obsolete as getDatabase handles loading.
     // Kept for compatibility in case it's called somewhere, but does nothing.
 };
 
-const getRatings = (): RatingsStore => {
-    const db = getDatabase();
+// FIX: make async to await getDatabase()
+const getRatings = async (): Promise<RatingsStore> => {
+    // FIX: await promise
+    const db = await getDatabase();
     return db.ratings;
 };
 
-const saveRatings = (ratings: RatingsStore): void => {
-    const db = getDatabase();
-    db.ratings = ratings;
-    saveDatabase(db);
+// FIX: make async and use specific saver from cloudService
+const saveRatings = async (ratings: RatingsStore): Promise<void> => {
+    await saveRatingsToCloud(ratings);
 };
 
-export const addRating = (recipeId: number, score: number, userEmail: string): void => {
-    const ratings = getRatings();
+// FIX: make async
+export const addRating = async (recipeId: number, score: number, userEmail: string): Promise<void> => {
+    // FIX: await promise
+    const ratings = await getRatings();
     if (!ratings[recipeId]) {
         ratings[recipeId] = { totalScore: 0, count: 0, userRatings: {} };
     }
@@ -36,11 +40,14 @@ export const addRating = (recipeId: number, score: number, userEmail: string): v
     }
     
     recipeRating.userRatings[userEmail] = score;
-    saveRatings(ratings);
+    // FIX: await promise
+    await saveRatings(ratings);
 };
 
-export const getRating = (recipeId: number): Recipe['rating'] | undefined => {
-    const ratings = getRatings();
+// FIX: make async
+export const getRating = async (recipeId: number): Promise<Recipe['rating'] | undefined> => {
+    // FIX: await promise
+    const ratings = await getRatings();
     const ratingData = ratings[recipeId];
     if (!ratingData || ratingData.count === 0) {
         return undefined;

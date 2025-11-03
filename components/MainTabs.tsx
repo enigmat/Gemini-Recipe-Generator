@@ -25,14 +25,12 @@ interface MainTabsProps {
 
 const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser }) => {
   const allTabs: any[] = [
-    { id: 'Home', name: 'Home', icon: <HomeIcon className="w-5 h-5" />, isLink: true, href: 'https://recipeextracter.com/' },
-    { id: 'All Recipes', name: 'All Recipes', icon: null },
+    { id: 'All Recipes', name: 'Home', icon: <HomeIcon className="w-5 h-5" /> },
     { id: 'Community Chat', name: 'Community Chat', icon: <ChatBubbleIcon className="w-5 h-5" /> },
     { id: 'Pantry Chef', name: 'Pantry Chef', icon: <RefrigeratorIcon className="w-5 h-5" /> },
     { id: 'AI Meal Planner', name: 'AI Meal Planner', icon: <ClipboardListIcon className="w-5 h-5" /> },
     { id: 'My Cookbook', name: 'My Cookbook', icon: <HeartIcon className="w-5 h-5" /> },
-    { id: 'Cocktail Menu', name: 'Cocktail Menu', icon: <BookOpenIcon className="w-5 h-5" /> },
-    { id: 'My Bar', name: 'My Bar', icon: <CocktailIcon className="w-5 h-5" /> },
+    { id: 'Cocktail Book', name: 'Cocktail Book', icon: <BookOpenIcon className="w-5 h-5" /> },
     { id: 'Shopping List', name: 'Shopping List', icon: <ShoppingCartIcon className="w-5 h-5" /> },
     { id: 'Marketplace', name: 'Marketplace', icon: <StoreIcon className="w-5 h-5" /> },
     { id: 'Meal Plans', name: 'Meal Plans', icon: <CalendarDaysIcon className="w-5 h-5" /> },

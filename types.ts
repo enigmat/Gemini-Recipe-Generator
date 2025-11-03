@@ -39,6 +39,7 @@ export interface RecipeVariation {
 }
 
 export interface User {
+  id: string; // Supabase auth user ID
   email: string;
   name: string;
   profileImage?: string; // base64 encoded image string
@@ -156,7 +157,6 @@ export interface ExpertQuestion {
   };
 }
 
-// FIX: Added missing AboutUsContent interface
 export interface AboutUsContent {
   companyName: string;
   missionStatement: string;
@@ -188,6 +188,12 @@ export interface ChatMessage {
   timestamp: string; // ISO 8601
 }
 
+export interface UserCookbook {
+  title: string;
+  introduction: string;
+  recipes: Recipe[];
+}
+
 // Centralized DB types
 export type RatingsStore = Record<number, { totalScore: number; count: number; userRatings: Record<string, number> }>;
 
@@ -213,6 +219,5 @@ export interface AppDatabase {
     userData: Record<string, UserData>; // Keyed by user email
     standardCocktails: SavedCocktail[];
     communityChat: ChatMessage[];
-    // FIX: Added missing 'aboutUs' property to the AppDatabase interface.
     aboutUs: AboutUsContent;
 }

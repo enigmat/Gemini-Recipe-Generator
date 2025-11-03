@@ -4,16 +4,15 @@ import { User } from '../types';
   
 interface LoginModalProps {
   onClose: () => void;
-  onLoginSuccess: (user: User) => void;
 }
 
-const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLoginSuccess }) => {
+const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
   const [isLoginView, setIsLoginView] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please fill in all fields.');
@@ -21,14 +20,18 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLoginSuccess }) => {
     }
     setError('');
 
-    const user = isLoginView
-      ? userService.login(email, password)
-      : userService.signup(email, password);
-
-    if (user) {
-      onLoginSuccess(user);
-    } else {
-      setError('An unexpected error occurred.');
+    try {
+        if (isLoginView) {
+            await userService.signIn(email, password);
+        } else {
+            await userService.signup(email, password);
+        }
+        // On success, the onAuthStateChange listener in App.tsx will handle
+        // setting the user and closing the modal. We can just call onClose here
+        // for a faster UI response.
+        onClose();
+    } catch (err: any) {
+        setError(err.message || 'An unexpected error occurred.');
     }
   };
 
