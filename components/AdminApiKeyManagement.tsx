@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import KeyIcon from './icons/KeyIcon';
 import CheckCircleIcon from './icons/CheckCircleIcon';
 import XCircleIcon from './icons/XCircleIcon';
+import Spinner from './Spinner';
 
-// FIX: Removed conflicting global declaration for `window.aistudio`.
 // The TypeScript error indicates this is declared elsewhere, so this redeclaration was causing a conflict.
 
 const AdminApiKeyManagement: React.FC = () => {
@@ -11,9 +11,10 @@ const AdminApiKeyManagement: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     const checkApiKeyStatus = async () => {
-        if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
+        // FIX: Add `(window as any)` type casting when accessing the `window.aistudio` object.
+        if ((window as any).aistudio && typeof (window as any).aistudio.hasSelectedApiKey === 'function') {
             try {
-                const hasKey = await window.aistudio.hasSelectedApiKey();
+                const hasKey = await (window as any).aistudio.hasSelectedApiKey();
                 setIsKeySet(hasKey);
             } catch (error) {
                 console.error("Error checking API key status:", error);
@@ -32,9 +33,10 @@ const AdminApiKeyManagement: React.FC = () => {
     }, []);
 
     const handleSetKey = async () => {
-        if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
+        // FIX: Add `(window as any)` type casting when accessing the `window.aistudio` object.
+        if ((window as any).aistudio && typeof (window as any).aistudio.openSelectKey === 'function') {
             try {
-                await window.aistudio.openSelectKey();
+                await (window as any).aistudio.openSelectKey();
                 // Optimistically update the UI, as per guidelines, to reflect the change immediately.
                 setIsKeySet(true);
             } catch(error) {
@@ -84,9 +86,17 @@ const AdminApiKeyManagement: React.FC = () => {
             <div className="mt-6">
                 <button
                     onClick={handleSetKey}
-                    className="w-full sm:w-auto px-6 py-3 bg-teal-500 text-white font-bold rounded-lg shadow-md hover:bg-teal-600 transition-colors text-base"
+                    disabled={isLoading}
+                    className="w-full sm:w-auto px-6 py-3 bg-teal-500 text-white font-bold rounded-lg shadow-md hover:bg-teal-600 transition-colors text-base disabled:bg-teal-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                    {isKeySet ? 'Update API Key' : 'Set API Key'}
+                    {isLoading ? (
+                        <>
+                            <Spinner size="w-5 h-5" />
+                            <span>Checking...</span>
+                        </>
+                    ) : (
+                        isKeySet ? 'Update API Key' : 'Set API Key'
+                    )}
                 </button>
             </div>
         </div>

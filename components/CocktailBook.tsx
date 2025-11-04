@@ -38,7 +38,7 @@ const CocktailBook: React.FC<CocktailBookProps> = ({
         onLoginRequest();
         return;
     }
-    if (!currentUser.isPremium) {
+    if (!currentUser.isPremium && !currentUser.isAdmin) {
         onUpgradeRequest();
         return;
     }

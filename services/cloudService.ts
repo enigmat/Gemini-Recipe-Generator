@@ -1,5 +1,5 @@
 import { getSupabaseClient } from './supabaseClient';
-import { AppDatabase, Recipe, UserData, User, Product, Newsletter, Lead, RatingsStore, SavedCocktail, ChatMessage, AboutUsContent } from '../types';
+import { AppDatabase, Recipe, UserData, User, Product, Newsletter, Lead, RatingsStore, SavedCocktail, ChatMessage, AboutUsContent, ExpertQuestion } from '../types';
 
 const checkError = (response: any, tableName: string) => {
     if (response.error) throw new Error(`Failed to fetch ${tableName}: ${response.error.message}`);
@@ -17,7 +17,11 @@ export const getPublicData = async (): Promise<Partial<AppDatabase>> => {
         scheduledRecipes,
         products,
         standardCocktails,
-        aboutUs
+        aboutUs,
+        mealPlans,
+        videos,
+        cookingClasses,
+        expertQuestions
     ] = await Promise.all([
         supabase.from('recipes').select('*'),
         supabase.from('new_recipes').select('*'),
@@ -25,6 +29,10 @@ export const getPublicData = async (): Promise<Partial<AppDatabase>> => {
         supabase.from('products').select('*'),
         supabase.from('standard_cocktails').select('*'),
         supabase.from('about_us').select('*').maybeSingle(),
+        supabase.from('meal_plans').select('*'),
+        supabase.from('videos').select('*'),
+        supabase.from('cooking_classes').select('*'),
+        supabase.from('expert_questions').select('*'),
     ]);
 
     const publicDb: Partial<AppDatabase> = {
@@ -36,6 +44,10 @@ export const getPublicData = async (): Promise<Partial<AppDatabase>> => {
         products: checkError(products, 'products') || [],
         standardCocktails: checkError(standardCocktails, 'standard_cocktails') || [],
         aboutUs: checkError(aboutUs, 'about_us') || { companyName: '', missionStatement: '', companyHistory: '', contactEmail: '', address: '' },
+        mealPlans: checkError(mealPlans, 'meal_plans') || [],
+        videos: checkError(videos, 'videos') || [],
+        cookingClasses: checkError(cookingClasses, 'cooking_classes') || [],
+        expertQuestions: checkError(expertQuestions, 'expert_questions') || [],
         // These are not public, will be fetched later
         users: [],
         newsletters: { sent: [], leads: [] },
@@ -135,6 +147,10 @@ export const getDatabase = async (): Promise<AppDatabase> => {
             communityChat: authenticatedData.communityChat || [],
             users: [], // Admin data removed
             newsletters: { sent: [], leads: [] }, // Admin data removed
+            mealPlans: publicData.mealPlans || [],
+            videos: publicData.videos || [],
+            cookingClasses: publicData.cookingClasses || [],
+            expertQuestions: publicData.expertQuestions || [],
             // The userData object in AppDatabase holds data for multiple users, but for client-side
             // services, we only need and can only fetch the current user's data.
             userData: userId ? { [userId]: currentUserData } : {},
@@ -220,6 +236,53 @@ export const saveAboutUsContent = async (content: AboutUsContent) => {
     const { error } = await supabase.from('about_us').upsert(contentForDb);
     if (error) console.error('Error saving about us content:', error.message);
 }
+
+export const addExpertQuestion = async (questionData: Omit<ExpertQuestion, 'id'>): Promise<ExpertQuestion | null> => {
+    const supabase = getSupabaseClient();
+    const newQuestionForDb = {
+        id: `q${Date.now()}`,
+        question: questionData.question,
+        topic: questionData.topic,
+        status: questionData.status,
+        submitted_date: questionData.submittedDate,
+        answer: questionData.answer,
+    };
+    
+    const { data, error } = await supabase
+        .from('expert_questions')
+        .insert(newQuestionForDb)
+        .select()
+        .single();
+    
+    if (error) {
+        console.error("Error adding expert question:", error.message);
+        return null;
+    }
+
+    return data as ExpertQuestion;
+};
+
+export const deleteRecipe = async (recipeId: number) => {
+    const supabase = getSupabaseClient();
+    // Use Promise.all to run in parallel
+    const results = await Promise.all([
+        supabase.from('recipes').delete().eq('id', recipeId),
+        supabase.from('new_recipes').delete().eq('id', recipeId),
+        supabase.from('scheduled_recipes').delete().eq('id', recipeId)
+    ]);
+    results.forEach(res => {
+        if (res.error) console.error('Error during multi-table recipe delete:', res.error.message);
+    });
+};
+
+export const deleteProduct = async (productId: string) => {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.from('products').delete().eq('id', productId);
+    if (error) {
+        console.error(`Error deleting product ${productId}:`, error.message);
+        throw error;
+    }
+};
 
 // --- User-Specific Data ---
 

@@ -65,7 +65,7 @@ const BartenderHelper: React.FC<BartenderHelperProps> = ({ currentUser, savedCoc
   };
 
   const handleSaveClick = async () => {
-    if (!currentUser.isPremium) {
+    if (!currentUser.isPremium && !currentUser.isAdmin) {
         onUpgradeRequest();
         return;
     }
@@ -115,14 +115,14 @@ const BartenderHelper: React.FC<BartenderHelperProps> = ({ currentUser, savedCoc
                 className={`w-full py-3 px-4 font-bold rounded-lg shadow-md transition-colors flex items-center justify-center gap-2 ${
                     isAlreadySaved 
                         ? 'bg-green-300 text-white cursor-not-allowed'
-                        : currentUser.isPremium 
+                        : (currentUser.isPremium || currentUser.isAdmin)
                             ? 'bg-green-500 text-white hover:bg-green-600'
                             : 'bg-amber-400 text-slate-900 hover:bg-amber-500'
                 }`}
               >
                 {isAlreadySaved 
                     ? 'Saved in My Bar' 
-                    : currentUser.isPremium 
+                    : (currentUser.isPremium || currentUser.isAdmin)
                         ? 'Save Drink'
                         : <>
                             <CrownIcon className="w-5 h-5" />

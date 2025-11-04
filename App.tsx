@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import RecipeCard from './components/RecipeCard';
 import RecipeModal from './components/RecipeModal';
 import TagFilter from './components/TagFilter';
-import { Recipe, User, ShoppingList, MealPlan, Video, CookingClass, Newsletter, Lead, Product, CocktailRecipe, SavedCocktail, ExpertQuestion, ChatMessage, AppDatabase, UserData } from './types';
+import { Recipe, User, ShoppingList, MealPlan, Video, CookingClass, Newsletter, Lead, Product, CocktailRecipe, SavedCocktail, ExpertQuestion, ChatMessage, AppDatabase, UserData, Chef } from './types';
 import EmptyState from './components/EmptyState';
 import BookOpenIcon from './components/icons/BookOpenIcon';
 import SearchIcon from './components/icons/SearchIcon';
@@ -16,26 +16,23 @@ import ShoppingCartIcon from './components/icons/ShoppingCartIcon';
 import RecipeCarousel from './components/RecipeCarousel';
 import SaveListModal from './components/SaveListModal';
 import ListsOverviewModal from './components/ListsOverviewModal';
-import { mealPlans } from './data/mealPlans';
 import MealPlanCard from './components/MealPlanCard';
 import CalendarDaysIcon from './components/icons/CalendarDaysIcon';
 import CheckIcon from './components/icons/CheckIcon';
 import ChevronLeftIcon from './components/icons/ChevronLeftIcon';
 import MainTabs from './components/MainTabs';
 import CookMode from './components/CookMode';
-import { videos } from './data/videos';
 import VideoCard from './components/VideoCard';
 import VideoPlayerModal from './components/VideoPlayerModal';
 import FilmIcon from './components/icons/FilmIcon';
 import PremiumContent from './components/PremiumContent';
 import UpgradeModal from './components/UpgradeModal';
 import LockClosedIcon from './components/icons/LockClosedIcon';
-import { cookingClasses } from './data/cookingClasses';
 import CookingClassCard from './components/CookingClassCard';
 import CookingClassDetail from './components/CookingClassDetail';
 import MortarPestleIcon from './components/icons/MortarPestleIcon';
 import XIcon from './components/icons/XIcon';
-import { generateImageFromPrompt, generateRecipeDetailsFromTitle, generateRecipeFromUrl } from './services/geminiService';
+import { generateImageFromPrompt, generateImage, generateRecipeDetailsFromTitle, generateRecipeFromUrl } from './services/geminiService';
 import * as newsletterService from './services/newsletterService';
 import * as leadService from './services/leadService';
 import NewsletterSignup from './components/NewsletterSignup';
@@ -58,12 +55,11 @@ import PrivacyPolicy from './components/PrivacyPolicy';
 import * as cocktailService from './services/cocktailService';
 import AdvancedClasses from './components/AdvancedClasses';
 import ExpertQAPremiumOffer from './components/ExpertQAPremiumOffer';
-import { initialExpertQuestions } from './data/expertQuestions';
 import PantryChef from './components/PantryChef';
 import AboutUsPage from './components/AboutUsPage';
 import * as imageStore from './services/imageStore';
 import MealPlanGenerator from './components/MealPlanGenerator';
-import RecipeOfTheDay from './components/RecipeOfTheDay';
+import FeaturedChefRecipe from './components/RecipeOfTheDay';
 import * as recipeOfTheDayService from './services/recipeOfTheDayService';
 import UnitToggleButton from './components/UnitToggleButton';
 import CocktailBook from './components/CocktailBook';
@@ -80,6 +76,8 @@ import SupabaseConnectionError from './components/SupabaseConnectionError';
 import SupabaseSchemaError from './components/SupabaseSchemaError';
 import DishIdentifier from './components/DishIdentifier';
 import AdminDashboard from './components/AdminDashboard';
+import AdminDataSync from './components/AdminDataSync';
+import { getSupabaseClient } from './services/supabaseClient';
 
 
 const RECIPES_PER_PAGE = 12;
@@ -134,6 +132,7 @@ const App: React.FC = () => {
     const [viewingCookingClass, setViewingCookingClass] = useState<CookingClass | null>(null);
     
     const [isUpdatingAllImages, setIsUpdatingAllImages] = useState(false);
+    const [imageUpdateProgress, setImageUpdateProgress] = useState<string | null>(null);
 
     const [isExtracting, setIsExtracting] = useState(false);
     const [extractError, setExtractError] = useState<string | null>(null);
@@ -142,10 +141,8 @@ const App: React.FC = () => {
     
     const [isPrivacyPolicyOpen, setIsPrivacyPolicyOpen] = useState(false);
     
-    const [expertQuestions, setExpertQuestions] = useState<ExpertQuestion[]>(initialExpertQuestions);
-
-    const [recipeOfTheDay, setRecipeOfTheDay] = useState<Recipe | null>(null);
-    const [isLoadingRecipeOfTheDay, setIsLoadingRecipeOfTheDay] = useState<boolean>(true);
+    const [featuredChefRecipe, setFeaturedChefRecipe] = useState<Recipe | null>(null);
+    const [isLoadingFeaturedRecipe, setIsLoadingFeaturedRecipe] = useState<boolean>(true);
 
     const [isCookbookMakerOpen, setIsCookbookMakerOpen] = useState(false);
     const [isAdminView, setIsAdminView] = useState(false);
@@ -167,18 +164,21 @@ const App: React.FC = () => {
                 
                 const publicDb = await cloudService.getPublicData();
                 
-                const newlyArchivedRecipe = await recipeOfTheDayService.archiveYesterdaysRecipe(publicDb.recipes?.scheduled || []);
+                // FIX: Pass all recipes from the initial fetch to the archive function
+                // to prevent it from re-fetching data, which can cause a hang.
+                const allRecipesFromDb = publicDb.recipes?.all || [];
+                const newlyArchivedRecipe = await recipeOfTheDayService.archiveYesterdaysRecipe(publicDb.recipes?.scheduled || [], allRecipesFromDb);
+                
                 if (newlyArchivedRecipe) {
-                    const all = publicDb.recipes?.all || [];
                     publicDb.recipes = {
                         ...(publicDb.recipes as AppDatabase['recipes']),
-                        all: [newlyArchivedRecipe, ...all],
+                        all: [newlyArchivedRecipe, ...allRecipesFromDb],
                     };
                 }
                 setAppData(publicDb);
                 
                 const recipe = recipeOfTheDayService.getTodaysRecipe(publicDb.recipes?.scheduled || []);
-                setRecipeOfTheDay(recipe);
+                setFeaturedChefRecipe(recipe);
 
                 setAppState('ready'); // Success!
             } catch (error: any) {
@@ -196,7 +196,7 @@ const App: React.FC = () => {
                     setAppState('connection_error');
                 }
             } finally {
-                setIsLoadingRecipeOfTheDay(false);
+                setIsLoadingFeaturedRecipe(false);
             }
         };
 
@@ -247,16 +247,20 @@ const App: React.FC = () => {
 
     const allRecipes = useMemo(() => appData?.recipes?.all || [], [appData]);
     const newThisMonthRecipes = useMemo(() => appData?.recipes?.new || [], [appData]);
+    const mealPlans = useMemo(() => appData?.mealPlans || [], [appData]);
+    const videos = useMemo(() => appData?.videos || [], [appData]);
+    const cookingClasses = useMemo(() => appData?.cookingClasses || [], [appData]);
+    const expertQuestions = useMemo(() => appData?.expertQuestions || [], [appData]);
     
     // Reset recipe pagination when filters change
     useEffect(() => {
         setVisibleRecipeCount(RECIPES_PER_PAGE);
     }, [searchQuery, committedPantryIngredients, selectedTag, activeTab]);
 
-    const isRecipeOfTheDayArchived = useMemo(() => {
-        if (!recipeOfTheDay) return false;
-        return allRecipes.some(r => r.title.toLowerCase() === recipeOfTheDay.title.toLowerCase());
-    }, [recipeOfTheDay, allRecipes]);
+    const isFeaturedRecipeArchived = useMemo(() => {
+        if (!featuredChefRecipe) return false;
+        return allRecipes.some(r => r.title.toLowerCase() === featuredChefRecipe.title.toLowerCase());
+    }, [featuredChefRecipe, allRecipes]);
 
 
     const allCategoryTags = useMemo(() => {
@@ -278,7 +282,7 @@ const App: React.FC = () => {
             setIsLoginModalOpen(true);
             return;
         }
-        if (!currentUser.isPremium) {
+        if (!currentUser.isPremium && !currentUser.isAdmin) {
             setIsUpgradeModalOpen(true);
             return;
         }
@@ -314,7 +318,7 @@ const App: React.FC = () => {
             setIsLoginModalOpen(true);
             return;
         }
-        if (!currentUser.isPremium) {
+        if (!currentUser.isPremium && !currentUser.isAdmin) {
             setIsUpgradeModalOpen(true);
             return;
         }
@@ -357,7 +361,7 @@ const App: React.FC = () => {
 
     const handleCardClick = (recipe: Recipe) => {
         if (previewRecipe) return;
-        if (!currentUser?.isPremium) {
+        if (!currentUser?.isPremium && !currentUser?.isAdmin) {
             setIsUpgradeModalOpen(true);
             return;
         }
@@ -385,7 +389,7 @@ const App: React.FC = () => {
         }
         setIsAdminView(false);
 
-        if (['My Cookbook', 'Shopping List', 'Cocktail Book', 'AI Meal Planner', 'Community Chat', 'Bartender Helper'].includes(tab)) {
+        if (['My Cookbook', 'Shopping List', 'Cocktail Book', 'AI Meal Planner', 'Community Chat', 'Bartender Helper', 'Data Sync'].includes(tab)) {
             if (!currentUser) {
                 setIsLoginModalOpen(true);
                 return;
@@ -393,7 +397,7 @@ const App: React.FC = () => {
         }
 
         if (tab === 'Shopping List') {
-            if (currentUser && !currentUser.isPremium) {
+            if (currentUser && !currentUser.isPremium && !currentUser.isAdmin) {
                 setIsUpgradeModalOpen(true);
                 return;
             }
@@ -483,7 +487,7 @@ const App: React.FC = () => {
             setIsLoginModalOpen(true);
             return;
         }
-        if (!currentUser.isPremium) {
+        if (!currentUser.isPremium && !currentUser.isAdmin) {
             setIsUpgradeModalOpen(true);
             return;
         }
@@ -498,7 +502,7 @@ const App: React.FC = () => {
             setIsLoginModalOpen(true);
             return;
         }
-        if (!currentUser.isPremium) {
+        if (!currentUser.isPremium && !currentUser.isAdmin) {
             setIsUpgradeModalOpen(true);
             return;
         }
@@ -515,15 +519,20 @@ const App: React.FC = () => {
         setUserData(prev => ({ ...prev, cocktails: prev.cocktails.filter(c => c.id !== cocktailId)}));
     };
 
-    const handleAddExpertQuestion = (question: string, topic: string) => {
-        const newQuestion: ExpertQuestion = {
-            id: `q${Date.now()}`,
+    const handleAddExpertQuestion = async (question: string, topic: string) => {
+        const newQuestionData: Omit<ExpertQuestion, 'id' | 'answer'> = {
             question,
             topic,
             status: 'Pending',
             submittedDate: new Date().toISOString(),
         };
-        setExpertQuestions(prev => [newQuestion, ...prev]);
+        const addedQuestion = await cloudService.addExpertQuestion(newQuestionData as Omit<ExpertQuestion, 'id'>);
+        if (addedQuestion) {
+             setAppData(prev => ({ 
+                ...prev, 
+                expertQuestions: [addedQuestion, ...(prev?.expertQuestions || [])]
+            }));
+        }
     };
 
     const handleSendMessage = async (text: string) => {
@@ -544,12 +553,26 @@ const App: React.FC = () => {
         // ... (this logic is largely independent of db)
     };
 
-    const handleRecipeGenerated = async (recipeDetails: Omit<Recipe, 'id' | 'image'>, image: string) => {
+    const handleRecipeGenerated = async (recipeDetails: any, image: string) => {
        const newId = Date.now();
+       let finalChef: Chef | undefined;
+
+       if (recipeDetails.chef && recipeDetails.chef.imagePrompt) {
+         const chefImage = await generateImage(recipeDetails.chef.imagePrompt);
+         await imageStore.setImage(`chef-${newId}`, chefImage);
+         finalChef = {
+           name: recipeDetails.chef.name,
+           bio: recipeDetails.chef.bio,
+           signatureDish: recipeDetails.chef.signatureDish,
+           image: `indexeddb:chef-${newId}`
+         };
+       }
+
        const newRecipe: Recipe = {
          id: newId,
          image: image,
          ...recipeDetails,
+         chef: finalChef,
        };
        setPreviewRecipe(newRecipe);
     };
@@ -569,6 +592,9 @@ const App: React.FC = () => {
         if (recipe.image.startsWith('indexeddb:')) {
             imageStore.deleteImage(recipe.id.toString());
         }
+        if (recipe.chef?.image.startsWith('indexeddb:')) {
+            imageStore.deleteImage(`chef-${recipe.id}`);
+        }
         setPreviewRecipe(null);
     };
 
@@ -582,28 +608,29 @@ const App: React.FC = () => {
     };
 
     // --- Admin Dashboard Handlers ---
-
-    const handleSaveChangesAdmin = async () => {
-        if (!appData) return;
-        await Promise.all([
-            cloudService.saveAllRecipes(appData.recipes?.all || []),
-            cloudService.saveNewRecipes(appData.recipes?.new || []),
-            cloudService.saveScheduledRecipes(appData.recipes?.scheduled || []),
-            cloudService.saveProducts(appData.products || []),
-            cocktailService.saveStandardCocktails(appData.standardCocktails || []),
-        ]);
-    };
     
     const handleAddRecipeAdmin = async (title: string, addToNew: boolean, addToRotd: boolean) => {
-        const recipeDetails = await generateRecipeDetailsFromTitle(title);
-        const image = await generateImageFromPrompt(recipeDetails.title);
+        const recipeDetails = await generateRecipeDetailsFromTitle(title) as any;
+        
+        const [recipeImage, chefImage] = await Promise.all([
+            generateImageFromPrompt(recipeDetails.title),
+            generateImage(recipeDetails.chef.imagePrompt)
+        ]);
+
         const newId = Date.now();
-        await imageStore.setImage(String(newId), image);
+        await imageStore.setImage(String(newId), recipeImage);
+        await imageStore.setImage(`chef-${newId}`, chefImage);
 
         const newRecipe: Recipe = {
             id: newId,
             image: `indexeddb:${newId}`,
             ...recipeDetails,
+            chef: {
+                name: recipeDetails.chef.name,
+                bio: recipeDetails.chef.bio,
+                signatureDish: recipeDetails.chef.signatureDish,
+                image: `indexeddb:chef-${newId}`
+            }
         };
 
         setAppData(prev => {
@@ -626,10 +653,20 @@ const App: React.FC = () => {
                 }
             };
         });
+
+        // Auto-sync
+        const supabase = getSupabaseClient();
+        const recipeForDb = { ...newRecipe, cook_time: newRecipe.cookTime, wine_pairing: newRecipe.winePairing };
+        await supabase.from('recipes').insert(recipeForDb as any);
+        if (addToNew) {
+            await supabase.from('new_recipes').insert(recipeForDb as any);
+        }
+        if (addToRotd) {
+            await supabase.from('scheduled_recipes').insert(recipeForDb as any);
+        }
     };
 
-    const handleDeleteRecipeAdmin = (recipeId: number) => {
-        imageStore.deleteImage(String(recipeId));
+    const handleDeleteRecipeAdmin = async (recipeId: number) => {
         setAppData(prev => {
             if (!prev || !prev.recipes) return prev;
             return {
@@ -642,13 +679,33 @@ const App: React.FC = () => {
                 }
             };
         });
+        await imageStore.deleteImage(String(recipeId));
+        await imageStore.deleteImage(`chef-${recipeId}`);
+        await cloudService.deleteRecipe(recipeId);
     };
 
     const handleUpdateRecipeAdmin = async (recipeId: number, title: string) => {
-        const recipeDetails = await generateRecipeDetailsFromTitle(title);
-        const image = await generateImageFromPrompt(recipeDetails.title);
-        await imageStore.setImage(String(recipeId), image);
-        const updatedRecipe: Recipe = { ...recipeDetails, id: recipeId, image: `indexeddb:${recipeId}?t=${Date.now()}` };
+        const recipeDetails = await generateRecipeDetailsFromTitle(title) as any;
+        
+        const [recipeImage, chefImage] = await Promise.all([
+            generateImageFromPrompt(recipeDetails.title),
+            generateImage(recipeDetails.chef.imagePrompt)
+        ]);
+
+        await imageStore.setImage(String(recipeId), recipeImage);
+        await imageStore.setImage(`chef-${recipeId}`, chefImage);
+        
+        const updatedRecipe: Recipe = { 
+            ...recipeDetails, 
+            id: recipeId, 
+            image: `indexeddb:${recipeId}?t=${Date.now()}`,
+            chef: {
+                name: recipeDetails.chef.name,
+                bio: recipeDetails.chef.bio,
+                signatureDish: recipeDetails.chef.signatureDish,
+                image: `indexeddb:chef-${recipeId}?t=${Date.now()}`
+            }
+        };
 
         setAppData(prev => {
              if (!prev || !prev.recipes) return prev;
@@ -662,47 +719,76 @@ const App: React.FC = () => {
                 }
             }
         });
+
+        // Auto-sync
+        const supabase = getSupabaseClient();
+        const recipeForDb = { ...updatedRecipe, cook_time: updatedRecipe.cookTime, wine_pairing: updatedRecipe.winePairing };
+        await supabase.from('recipes').update(recipeForDb as any).eq('id', recipeId);
+        await supabase.from('new_recipes').update(recipeForDb as any).eq('id', recipeId).maybeSingle();
+        await supabase.from('scheduled_recipes').update(recipeForDb as any).eq('id', recipeId).maybeSingle();
     };
     
     const handleUpdateAllRecipeImagesAdmin = async () => {
         setIsUpdatingAllImages(true);
-        const recipesToUpdate = appData?.recipes?.all || [];
-        const updatedRecipes: Recipe[] = [];
-
-        for (const recipe of recipesToUpdate) {
+        
+        const recipesToUpdate = [...(appData?.recipes?.all || [])];
+        const total = recipesToUpdate.length;
+        setImageUpdateProgress(`(0/${total}) Starting...`);
+    
+        const updatedRecipesMap = new Map<number, Recipe>();
+    
+        for (let i = 0; i < total; i++) {
+            const recipe = recipesToUpdate[i];
+            setImageUpdateProgress(`(${i + 1}/${total}) Generating image for "${recipe.title}"...`);
             try {
+                await new Promise(resolve => setTimeout(resolve, 500)); // API politeness
                 const image = await generateImageFromPrompt(recipe.title);
                 await imageStore.setImage(String(recipe.id), image);
-                updatedRecipes.push({ ...recipe, image: `indexeddb:${recipe.id}?t=${Date.now()}` });
+                const updatedRecipe = { ...recipe, image: `indexeddb:${recipe.id}?t=${Date.now()}` };
+                updatedRecipesMap.set(recipe.id, updatedRecipe);
             } catch (e) {
                 console.error(`Failed to update image for ${recipe.title}`, e);
-                updatedRecipes.push(recipe); // Keep old one if it fails
             }
-             setAppData(prev => ({
+        }
+    
+        setImageUpdateProgress('Applying updates...');
+    
+        let finalAll: Recipe[] = [];
+        setAppData(prev => {
+            if (!prev || !prev.recipes) return prev;
+            
+            finalAll = prev.recipes.all.map(r => updatedRecipesMap.get(r.id) || r);
+            const newNew = prev.recipes.new.map(r => updatedRecipesMap.get(r.id) || r);
+            const newScheduled = prev.recipes.scheduled.map(r => updatedRecipesMap.get(r.id) || r);
+    
+            return {
                 ...prev,
                 recipes: {
-                    ...(prev?.recipes as AppDatabase['recipes']),
-                    all: prev?.recipes?.all.map(r => updatedRecipes.find(ur => ur.id === r.id) || r) || []
+                    all: finalAll,
+                    new: newNew,
+                    scheduled: newScheduled,
                 }
-            }));
-        }
+            };
+        });
+        
+        // Auto-sync
+        await cloudService.saveAllRecipes(finalAll);
+    
         setIsUpdatingAllImages(false);
+        setImageUpdateProgress(null);
     };
 
-    const handleDeleteUserAdmin = (userEmail: string) => {
+    const handleDeleteUserAdmin = async (userEmail: string) => {
         console.warn(`Simulating deletion for user ${userEmail}. In a real app, this would require a secure server-side call.`);
         setAppData(prev => ({
             ...prev,
             users: prev?.users?.filter(u => u.email !== userEmail)
         }));
+        // Note: Actual user deletion in Supabase Auth requires a privileged client and is not done here.
     };
     
-    const handleSendNewsletterAdmin = (newsletter: Omit<Newsletter, 'id' | 'sentDate'>) => {
-        const newNewsletter: Newsletter = {
-            id: Date.now().toString(),
-            sentDate: new Date().toISOString(),
-            ...newsletter
-        };
+    const handleSendNewsletterAdmin = async (newsletter: Omit<Newsletter, 'id' | 'sentDate'>) => {
+        const newNewsletter = await newsletterService.sendNewsletter(newsletter);
         setAppData(prev => ({
             ...prev,
             newsletters: {
@@ -712,20 +798,23 @@ const App: React.FC = () => {
         }));
     };
 
-    const handleUpdateProductsAdmin = (updatedProducts: Product[]) => {
+    const handleUpdateProductsAdmin = async (updatedProducts: Product[]) => {
          setAppData(prev => ({ ...prev, products: updatedProducts }));
+         await cloudService.saveProducts(updatedProducts);
     };
 
-    const handleDeleteProductAdmin = (productId: string) => {
+    const handleDeleteProductAdmin = async (productId: string) => {
         setAppData(prev => ({...prev, products: prev?.products?.filter(p => p.id !== productId)}));
-        imageStore.deleteImage(productId);
+        await imageStore.deleteImage(productId);
+        await cloudService.deleteProduct(productId);
     };
 
-    const handleUpdateStandardCocktailsAdmin = (cocktails: SavedCocktail[]) => {
+    const handleUpdateStandardCocktailsAdmin = async (cocktails: SavedCocktail[]) => {
          setAppData(prev => ({ ...prev, standardCocktails: cocktails }));
+         await cocktailService.saveStandardCocktails(cocktails);
     };
 
-    const handleRemoveFromNewAdmin = (recipeId: number) => {
+    const handleRemoveFromNewAdmin = async (recipeId: number) => {
         setAppData(prev => ({
             ...prev,
             recipes: {
@@ -733,9 +822,10 @@ const App: React.FC = () => {
                 new: prev?.recipes?.new.filter(r => r.id !== recipeId) || []
             }
         }));
+        await getSupabaseClient().from('new_recipes').delete().eq('id', recipeId);
     };
 
-    const handleAddToNewAdmin = (recipeId: number) => {
+    const handleAddToNewAdmin = async (recipeId: number) => {
         const recipeToAdd = allRecipes.find(r => r.id === recipeId);
         if (recipeToAdd && !newThisMonthRecipes.some(r => r.id === recipeId)) {
             setAppData(prev => ({
@@ -745,23 +835,65 @@ const App: React.FC = () => {
                     new: [recipeToAdd, ...newThisMonthRecipes]
                 }
             }));
+            const recipeForDb = { ...recipeToAdd, cook_time: recipeToAdd.cookTime, wine_pairing: recipeToAdd.winePairing };
+            await getSupabaseClient().from('new_recipes').insert(recipeForDb as any);
         }
     };
     
+    const handleAddToRotdAdmin = async (recipeId: number) => {
+        const recipeToAdd = allRecipes.find(r => r.id === recipeId);
+        const scheduled = appData?.recipes?.scheduled || [];
+        if (recipeToAdd && !scheduled.some(r => r.id === recipeId)) {
+            setAppData(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    recipes: {
+                        ...(prev.recipes as AppDatabase['recipes']),
+                        scheduled: [recipeToAdd, ...scheduled]
+                    }
+                };
+            });
+            const recipeForDb = { ...recipeToAdd, cook_time: recipeToAdd.cookTime, wine_pairing: recipeToAdd.winePairing };
+            await getSupabaseClient().from('scheduled_recipes').insert(recipeForDb as any);
+        }
+    };
+
+    // FIX: Pass the current list of all recipes to `addRecipeIfUnique`
+    // to prevent it from re-fetching data, which can cause hangs.
     const handleMoveRecipeFromRotdToMainAdmin = async (recipe: Recipe) => {
-        const newlyAddedRecipe = await recipeService.addRecipeIfUnique(recipe);
+        const allCurrentRecipes = appData?.recipes?.all || [];
+        const newlyAddedRecipe = await recipeService.addRecipeIfUnique(recipe, allCurrentRecipes);
         if (newlyAddedRecipe) {
-            setAppData(prev => ({
-                ...prev,
-                recipes: {
-                    ...(prev?.recipes as AppDatabase['recipes']),
-                    all: [newlyAddedRecipe, ...(prev?.recipes?.all || [])],
-                    scheduled: prev?.recipes?.scheduled.filter(r => r.id !== recipe.id) || [],
-                }
-            }));
+            setAppData(prev => {
+                if (!prev || !prev.recipes) return prev;
+                return {
+                    ...prev,
+                    recipes: {
+                        ...prev.recipes,
+                        all: [newlyAddedRecipe, ...prev.recipes.all],
+                        scheduled: prev.recipes.scheduled.filter(r => r.id !== recipe.id),
+                    }
+                };
+            });
+            await getSupabaseClient().from('scheduled_recipes').delete().eq('id', recipe.id);
             return true;
         }
         return false;
+    };
+
+    const handleUpdateScheduledRecipesAdmin = async (newScheduledRecipes: Recipe[]) => {
+        setAppData(prev => {
+            if (!prev || !prev.recipes) return prev;
+            return {
+                ...prev,
+                recipes: {
+                    ...(prev.recipes as AppDatabase['recipes']),
+                    scheduled: newScheduledRecipes,
+                }
+            };
+        });
+        await recipeService.saveScheduledRecipes(newScheduledRecipes);
     };
     
     const handleImportDataAdmin = async (db: AppDatabase) => {
@@ -789,6 +921,10 @@ const App: React.FC = () => {
         }
         return recommendations;
     }, [currentUser, allRecipes, newThisMonthRecipes]);
+
+    const carouselTitle = (currentUser?.isPremium && currentUser.foodPreferences?.length) 
+        ? "Recommended For You" 
+        : "New This Month";
 
     const filteredAndSortedCookbook = useMemo(() => {
         return favoriteRecipes
@@ -855,6 +991,7 @@ const App: React.FC = () => {
             currentUser={currentUser}
             allRecipes={allRecipes}
             newRecipes={newThisMonthRecipes}
+            scheduledRecipes={appData.recipes?.scheduled || []}
             users={appData.users || []}
             sentNewsletters={appData.newsletters?.sent || []}
             collectedLeads={appData.newsletters?.leads || []}
@@ -865,6 +1002,7 @@ const App: React.FC = () => {
             onUpdateRecipeWithAI={handleUpdateRecipeAdmin}
             onUpdateAllRecipeImages={handleUpdateAllRecipeImagesAdmin}
             isUpdatingAllImages={isUpdatingAllImages}
+            imageUpdateProgress={imageUpdateProgress}
             onUpdateUserRoles={handleUpdateUser}
             onDeleteUser={handleDeleteUserAdmin}
             onSendNewsletter={handleSendNewsletterAdmin}
@@ -874,8 +1012,9 @@ const App: React.FC = () => {
             onExit={() => setIsAdminView(false)}
             onRemoveFromNew={handleRemoveFromNewAdmin}
             onAddToNew={handleAddToNewAdmin}
-            onSaveChanges={handleSaveChangesAdmin}
+            onAddToRotd={handleAddToRotdAdmin}
             onMoveRecipeFromRotdToMain={handleMoveRecipeFromRotdToMainAdmin}
+            onUpdateScheduledRecipes={handleUpdateScheduledRecipesAdmin}
             onImportData={handleImportDataAdmin}
         />
     }
@@ -900,7 +1039,7 @@ const App: React.FC = () => {
             case "Where's This From?":
                 return <DishIdentifier onSearchForDish={handleSearchForDish} />;
             case 'AI Meal Planner':
-                 if (!currentUser?.isPremium) {
+                 if (!currentUser?.isPremium && !currentUser?.isAdmin) {
                     return (
                         <PremiumContent
                             isPremium={false}
@@ -918,7 +1057,7 @@ const App: React.FC = () => {
                 }
                 return <MealPlanGenerator allRecipes={allRecipes} onRecipeClick={handleCardClick} />;
             case 'My Cookbook':
-                 if (!currentUser?.isPremium) {
+                 if (!currentUser?.isPremium && !currentUser?.isAdmin) {
                     return (
                          <PremiumContent
                             isPremium={false}
@@ -1008,19 +1147,121 @@ const App: React.FC = () => {
                         onSendMessage={handleSendMessage}
                     />
                 );
-            // ... other cases
+            case 'Data Sync':
+                return <AdminDataSync onImportData={handleImportDataAdmin} />;
+            case 'About Us':
+                return <AboutUsPage />;
+            case 'Marketplace':
+                return <Marketplace allProducts={appData.products || []} />;
+            case 'Ask an Expert':
+                 if (!currentUser?.isPremium && !currentUser?.isAdmin) {
+                    return <ExpertQAPremiumOffer onUpgradeClick={() => setIsUpgradeModalOpen(true)} />;
+                }
+                return <AskAnExpert questions={expertQuestions} onAskQuestion={handleAddExpertQuestion} />;
+            case 'Bartender Helper':
+                if (!currentUser) {
+                     return (
+                        <PremiumContent
+                            isPremium={false}
+                            onUpgradeClick={() => setIsLoginModalOpen(true)}
+                            featureTitle="AI Bartender Helper"
+                            featureDescription="Log in to create custom cocktail recipes with our AI mixologist."
+                        />
+                    );
+                }
+                return <BartenderHelper currentUser={currentUser} savedCocktails={userData.cocktails} onSaveCocktail={handleSaveCocktail} onUpgradeRequest={() => setIsUpgradeModalOpen(true)} />;
+            case 'Cooking Classes':
+                if (viewingCookingClass) {
+                    return <CookingClassDetail cookingClass={viewingCookingClass} onBack={() => setViewingCookingClass(null)} />
+                }
+                if (!currentUser?.isPremium && !currentUser?.isAdmin) {
+                    return <AdvancedClasses onUpgradeClick={() => setIsUpgradeModalOpen(true)} />;
+                }
+                return (
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {cookingClasses.map(c => <CookingClassCard key={c.id} cookingClass={c} onClick={setViewingCookingClass} />)}
+                     </div>
+                );
+            case 'Video Tutorials':
+                const videosByCategory = videos.reduce((acc, video) => {
+                    (acc[video.category] = acc[video.category] || []).push(video);
+                    return acc;
+                }, {} as Record<string, Video[]>);
+
+                return (
+                    <div className="space-y-12">
+                        {/* FIX: Replaced `Object.entries` with `Object.keys` to prevent a potential type inference issue where the `categoryVideos` array was being incorrectly typed as `unknown`. This ensures that `categoryVideos` is correctly recognized as an array, allowing the `.map` method to be used without causing a type error. */}
+                        {Object.keys(videosByCategory).map(category => {
+                            const categoryVideos = videosByCategory[category];
+                            return (
+                                <div key={category}>
+                                    <h2 className="text-2xl font-bold text-slate-800 mb-4">{category}</h2>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                        {categoryVideos.map(video => (
+                                            <VideoCard key={video.id} video={video} onPlay={handlePlayVideo} />
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                );
+            case 'Meal Plans':
+                 if (viewingMealPlan) {
+                    const planRecipes = allRecipes.filter(r => viewingMealPlan.recipeIds.includes(r.id));
+                    return (
+                        <div className="animate-fade-in">
+                            <button onClick={() => setViewingMealPlan(null)} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-semibold mb-4">
+                                <ChevronLeftIcon className="w-5 h-5"/>
+                                Back to All Plans
+                            </button>
+                             <div className="text-center mb-8">
+                                <h2 className="text-3xl font-bold text-slate-800">{viewingMealPlan.title}</h2>
+                                <p className="mt-2 text-lg text-slate-500 max-w-2xl mx-auto">{viewingMealPlan.description}</p>
+                            </div>
+                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                {planRecipes.map(recipe => (
+                                    <RecipeCard 
+                                        key={recipe.id}
+                                        recipe={recipe}
+                                        onClick={handleCardClick}
+                                        isFavorite={userData.favorites.includes(recipe.id)}
+                                        onToggleFavorite={handleToggleFavorite}
+                                        isSelected={selectedRecipeIds.includes(recipe.id)}
+                                        onToggleSelect={handleToggleSelect}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    );
+                }
+                return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+                        {mealPlans.map(plan => (
+                           <MealPlanCard key={plan.id} plan={plan} allRecipes={allRecipes} onViewPlan={setViewingMealPlan} />
+                        ))}
+                    </div>
+                );
             default:
                  return (
                     <div className="space-y-12">
-                         <RecipeOfTheDay 
-                            recipe={recipeOfTheDay} 
-                            isLoading={isLoadingRecipeOfTheDay} 
+                         <FeaturedChefRecipe 
+                            recipe={featuredChefRecipe} 
+                            isLoading={isLoadingFeaturedRecipe} 
                             onClick={handleCardClick}
                             onArchive={async (recipe) => { /* migration needed */}}
-                            isArchived={isRecipeOfTheDayArchived}
+                            isArchived={isFeaturedRecipeArchived}
                         />
 
-                        {/* ... other components ... */}
+                        <RecipeCarousel
+                            title={carouselTitle}
+                            recipes={recommendedRecipes.slice(0, 10)}
+                            favorites={userData.favorites}
+                            selectedRecipeIds={selectedRecipeIds}
+                            onCardClick={handleCardClick}
+                            onToggleFavorite={handleToggleFavorite}
+                            onToggleSelect={handleToggleSelect}
+                        />
     
                         <div>
                              <div className="text-center mb-8">

@@ -14,6 +14,13 @@ export interface WinePairing {
   description: string;
 }
 
+export interface Chef {
+  name: string;
+  bio: string;
+  signatureDish: string;
+  image: string; // base64 encoded image
+}
+
 export interface Recipe {
   id: number;
   title: string;
@@ -31,6 +38,7 @@ export interface Recipe {
     score: number;
     count: number;
   };
+  chef?: Chef;
 }
 
 export interface RecipeVariation {
@@ -226,4 +234,8 @@ export interface AppDatabase {
     standardCocktails: SavedCocktail[];
     communityChat: ChatMessage[];
     aboutUs: AboutUsContent;
+    mealPlans: MealPlan[];
+    videos: Video[];
+    cookingClasses: CookingClass[];
+    expertQuestions: ExpertQuestion[];
 }

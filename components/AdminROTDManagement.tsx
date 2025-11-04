@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Recipe } from '../types';
+import { Recipe, Chef } from '../types';
 import * as recipeService from '../services/recipeService';
 import * as geminiService from '../services/geminiService';
 import Spinner from './Spinner';
@@ -9,71 +9,73 @@ import * as imageStore from '../services/imageStore';
 import StoredImage from './StoredImage';
 import DownloadIcon from './icons/DownloadIcon';
 
-interface AdminROTDManagementProps {
+interface AdminFeaturedChefManagementProps {
+    recipes: Recipe[];
     onMoveRecipe: (recipe: Recipe) => Promise<boolean>;
+    onUpdateScheduledRecipes: (recipes: Recipe[]) => Promise<void>;
 }
 
-const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe }) => {
-    const [scheduledRecipes, setScheduledRecipes] = useState<Recipe[]>([]);
+const AdminFeaturedChefManagement: React.FC<AdminFeaturedChefManagementProps> = ({ recipes, onMoveRecipe, onUpdateScheduledRecipes }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [movingId, setMovingId] = useState<number | null>(null);
+    const [currentRecipes, setCurrentRecipes] = useState<Recipe[]>(recipes);
 
     useEffect(() => {
-        // FIX: Await promise from async service call before setting state.
-        const fetchRecipes = async () => {
-            const recipes = await recipeService.getScheduledRecipes();
-            setScheduledRecipes(recipes);
-        };
-        fetchRecipes();
-    }, []);
+        setCurrentRecipes(recipes);
+    }, [recipes]);
 
     const handleGenerateNewPool = async () => {
-        if (!window.confirm("Are you sure you want to generate 30 new recipes? This will replace the entire existing 'Recipe of the Day' pool. This action can take a few minutes and cannot be undone.")) {
+        if (!window.confirm("Are you sure you want to generate 30 new recipes? This will replace the entire existing 'Featured Chef Recipe' pool. This action can take a few minutes and cannot be undone.")) {
             return;
         }
 
         setIsLoading(true);
         setError(null);
-        // Clear the existing pool immediately to show progress from scratch
-        setScheduledRecipes([]);
-        recipeService.saveScheduledRecipes([]);
+        setCurrentRecipes([]); // Clear the UI immediately
 
         try {
-            // Step 1: Generate 30 recipe details
+            // Step 1: Generate 30 recipe details from AI
             const recipeDetailsList = await geminiService.generateBulkRecipes(30);
 
-            // This will hold the successfully generated recipes
             const newRecipes: Recipe[] = [];
 
-            // Step 2: Generate images for each recipe and save incrementally
+            // Step 2: Generate images for each recipe and chef, then update UI incrementally
             for (const details of recipeDetailsList) {
                 // To avoid rate limiting, add a small delay
                 await new Promise(resolve => setTimeout(resolve, 500));
                 
-                const image = await geminiService.generateImageFromPrompt(details.title);
+                const [recipeImage, chefImage] = await Promise.all([
+                    geminiService.generateImageFromPrompt(details.title),
+                    geminiService.generateImage(details.chef.imagePrompt)
+                ]);
+
                 const newId = Date.now() + Math.random(); // Temp unique ID
                 
-                await imageStore.setImage(String(newId), image);
+                await imageStore.setImage(String(newId), recipeImage);
+                await imageStore.setImage(`chef-${newId}`, chefImage);
 
                 const newRecipe: Recipe = {
                     id: newId,
                     image: `indexeddb:${newId}`, 
-                    ...details
+                    ...details,
+                    chef: {
+                        name: details.chef.name,
+                        bio: details.chef.bio,
+                        signatureDish: details.chef.signatureDish,
+                        image: `indexeddb:chef-${newId}`
+                    }
                 };
 
                 newRecipes.push(newRecipe);
-
-                // Update UI and save to localStorage on each successful generation
-                setScheduledRecipes([...newRecipes]);
-                recipeService.saveScheduledRecipes(newRecipes);
+                setCurrentRecipes([...newRecipes]); // Update UI for progress feedback
             }
             
-            // Final state update
-            setScheduledRecipes(newRecipes);
-
+            // Step 3: Save the entire new pool to the database AND update global state via callback
+            await onUpdateScheduledRecipes(newRecipes);
+            
         } catch (err: any) {
-            setError(err.message || 'An unknown error occurred during generation. Any recipes generated so far have been saved.');
+            setError(err.message || 'An unknown error occurred during generation. The recipe pool may be empty. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -84,7 +86,7 @@ const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe 
         const success = await onMoveRecipe(recipe);
         if (success) {
             // If move was successful, update local state to remove the item
-            setScheduledRecipes(prev => prev.filter(r => r.id !== recipe.id));
+            // The parent component (App.tsx) will handle the global state update and pass new props
         }
         setMovingId(null);
     };
@@ -95,7 +97,7 @@ const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe 
                 <div>
                     <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                         <TrophyIcon className="w-7 h-7 text-amber-500" />
-                        Recipe of the Day Pool
+                        Featured Chef Recipe Pool
                     </h2>
                     <p className="text-slate-500 mt-1">This is the pool of 30 recipes that will rotate daily for all users.</p>
                 </div>
@@ -118,21 +120,19 @@ const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe 
                             <th className="pl-6 pr-3 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-24">Day</th>
                             <th className="px-3 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Image</th>
                             <th className="px-3 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
-                            <th className="pl-3 pr-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
+                            <th className="px-3 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Chef</th>
                             <th className="pl-3 pr-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
-                        {scheduledRecipes.map((recipe, index) => (
+                        {currentRecipes.map((recipe, index) => (
                             <tr key={recipe.id} className={movingId === recipe.id ? 'opacity-50' : ''}>
                                 <td className="pl-6 pr-3 py-4 whitespace-nowrap text-sm font-semibold text-slate-700">{index + 1}</td>
                                 <td className="px-3 py-4 whitespace-nowrap">
                                     <StoredImage src={recipe.image} alt={recipe.title} className="w-20 h-14 object-cover rounded-md border border-slate-200" />
                                 </td>
                                 <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{recipe.title}</td>
-                                <td className="pl-3 pr-6 py-4">
-                                    <p className="text-sm text-slate-500 line-clamp-2">{recipe.description}</p>
-                                </td>
+                                <td className="px-3 py-4 whitespace-nowrap text-sm text-slate-500">{recipe.chef?.name}</td>
                                 <td className="pl-3 pr-6 py-4 whitespace-nowrap">
                                     <button
                                         onClick={() => handleMove(recipe)}
@@ -152,13 +152,13 @@ const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe 
                                 <td colSpan={5} className="text-center p-4">
                                     <div className="flex items-center justify-center gap-2 text-slate-600">
                                         <Spinner />
-                                        <span>Generating recipe {Math.min(scheduledRecipes.length + 1, 30)} of 30...</span>
+                                        <span>Generating recipe {Math.min(currentRecipes.length + 1, 30)} of 30...</span>
                                     </div>
                                 </td>
                             </tr>
                         )}
 
-                        {!isLoading && scheduledRecipes.length === 0 && (
+                        {!isLoading && currentRecipes.length === 0 && (
                             <tr>
                                 <td colSpan={5} className="text-center py-12 text-slate-500">
                                     The recipe pool is empty. Click the "Generate" button to populate it.
@@ -172,4 +172,4 @@ const AdminROTDManagement: React.FC<AdminROTDManagementProps> = ({ onMoveRecipe 
     );
 };
 
-export default AdminROTDManagement;
+export default AdminFeaturedChefManagement;

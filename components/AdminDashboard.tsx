@@ -15,7 +15,7 @@ import AdminNewRecipeManagement from './AdminNewRecipeManagement';
 import Spinner from './Spinner';
 import CheckIcon from './icons/CheckIcon';
 import DownloadIcon from './icons/DownloadIcon';
-import AdminROTDManagement from './AdminROTDManagement';
+import AdminFeaturedChefManagement from './AdminROTDManagement';
 import AdminBulkImport from './AdminBulkImport';
 import AdminDataExport from './AdminDataExport';
 import AdminCocktailManagement from './AdminCocktailManagement';
@@ -23,11 +23,13 @@ import AdminCocktailDistribution from './AdminCocktailDistribution';
 import AdminAboutUs from './AdminAboutUs';
 import ChevronDownIcon from './icons/ChevronDownIcon';
 import AdminDataSync from './AdminDataSync';
+import GlobeAltIcon from './icons/GlobeAltIcon';
 
 interface AdminDashboardProps {
     currentUser: User;
     allRecipes: Recipe[];
     newRecipes: Recipe[];
+    scheduledRecipes: Recipe[];
     users: User[];
     sentNewsletters: Newsletter[];
     collectedLeads: Lead[];
@@ -38,6 +40,7 @@ interface AdminDashboardProps {
     onUpdateRecipeWithAI: (recipeId: number, title: string) => Promise<void>;
     onUpdateAllRecipeImages: () => Promise<void>;
     isUpdatingAllImages: boolean;
+    imageUpdateProgress: string | null;
     onUpdateUserRoles: (user: User) => void;
     onDeleteUser: (userEmail: string) => void;
     onSendNewsletter: (newsletter: Omit<Newsletter, 'id' | 'sentDate'>) => void;
@@ -47,8 +50,9 @@ interface AdminDashboardProps {
     onExit: () => void;
     onRemoveFromNew: (recipeId: number) => void;
     onAddToNew: (recipeId: number) => void;
-    onSaveChanges: () => Promise<void>;
+    onAddToRotd: (recipeId: number) => void;
     onMoveRecipeFromRotdToMain: (recipe: Recipe) => Promise<boolean>;
+    onUpdateScheduledRecipes: (recipes: Recipe[]) => Promise<void>;
     onImportData: (db: AppDatabase) => Promise<void>;
 }
 
@@ -70,7 +74,7 @@ const menuStructure = [
     },
     {
         title: 'Recipe Management',
-        items: ['Recipe Management', 'Add Recipe', 'Recipe of the Day Pool']
+        items: ['Recipe Management', 'Add Recipe', 'Featured Chef Recipe Pool']
     },
     {
         title: 'Import/Export',
@@ -93,8 +97,6 @@ const menuStructure = [
 const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
     const [activePanel, setActivePanel] = useState('User Management');
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [isSaving, setIsSaving] = useState(false);
-    const [saveSuccess, setSaveSuccess] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [importProgress, setImportProgress] = useState('');
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -110,14 +112,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleSave = () => {
-        setIsSaving(true);
-        setSaveSuccess(false);
-        props.onSaveChanges().then(() => {
-            setIsSaving(false);
-            setSaveSuccess(true);
-            setTimeout(() => setSaveSuccess(false), 2000);
-        });
+    const handleCustomDomain = async () => {
+        // FIX: Cast `window.aistudio` to `any` to access `openCustomDomain`, as the `AIStudio` type definition is likely incomplete.
+        if (window.aistudio && typeof (window.aistudio as any).openCustomDomain === 'function') {
+            try {
+                await (window.aistudio as any).openCustomDomain();
+            } catch (error) {
+                console.error("Error opening custom domain dialog:", error);
+                alert("Could not open the custom domain dialog.");
+            }
+        } else {
+            alert('Custom domain management is not available in this environment.');
+        }
     };
 
     const handleBulkImport = async (htmlContent: string) => {
@@ -175,13 +181,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                  return (
                     <div className="space-y-8">
                         <AdminNewRecipeManagement recipes={props.newRecipes} onRemoveFromNew={props.onRemoveFromNew} onUpdateRecipeWithAI={props.onUpdateRecipeWithAI} />
-                        <AdminRecipeManagement {...props} newRecipeIds={props.newRecipes.map(r => r.id)} recipes={props.allRecipes} />
+                        <AdminRecipeManagement 
+                            {...props}
+                            newRecipeIds={props.newRecipes.map(r => r.id)}
+                            recipes={props.allRecipes}
+                            scheduledRecipes={props.scheduledRecipes}
+                            onAddToRotd={props.onAddToRotd}
+                            imageUpdateProgress={props.imageUpdateProgress}
+                        />
                     </div>
                 );
             case 'Add Recipe':
                  return <AdminAddRecipe onAddRecipe={props.onAddRecipe} />;
-            case 'Recipe of the Day Pool':
-                 return <AdminROTDManagement onMoveRecipe={props.onMoveRecipeFromRotdToMain} />;
+            case 'Featured Chef Recipe Pool':
+                 return <AdminFeaturedChefManagement 
+                    recipes={props.scheduledRecipes} 
+                    onMoveRecipe={props.onMoveRecipeFromRotdToMain}
+                    onUpdateScheduledRecipes={props.onUpdateScheduledRecipes}
+                 />;
             case 'Bulk Import':
                 return <AdminBulkImport onImport={handleBulkImport} isImporting={isImporting} importProgress={importProgress} />;
             case 'Export Recipes (CSV)':
@@ -213,12 +230,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                 <h1 className="text-4xl font-bold text-slate-800">Admin Dashboard</h1>
                  <div className="flex items-center gap-4">
                     <button 
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition-colors disabled:bg-green-300 disabled:cursor-wait"
+                        onClick={handleCustomDomain}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white font-semibold rounded-lg shadow-md hover:bg-purple-600 transition-colors"
                     >
-                        {isSaving ? <Spinner size="w-5 h-5" /> : (saveSuccess ? <CheckIcon className="w-5 h-5" /> : <DownloadIcon className="w-5 h-5" />)}
-                        <span>{isSaving ? 'Saving...' : (saveSuccess ? 'Saved!' : 'Save Changes')}</span>
+                        <GlobeAltIcon className="w-5 h-5" />
+                        <span>Custom Domain</span>
                     </button>
                     <button 
                         onClick={props.onExit}

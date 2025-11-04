@@ -1,6 +1,23 @@
 import { User } from '../types';
 import { getSupabaseClient } from './supabaseClient';
 
+// FIX: Add a helper function to map snake_case from the database to camelCase for the User type.
+// This ensures data consistency when fetching directly from the 'user_profiles' table.
+const mapProfileData = (data: any): User | null => {
+    if (!data) return null;
+    return {
+        id: data.id,
+        email: data.email,
+        name: data.name,
+        profileImage: data.profile_image,
+        isPremium: data.is_premium,
+        isAdmin: data.is_admin,
+        isSubscribed: data.is_subscribed,
+        planEndDate: data.plan_end_date,
+        foodPreferences: data.food_preferences
+    };
+};
+
 // Helper function to get a user profile, and enforce admin roles.
 // It relies on the database trigger to create the profile on signup,
 // but now includes a robust server-side RPC fallback to prevent race conditions.
@@ -26,7 +43,8 @@ const _getUserProfile = async (authUser: { id: string, email?: string }): Promis
         }
         
         if (data) {
-            userProfile = data as User;
+            // FIX: Use the mapping function to correctly handle snake_case from the database.
+            userProfile = mapProfileData(data);
             break; // Profile found, exit loop.
         }
 
@@ -60,13 +78,6 @@ const _getUserProfile = async (authUser: { id: string, email?: string }): Promis
         userProfile = rpcProfile as User;
     }
 
-    // TEMPORARY: Grant admin privileges to a specific user to bootstrap access.
-    // This allows the user to access the admin dashboard and permanently set their role.
-    if (userProfile && userProfile.email === 'billhanoman@gmail.com') {
-        console.log("Applying temporary admin privileges for billhanoman@gmail.com");
-        userProfile.isAdmin = true;
-    }
-    
     return userProfile;
 };
 
@@ -159,5 +170,8 @@ export const updateUser = async (user: User): Promise<User | null> => {
         console.error("Error updating user profile:", error.message);
         return null;
     }
-    return data as User;
+    
+    // FIX: Use the mapping function to correctly handle the snake_case response from the database.
+    // This prevents properties like 'isAdmin' and 'isPremium' from being lost on profile updates.
+    return mapProfileData(data);
 };

@@ -132,7 +132,8 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementS
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left Column: Image & Meta */}
             <div>
-                <h2 className="text-3xl font-bold mb-4 text-slate-800 lg:pr-8">{recipe.title}</h2>
+                <h2 className="text-3xl font-bold mb-2 text-slate-800 lg:pr-8">{recipe.title}</h2>
+                {recipe.chef && <p className="text-lg font-semibold text-slate-600 mb-4">By Chef {recipe.chef.name}</p>}
                 <StoredImage src={recipe.image} alt={recipe.title} className="w-full h-64 object-cover rounded-lg mb-6" />
                 <p className="text-slate-600 mb-6">{recipe.description}</p>
                  
@@ -162,6 +163,19 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, measurementS
                     </div>
                     
                     <div className="space-y-4">
+                        {recipe.chef && (
+                          <div className="bg-slate-50 p-4 rounded-lg border">
+                              <h4 className="font-semibold text-slate-800 mb-3 text-lg">About the Chef</h4>
+                              <div className="flex items-start gap-4">
+                                  <StoredImage src={recipe.chef.image} alt={recipe.chef.name} className="w-24 h-24 rounded-full object-cover border-2 border-white shadow-md flex-shrink-0" />
+                                  <div>
+                                      <h5 className="font-bold text-slate-800">{recipe.chef.name}</h5>
+                                      <p className="text-sm text-slate-600 mt-1">{recipe.chef.bio}</p>
+                                      <p className="text-sm text-slate-600 mt-2"><strong className="text-slate-700">Signature Dish:</strong> {recipe.chef.signatureDish}</p>
+                                  </div>
+                              </div>
+                          </div>
+                        )}
                         {/* RATING */}
                         <div className="bg-slate-50 p-4 rounded-lg">
                             <h4 className="font-semibold text-slate-800 mb-2 text-center">Rate this recipe</h4>

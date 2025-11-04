@@ -42,7 +42,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres, an
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, authenticated, service_role;
 
 -- ---------------------------------------------------------------------
--- STEP 4: RECREATE ALL TABLES AND ROW-LEVEL SECURITY (RLS) POLICIES
+-- STEP 4: RECREATE ALL TABLES
 -- ---------------------------------------------------------------------
 
 -- Create the user_profiles table
@@ -58,9 +58,6 @@ CREATE TABLE public.user_profiles (
     food_preferences TEXT[]
 );
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow individual user access to their own profile" ON public.user_profiles FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Allow individual user to update their own profile" ON public.user_profiles FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Allow individual user to create their own profile" ON public.user_profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- Create the user_data table
 CREATE TABLE public.user_data (
@@ -68,137 +65,111 @@ CREATE TABLE public.user_data (
     data JSONB
 );
 ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow individual user access to their own data" ON public.user_data FOR ALL USING (auth.uid() = user_id);
 
 -- Create all other application tables
 CREATE TABLE public.recipes (
     id INTEGER PRIMARY KEY, title TEXT, image TEXT, description TEXT, cook_time TEXT, servings TEXT,
-    ingredients JSONB, instructions TEXT[], calories TEXT, tags TEXT[], cuisine TEXT, wine_pairing JSONB, rating JSONB
+    ingredients JSONB, instructions TEXT[], calories TEXT, tags TEXT[], cuisine TEXT, wine_pairing JSONB, rating JSONB, chef JSONB
 );
 ALTER TABLE public.recipes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read access to recipes" ON public.recipes FOR SELECT USING (true);
-CREATE POLICY "Allow anon to seed recipes if table is empty" ON public.recipes FOR INSERT TO anon WITH CHECK (public.is_recipes_table_empty());
 
 CREATE TABLE public.new_recipes (
     id INTEGER PRIMARY KEY, title TEXT, image TEXT, description TEXT, cook_time TEXT, servings TEXT,
-    ingredients JSONB, instructions TEXT[], calories TEXT, tags TEXT[], cuisine TEXT, wine_pairing JSONB, rating JSONB
+    ingredients JSONB, instructions TEXT[], calories TEXT, tags TEXT[], cuisine TEXT, wine_pairing JSONB, rating JSONB, chef JSONB
 );
 ALTER TABLE public.new_recipes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read access to new_recipes" ON public.new_recipes FOR SELECT USING (true);
-CREATE POLICY "Allow anon to seed new_recipes if table is empty" ON public.new_recipes FOR INSERT TO anon WITH CHECK (public.is_new_recipes_table_empty());
 
 CREATE TABLE public.scheduled_recipes (
     id REAL PRIMARY KEY, title TEXT, image TEXT, description TEXT, cook_time TEXT, servings TEXT,
-    ingredients JSONB, instructions TEXT[], calories TEXT, tags TEXT[], cuisine TEXT, wine_pairing JSONB, rating JSONB
+    ingredients JSONB, instructions TEXT[], calories TEXT, tags TEXT[], cuisine TEXT, wine_pairing JSONB, rating JSONB, chef JSONB
 );
 ALTER TABLE public.scheduled_recipes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read access to scheduled_recipes" ON public.scheduled_recipes FOR SELECT USING (true);
 
 CREATE TABLE public.products (
     id TEXT PRIMARY KEY, name TEXT, brand TEXT, description TEXT, image_url TEXT, affiliate_url TEXT, category TEXT
 );
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read access to products" ON public.products FOR SELECT USING (true);
-CREATE POLICY "Allow anon to seed products if table is empty" ON public.products FOR INSERT TO anon WITH CHECK (public.is_products_table_empty());
 
 CREATE TABLE public.sent_newsletters (
     id TEXT PRIMARY KEY, subject TEXT, message TEXT, recipe_ids INTEGER[], target TEXT, sent_date TEXT
 );
 ALTER TABLE public.sent_newsletters ENABLE ROW LEVEL SECURITY;
--- No policies by default, only service_role can access
 
 CREATE TABLE public.leads ( email TEXT PRIMARY KEY, date_collected TEXT );
 ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow anon insert to leads" ON public.leads FOR INSERT WITH CHECK (true);
 
 CREATE TABLE public.ratings (
     recipe_id INTEGER PRIMARY KEY, total_score INTEGER, count INTEGER, user_ratings JSONB
 );
 ALTER TABLE public.ratings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow authenticated read on ratings" ON public.ratings FOR SELECT USING (auth.role() = 'authenticated');
 
 CREATE TABLE public.standard_cocktails (
     id TEXT PRIMARY KEY, title TEXT, description TEXT, image_prompt TEXT, glassware TEXT,
     garnish TEXT, ingredients TEXT[], instructions TEXT[], image TEXT
 );
 ALTER TABLE public.standard_cocktails ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read access to standard_cocktails" ON public.standard_cocktails FOR SELECT USING (true);
-CREATE POLICY "Allow anon to seed standard_cocktails if table is empty" ON public.standard_cocktails FOR INSERT TO anon WITH CHECK (public.is_standard_cocktails_table_empty());
 
 CREATE TABLE public.community_chat (
     id TEXT PRIMARY KEY, user_id TEXT, user_name TEXT, user_profile_image TEXT,
     is_admin BOOLEAN, text TEXT, "timestamp" TEXT
 );
 ALTER TABLE public.community_chat ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow authenticated users to read chat" ON public.community_chat FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated users to insert their own messages" ON public.community_chat FOR INSERT WITH CHECK (auth.email() = user_id);
 
 CREATE TABLE public.about_us (
     id INTEGER PRIMARY KEY, company_name TEXT, mission_statement TEXT, company_history TEXT, contact_email TEXT, address TEXT
 );
 ALTER TABLE public.about_us ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read access to about_us" ON public.about_us FOR SELECT USING (true);
-CREATE POLICY "Allow anon to seed about_us if table is empty" ON public.about_us FOR INSERT TO anon WITH CHECK (public.is_about_us_table_empty());
 
+CREATE TABLE public.meal_plans (
+    id TEXT PRIMARY KEY, title TEXT, description TEXT, recipe_ids INTEGER[]
+);
+ALTER TABLE public.meal_plans ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE public.videos (
+    id TEXT PRIMARY KEY, category TEXT, title TEXT, description TEXT, video_url TEXT, thumbnail_url TEXT
+);
+ALTER TABLE public.videos ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE public.cooking_classes (
+    id TEXT PRIMARY KEY, title TEXT, description TEXT, chef TEXT, thumbnail_url TEXT,
+    steps JSONB, what_you_will_learn TEXT[], techniques_covered TEXT[], pro_tips TEXT[]
+);
+ALTER TABLE public.cooking_classes ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE public.expert_questions (
+    id TEXT PRIMARY KEY, question TEXT, topic TEXT, status TEXT, submitted_date TEXT, answer JSONB
+);
+ALTER TABLE public.expert_questions ENABLE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------
--- STEP 5: RECREATE FUNCTIONS AND TRIGGERS.
+-- STEP 5: RECREATE FUNCTIONS.
 -- ---------------------------------------------------------------------
 
--- Functions to check if seedable tables are empty. Using LANGUAGE sql with STABLE
--- and SECURITY DEFINER is the correct combination to handle bulk inserts for seeding.
--- STABLE ensures the result is cached for the entire duration of the INSERT statement.
--- SECURITY DEFINER ensures the function runs with owner privileges, bypassing RLS and
--- seeing a consistent snapshot of the table before the transaction started.
-
-CREATE OR REPLACE FUNCTION public.is_recipes_table_empty()
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT NOT EXISTS (SELECT 1 FROM public.recipes);
-$$;
-GRANT EXECUTE ON FUNCTION public.is_recipes_table_empty() TO anon;
-
-CREATE OR REPLACE FUNCTION public.is_new_recipes_table_empty()
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT NOT EXISTS (SELECT 1 FROM public.new_recipes);
-$$;
-GRANT EXECUTE ON FUNCTION public.is_new_recipes_table_empty() TO anon;
-
-CREATE OR REPLACE FUNCTION public.is_products_table_empty()
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT NOT EXISTS (SELECT 1 FROM public.products);
-$$;
-GRANT EXECUTE ON FUNCTION public.is_products_table_empty() TO anon;
-
-CREATE OR REPLACE FUNCTION public.is_standard_cocktails_table_empty()
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT NOT EXISTS (SELECT 1 FROM public.standard_cocktails);
-$$;
-GRANT EXECUTE ON FUNCTION public.is_standard_cocktails_table_empty() TO anon;
-
-CREATE OR REPLACE FUNCTION public.is_about_us_table_empty()
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT NOT EXISTS (SELECT 1 FROM public.about_us);
-$$;
-GRANT EXECUTE ON FUNCTION public.is_about_us_table_empty() TO anon;
-
-
--- Function to create a profile when a new user signs up
+-- Function to create a profile when a new user signs up.
+-- The first user to sign up automatically becomes an admin.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public
 AS $$
+DECLARE
+  user_count integer;
 BEGIN
-  INSERT INTO public.user_profiles (id, email, name)
-  VALUES (new.id, new.email, 'New User');
+  -- Check if any user already exists in the auth schema
+  SELECT count(*) INTO user_count FROM auth.users;
+
+  -- If this is the very first user (count will be 1), make them an admin.
+  IF user_count = 1 THEN
+    INSERT INTO public.user_profiles (id, email, name, is_admin)
+    VALUES (new.id, new.email, 'Admin User', TRUE);
+  ELSE
+    INSERT INTO public.user_profiles (id, email, name, is_admin)
+    VALUES (new.id, new.email, 'New User', FALSE);
+  END IF;
+  
   RETURN new;
 END;
 $$;
-
--- Trigger to execute the function after a new user is created in auth.users
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- RPC fallback function to ensure a profile exists if the trigger fails for any reason
 CREATE OR REPLACE FUNCTION public.get_or_create_user_profile(dummy_param TEXT)
@@ -229,6 +200,85 @@ BEGIN
 END;
 $$;
 GRANT EXECUTE ON FUNCTION public.get_or_create_user_profile(TEXT) TO authenticated;
+
+-- Function to check if the current user has the 'admin' role
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY INVOKER
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN FALSE;
+  END IF;
+  RETURN COALESCE((SELECT is_admin FROM public.user_profiles WHERE id = auth.uid()), FALSE);
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated, anon;
+
+
+-- ---------------------------------------------------------------------
+-- STEP 6: CREATE ROW-LEVEL SECURITY (RLS) POLICIES
+-- ---------------------------------------------------------------------
+
+CREATE POLICY "Allow individual user access to their own profile" ON public.user_profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Allow individual user to update their own profile" ON public.user_profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Allow individual user to create their own profile" ON public.user_profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Allow individual user access to their own data" ON public.user_data FOR ALL USING (auth.uid() = user_id);
+
+CREATE POLICY "Allow public read access to recipes" ON public.recipes FOR SELECT USING (true);
+CREATE POLICY "Allow anon to seed recipes" ON public.recipes FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Allow admins full access" ON public.recipes FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+CREATE POLICY "Allow public read access to new_recipes" ON public.new_recipes FOR SELECT USING (true);
+CREATE POLICY "Allow anon to seed new_recipes" ON public.new_recipes FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Allow admins full access" ON public.new_recipes FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+CREATE POLICY "Allow public read access to scheduled_recipes" ON public.scheduled_recipes FOR SELECT USING (true);
+CREATE POLICY "Allow admins full access" ON public.scheduled_recipes FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+CREATE POLICY "Allow public read access to products" ON public.products FOR SELECT USING (true);
+CREATE POLICY "Allow anon to seed products" ON public.products FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Allow admins full access" ON public.products FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+-- No policies for sent_newsletters by default, only service_role can access
+
+CREATE POLICY "Allow anon insert to leads" ON public.leads FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated read on ratings" ON public.ratings FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow public read access to standard_cocktails" ON public.standard_cocktails FOR SELECT USING (true);
+CREATE POLICY "Allow anon to seed standard_cocktails" ON public.standard_cocktails FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Allow admins full access" ON public.standard_cocktails FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+CREATE POLICY "Allow authenticated users to read chat" ON public.community_chat FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to insert their own messages" ON public.community_chat FOR INSERT WITH CHECK (auth.email() = user_id);
+
+CREATE POLICY "Allow public read access to about_us" ON public.about_us FOR SELECT USING (true);
+CREATE POLICY "Allow anon to seed about_us" ON public.about_us FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "Allow public read access to meal_plans" ON public.meal_plans FOR SELECT USING (true);
+CREATE POLICY "Allow anon to seed meal_plans" ON public.meal_plans FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "Allow public read access to videos" ON public.videos FOR SELECT USING (true);
+CREATE POLICY "Allow anon to seed videos" ON public.videos FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "Allow public read access to cooking_classes" ON public.cooking_classes FOR SELECT USING (true);
+CREATE POLICY "Allow anon to seed cooking_classes" ON public.cooking_classes FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "Allow public read access to expert_questions" ON public.expert_questions FOR SELECT USING (true);
+CREATE POLICY "Allow authenticated users to insert questions" ON public.expert_questions FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Allow anon to seed expert_questions" ON public.expert_questions FOR INSERT TO anon WITH CHECK (true);
+
+-- ---------------------------------------------------------------------
+-- STEP 7: RECREATE TRIGGERS.
+-- ---------------------------------------------------------------------
+
+-- Trigger to execute the function after a new user is created in auth.users
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- End of script
 `;

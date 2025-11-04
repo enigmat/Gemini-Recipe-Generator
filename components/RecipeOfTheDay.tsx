@@ -7,7 +7,7 @@ import StoredImage from './StoredImage';
 import CheckCircleIcon from './icons/CheckCircleIcon';
 import FireIcon from './icons/FireIcon';
 
-interface RecipeOfTheDayProps {
+interface FeaturedChefRecipeProps {
   recipe: Recipe | null;
   isLoading: boolean;
   onClick: (recipe: Recipe) => void;
@@ -15,7 +15,7 @@ interface RecipeOfTheDayProps {
   isArchived: boolean;
 }
 
-const RecipeOfTheDaySkeleton: React.FC = () => (
+const FeaturedChefRecipeSkeleton: React.FC = () => (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden animate-pulse">
         <div className="p-4 bg-slate-300 text-center">
             <div className="h-7 bg-slate-400 rounded w-1/2 mx-auto"></div>
@@ -36,16 +36,16 @@ const RecipeOfTheDaySkeleton: React.FC = () => (
 );
 
 
-const RecipeOfTheDay: React.FC<RecipeOfTheDayProps> = ({ recipe, isLoading, onClick, onArchive, isArchived }) => {
+const FeaturedChefRecipe: React.FC<FeaturedChefRecipeProps> = ({ recipe, isLoading, onClick, onArchive, isArchived }) => {
     if (isLoading) {
-        return <RecipeOfTheDaySkeleton />;
+        return <FeaturedChefRecipeSkeleton />;
     }
 
     if (!recipe) {
         return (
             <div className="bg-slate-100 border border-slate-200 rounded-lg shadow-sm p-8 text-center">
                 <TrophyIcon className="w-10 h-10 text-slate-400 mx-auto" />
-                <h2 className="text-xl font-bold text-slate-700 mt-4">Recipe of the Day</h2>
+                <h2 className="text-xl font-bold text-slate-700 mt-4">Featured Chef Recipe</h2>
                 <p className="text-slate-500 mt-2">Come back tomorrow for a new featured recipe! The recipe pool is currently being curated by our chefs.</p>
             </div>
         )
@@ -56,7 +56,7 @@ const RecipeOfTheDay: React.FC<RecipeOfTheDayProps> = ({ recipe, isLoading, onCl
             <div className="p-4 bg-amber-400 text-center">
                 <h2 className="text-xl font-bold text-white flex items-center justify-center gap-2">
                     <TrophyIcon className="w-6 h-6" />
-                    Recipe of the Day
+                    Featured Chef Recipe
                 </h2>
             </div>
             <div className="md:flex">
@@ -65,6 +65,7 @@ const RecipeOfTheDay: React.FC<RecipeOfTheDayProps> = ({ recipe, isLoading, onCl
                 </div>
                 <div className="md:w-1/2 p-8 flex flex-col justify-center">
                     <h3 className="text-3xl font-bold text-slate-800 mb-2">{recipe.title}</h3>
+                    {recipe.chef && <p className="text-lg font-medium text-slate-600 mb-4">By Chef {recipe.chef.name}</p>}
                     <div className="flex items-center gap-6 text-slate-500 mb-4">
                         <div className="flex items-center space-x-2">
                             <ClockIcon className="w-5 h-5" />
@@ -110,4 +111,4 @@ const RecipeOfTheDay: React.FC<RecipeOfTheDayProps> = ({ recipe, isLoading, onCl
     );
 };
 
-export default RecipeOfTheDay;
+export default FeaturedChefRecipe;

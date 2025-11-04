@@ -6,8 +6,12 @@ import { newRecipes } from '../data/newRecipes';
 import { affiliateProducts } from '../data/affiliateProducts';
 import { standardCocktails } from '../data/cocktails';
 import { aboutUsData } from '../data/aboutUs';
+import { mealPlans } from '../data/mealPlans';
+import { videos } from '../data/videos';
+import { cookingClasses } from '../data/cookingClasses';
+import { initialExpertQuestions } from '../data/expertQuestions';
 
-const SEED_FLAG_KEY = 'database_seeded_v1';
+const SEED_FLAG_KEY = 'database_seeded_v2';
 
 export const seedDatabaseIfEmpty = async (): Promise<void> => {
     // 1. Check if seeding has already been done
@@ -69,6 +73,27 @@ export const seedDatabaseIfEmpty = async (): Promise<void> => {
         const { error: aboutUsError } = await supabase.from('about_us').upsert(aboutUsForDb);
         if (aboutUsError) throw new Error(`Seeding about_us failed: ${aboutUsError.message}`);
         console.log("Seeded about us info.");
+        
+        // Seed Meal Plans
+        const { error: mealPlansError } = await supabase.from('meal_plans').insert(mealPlans.map(mp => ({ id: mp.id, title: mp.title, description: mp.description, recipe_ids: mp.recipeIds })));
+        if (mealPlansError) throw new Error(`Seeding meal_plans failed: ${mealPlansError.message}`);
+        console.log(`Seeded ${mealPlans.length} meal plans.`);
+
+        // Seed Videos
+        const { error: videosError } = await supabase.from('videos').insert(videos.map(v => ({ id: v.id, category: v.category, title: v.title, description: v.description, video_url: v.videoUrl, thumbnail_url: v.thumbnailUrl })));
+        if (videosError) throw new Error(`Seeding videos failed: ${videosError.message}`);
+        console.log(`Seeded ${videos.length} videos.`);
+
+        // Seed Cooking Classes
+        const { error: classesError } = await supabase.from('cooking_classes').insert(cookingClasses.map(c => ({ id: c.id, title: c.title, description: c.description, chef: c.chef, thumbnail_url: c.thumbnailUrl, steps: c.steps, what_you_will_learn: c.whatYouWillLearn, techniques_covered: c.techniquesCovered, pro_tips: c.proTips })));
+        if (classesError) throw new Error(`Seeding cooking_classes failed: ${classesError.message}`);
+        console.log(`Seeded ${cookingClasses.length} cooking classes.`);
+
+        // Seed Expert Questions
+        const { error: questionsError } = await supabase.from('expert_questions').insert(initialExpertQuestions.map(q => ({ id: q.id, question: q.question, topic: q.topic, status: q.status, submitted_date: q.submittedDate, answer: q.answer })));
+        if (questionsError) throw new Error(`Seeding expert_questions failed: ${questionsError.message}`);
+        console.log(`Seeded ${initialExpertQuestions.length} expert questions.`);
+
 
         // 4. Set the flag to prevent running again
         localStorage.setItem(SEED_FLAG_KEY, 'true');

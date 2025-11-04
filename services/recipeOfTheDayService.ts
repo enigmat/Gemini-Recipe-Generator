@@ -28,7 +28,8 @@ export const getTodaysRecipe = (scheduledRecipes: Recipe[]): Recipe | null => {
     }
 };
 
-export const archiveYesterdaysRecipe = async (scheduledRecipes: Recipe[]): Promise<Recipe | null> => {
+// FIX: Accept `allRecipes` as an argument to avoid re-fetching data.
+export const archiveYesterdaysRecipe = async (scheduledRecipes: Recipe[], allRecipes: Recipe[]): Promise<Recipe | null> => {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const lastArchiveDate = localStorage.getItem(LAST_ARCHIVE_KEY);
 
@@ -50,7 +51,8 @@ export const archiveYesterdaysRecipe = async (scheduledRecipes: Recipe[]): Promi
         const yesterdaysRecipe = scheduledRecipes[dayIndex];
 
         if (yesterdaysRecipe) {
-            const newlyAddedRecipe = await recipeService.addRecipeIfUnique(yesterdaysRecipe);
+            // FIX: Pass the `allRecipes` array down to the next service function.
+            const newlyAddedRecipe = await recipeService.addRecipeIfUnique(yesterdaysRecipe, allRecipes);
             localStorage.setItem(LAST_ARCHIVE_KEY, today);
             return newlyAddedRecipe;
         }

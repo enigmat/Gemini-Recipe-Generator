@@ -18,6 +18,7 @@ import BookOpenIcon from './icons/BookOpenIcon';
 import ChatBubbleIcon from './icons/ChatBubbleIcon';
 import GlobeAltIcon from './icons/GlobeAltIcon';
 import LayoutDashboardIcon from './icons/LayoutDashboardIcon';
+import ArrowPathIcon from './icons/ArrowPathIcon';
 
 interface MainTabsProps {
   activeTab: string;
@@ -41,6 +42,7 @@ const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser
     { id: 'Cooking Classes', name: 'Cooking Classes', icon: <MortarPestleIcon className="w-5 h-5" /> },
     { id: 'Bartender Helper', name: 'Bartender Helper', icon: <SparklesIcon className="w-5 h-5" /> },
     { id: 'Ask an Expert', name: 'Ask an Expert', icon: <QuestionMarkCircleIcon className="w-5 h-5" /> },
+    { id: 'Data Sync', name: 'Sync', icon: <ArrowPathIcon className="w-5 h-5" /> },
     { id: 'About Us', name: 'About Us', icon: <InformationCircleIcon className="w-5 h-5" /> },
   ];
 
