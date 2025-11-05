@@ -30,20 +30,29 @@ export const getTodaysRecipe = (scheduledRecipes: Recipe[]): Recipe | null => {
 };
 
 export const archiveRecipe = (recipe: Recipe): boolean => {
-    const db = getDatabase();
-    const isAlreadyArchived = db.recipes.all.some(r => r.title.toLowerCase() === recipe.title.toLowerCase());
-    if (isAlreadyArchived) {
-        console.log(`Recipe "${recipe.title}" is already in the main list.`);
-        return false;
-    }
-
+    let moved = false;
     updateDatabase(draftDb => {
-        draftDb.recipes.all.push(recipe);
+        // Add to main list only if it's not there by ID
+        const isAlreadyInMainList = draftDb.recipes.all.some(r => r.id === recipe.id);
+        if (!isAlreadyInMainList) {
+            draftDb.recipes.all.push(recipe);
+            console.log(`Archived "${recipe.title}" to main list.`);
+        } else {
+            console.log(`Recipe "${recipe.title}" is already in the main list.`);
+        }
+
+        // Always remove from the scheduled pool
+        const initialScheduledCount = draftDb.recipes.scheduled.length;
+        const updatedScheduled = draftDb.recipes.scheduled.filter(r => r.id !== recipe.id);
+
+        if (updatedScheduled.length < initialScheduledCount) {
+            draftDb.recipes.scheduled = updatedScheduled;
+            console.log(`Removed "${recipe.title}" from scheduled list.`);
+            moved = true; // The operation was successful if a recipe was removed
+        }
     });
-    
-    console.log(`Archived "${recipe.title}" to main list.`);
-    return true;
-}
+    return moved;
+};
 
 export const archiveYesterdaysRecipe = (): Recipe | null => {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD

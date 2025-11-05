@@ -20,6 +20,7 @@ let db: AppDatabase = {
         new: initialNewRecipes,
         scheduled: initialAllRecipes.slice(0, 30), // Use first 30 as a default pool
     },
+    featuredChefs: [],
     products: affiliateProducts,
     newsletters: {
         sent: [],

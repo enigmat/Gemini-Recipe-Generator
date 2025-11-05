@@ -21,20 +21,6 @@ export interface Chef {
   image: string; // base64 encoded image
 }
 
-export interface FeaturedChefInfo {
-  name: string;
-  bio: string;
-  imagePrompt: string;
-  recipeTitle: string;
-  recipeDescription: string;
-  recipeImagePrompt: string;
-}
-
-export interface DisplayChef extends FeaturedChefInfo {
-  chefImage: string;
-  recipeImage: string;
-}
-
 export interface Recipe {
   id: number;
   title: string;
@@ -238,6 +224,7 @@ export interface AppDatabase {
         new: Recipe[];
         scheduled: Recipe[];
     };
+    featuredChefs: Recipe[];
     products: Product[];
     newsletters: {
         sent: Newsletter[];

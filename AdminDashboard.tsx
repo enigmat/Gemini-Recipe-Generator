@@ -14,7 +14,7 @@ import AdminNewRecipeManagement from './AdminNewRecipeManagement';
 import Spinner from './Spinner';
 import CheckIcon from './icons/CheckIcon';
 import DownloadIcon from './icons/DownloadIcon';
-import AdminFeaturedChefManagement from './AdminROTDManagement';
+import AdminFeaturedChefManagement from './AdminFeaturedChefManagement';
 import AdminBulkImport from './AdminBulkImport';
 import AdminDataExport from './AdminDataExport';
 import AdminCocktailManagement from './AdminCocktailManagement';
@@ -34,6 +34,7 @@ interface AdminDashboardProps {
     collectedLeads: Lead[];
     products: Product[];
     standardCocktails: SavedCocktail[];
+    featuredChefs: Recipe[];
     onAddRecipe: (title: string, addToNew: boolean, addToRecipeOfTheDayPool: boolean) => Promise<void>;
     onDeleteRecipe: (recipeId: number) => void;
     onUpdateRecipeWithAI: (recipeId: number, title: string) => Promise<void>;
@@ -53,6 +54,7 @@ interface AdminDashboardProps {
     onMoveRecipeFromRotdToMain: (recipe: Recipe) => Promise<boolean>;
     onUpdateScheduledRecipes: (recipes: Recipe[]) => Promise<void>;
     onImportData: (db: AppDatabase) => Promise<void>;
+    onFeatureChef: (recipe: Recipe) => void;
 }
 
 const PlaceholderPanel: React.FC<{ title: string }> = ({ title }) => (
@@ -179,8 +181,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
             case 'Featured Chef Recipe Pool':
                  return <AdminFeaturedChefManagement 
                     recipes={props.scheduledRecipes} 
+                    featuredChefs={props.featuredChefs}
                     onMoveRecipe={props.onMoveRecipeFromRotdToMain}
                     onUpdateScheduledRecipes={props.onUpdateScheduledRecipes}
+                    onFeatureChef={props.onFeatureChef}
                  />;
             case 'Bulk Import':
                 return <AdminBulkImport onImport={handleBulkImport} isImporting={isImporting} importProgress={importProgress} />;

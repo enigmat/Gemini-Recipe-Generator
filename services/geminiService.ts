@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { Recipe, CocktailRecipe, RecipeVariation, ProductAnalysis, Product, GeneratedMealPlan, DishInfo, Chef, FeaturedChefInfo } from "../types";
+import { Recipe, CocktailRecipe, RecipeVariation, ProductAnalysis, Product, GeneratedMealPlan, DishInfo, Chef } from "../types";
 
 const chefProfileSchema = {
     type: Type.OBJECT,
@@ -221,7 +221,7 @@ export const generateRecipeOfTheDay = async (): Promise<Omit<Recipe, 'id' | 'ima
 export const generateRecipeFromUrl = async (url: string): Promise<Omit<Recipe, 'id' | 'image'>> => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const prompt = `Analyze the following URL and generate a complete, high-quality recipe based on its title and content theme. The URL is: "${url}". The recipe must be well-written, easy to follow, and appealing. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing, and an estimated calorie count per serving. Finally, create a profile for a fictional famous chef known for this type of cuisine, including their name, a short bio, their signature dish, and a prompt for generating a photorealistic portrait of them.`;
+        const prompt = `Analyze the following URL and generate a complete, high-quality recipe based on its title and content theme. The URL is: "${url}". The recipe must be well-written, easy to follow, and appealing. Provide a short, enticing description, a realistic cook time, and the number of servings. The ingredients list must be detailed with both metric and US units. The instructions should be clear, step-by-step. Include at least 3 relevant tags. Also, provide a suitable wine pairing suggestion with a specific wine name and a short explanation for the pairing, and an estimated calorie count per serving. Finally, create a profile for a fictional famous chef known for this type of cuisine, including their name, a short bio, their signatureDish, and a prompt for generating a photorealistic portrait of them.`;
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
@@ -649,57 +649,5 @@ export const identifyDishFromImage = async (base64Image: string, mimeType: strin
     } catch (error) {
         console.error("Error identifying dish from image with Gemini:", error);
         throw new Error("Failed to identify the dish from the image. The AI couldn't recognize it. Please try a clearer photo or a different dish.");
-    }
-};
-
-export const generateFeaturedChefs = async (existingChefs: string[]): Promise<FeaturedChefInfo[]> => {
-    try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        let prompt = `Act as a culinary expert. Generate a list of 10 famous, real-world chefs from a variety of cuisines. For each chef, provide their name, a short bio (2-3 sentences), a prompt for a photorealistic portrait, the title of one of their signature recipes, a short description of that recipe, and a prompt to generate a photorealistic image of that recipe.`;
-        if (existingChefs.length > 0) {
-            prompt += ` Do not include any of the following chefs that are already listed: ${existingChefs.join(', ')}.`;
-        }
-
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        chefs: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    name: { type: Type.STRING },
-                                    bio: { type: Type.STRING },
-                                    imagePrompt: { type: Type.STRING, description: "A descriptive prompt for a photorealistic portrait of the chef." },
-                                    recipeTitle: { type: Type.STRING, description: "The title of the chef's signature recipe." },
-                                    recipeDescription: { type: Type.STRING, description: "A short, enticing description of the recipe." },
-                                    recipeImagePrompt: { type: Type.STRING, description: "A descriptive prompt for a photorealistic image of the finished recipe." }
-                                },
-                                required: ['name', 'bio', 'imagePrompt', 'recipeTitle', 'recipeDescription', 'recipeImagePrompt']
-                            }
-                        }
-                    },
-                    required: ['chefs']
-                }
-            }
-        });
-
-        const jsonText = response.text;
-        const result = JSON.parse(jsonText);
-
-        if (!result.chefs || !Array.isArray(result.chefs)) {
-            throw new Error("Invalid response format from AI.");
-        }
-        
-        return result.chefs;
-
-    } catch (error) {
-        console.error("Error generating featured chefs with Gemini:", error);
-        throw new Error("Failed to generate the list of chefs. The AI might be busy! Please try again in a moment.");
     }
 };

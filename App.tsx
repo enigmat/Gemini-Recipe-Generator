@@ -114,6 +114,7 @@ const App: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [standardCocktails, setStandardCocktails] = useState<SavedCocktail[]>([]);
     const [featuredChefRecipe, setFeaturedChefRecipe] = useState<Recipe | null>(null);
+    const [featuredChefs, setFeaturedChefs] = useState<Recipe[]>([]);
     
     // --- Authenticated Data ---
     const [expertQuestions, setExpertQuestions] = useState<ExpertQuestion[]>([]);
@@ -203,6 +204,7 @@ const App: React.FC = () => {
             
             const rotd = recipeOfTheDayService.getTodaysRecipe(db.recipes?.scheduled || []);
             setFeaturedChefRecipe(rotd);
+            setFeaturedChefs(db.featuredChefs || []);
 
             const tags = recipeService.getDistinctRecipeTags();
             setAllTags(tags);
@@ -445,6 +447,14 @@ const App: React.FC = () => {
     const handleMoveRecipeFromRotdToMainAdmin = async (recipe: Recipe) => { return await recipeOfTheDayService.archiveRecipe(recipe) };
     const handleUpdateScheduledRecipesAdmin = async (newScheduledRecipes: Recipe[]) => { await recipeService.saveScheduledRecipes(newScheduledRecipes); };
     const handleImportDataAdmin = async (db: AppDatabase) => { await importDatabaseWithImages(db); window.location.reload(); };
+    const handleFeatureChef = (recipeToFeature: Recipe) => {
+        databaseService.updateDatabase(db => {
+            const isAlreadyFeatured = db.featuredChefs.some(fc => fc.chef?.name === recipeToFeature.chef?.name);
+            if (!isAlreadyFeatured) {
+                db.featuredChefs.unshift(recipeToFeature);
+            }
+        });
+    };
 
     // --- Render Logic ---
     const recommendedRecipes = useMemo(() => newThisMonthRecipes, [newThisMonthRecipes]);
@@ -461,14 +471,14 @@ const App: React.FC = () => {
     }, [favoriteRecipes]);
     
     if (isLoading) return <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50"><Spinner size="w-12 h-12" /><p className="mt-4 text-slate-600 font-semibold">Loading your kitchen...</p></div>;
-    if (isAdminView && currentUser?.isAdmin) return <AdminDashboard currentUser={currentUser} onExit={() => setIsAdminView(false)} allRecipes={allRecipes} newRecipes={newThisMonthRecipes} scheduledRecipes={databaseService.getDatabase().recipes.scheduled} users={users} sentNewsletters={newsletters.sent} collectedLeads={newsletters.leads} products={products} standardCocktails={standardCocktails} onAddRecipe={handleAddRecipeAdmin} onDeleteRecipe={handleDeleteRecipeAdmin} onUpdateRecipeWithAI={handleUpdateRecipeAdmin} onUpdateAllRecipeImages={handleUpdateAllRecipeImagesAdmin} isUpdatingAllImages={false} imageUpdateProgress={null} onUpdateUserRoles={handleUpdateUser} onDeleteUser={handleDeleteUserAdmin} onSendNewsletter={handleSendNewsletterAdmin} onUpdateProducts={handleUpdateProductsAdmin} onDeleteProduct={handleDeleteProductAdmin} onUpdateStandardCocktails={handleUpdateStandardCocktailsAdmin} onRemoveFromNew={handleRemoveFromNewAdmin} onAddToNew={handleAddToNewAdmin} onAddToRotd={handleAddToRotdAdmin} onMoveRecipeFromRotdToMain={handleMoveRecipeFromRotdToMainAdmin} onUpdateScheduledRecipes={handleUpdateScheduledRecipesAdmin} onImportData={handleImportDataAdmin} />;
+    if (isAdminView && currentUser?.isAdmin) return <AdminDashboard currentUser={currentUser} onExit={() => setIsAdminView(false)} allRecipes={allRecipes} newRecipes={newThisMonthRecipes} scheduledRecipes={databaseService.getDatabase().recipes.scheduled} users={users} sentNewsletters={newsletters.sent} collectedLeads={newsletters.leads} products={products} standardCocktails={standardCocktails} featuredChefs={featuredChefs} onAddRecipe={handleAddRecipeAdmin} onDeleteRecipe={handleDeleteRecipeAdmin} onUpdateRecipeWithAI={handleUpdateRecipeAdmin} onUpdateAllRecipeImages={handleUpdateAllRecipeImagesAdmin} isUpdatingAllImages={false} imageUpdateProgress={null} onUpdateUserRoles={handleUpdateUser} onDeleteUser={handleDeleteUserAdmin} onSendNewsletter={handleSendNewsletterAdmin} onUpdateProducts={handleUpdateProductsAdmin} onDeleteProduct={handleDeleteProductAdmin} onUpdateStandardCocktails={handleUpdateStandardCocktailsAdmin} onRemoveFromNew={handleRemoveFromNewAdmin} onAddToNew={handleAddToNewAdmin} onAddToRotd={handleAddToRotdAdmin} onMoveRecipeFromRotdToMain={handleMoveRecipeFromRotdToMainAdmin} onUpdateScheduledRecipes={handleUpdateScheduledRecipesAdmin} onImportData={handleImportDataAdmin} onFeatureChef={handleFeatureChef} />;
     if (cookModeRecipe) return <CookMode recipe={cookModeRecipe} onExit={handleExitCookMode} measurementSystem={measurementSystem} />;
     
     const renderContent = () => {
         switch(activeTab) {
             case 'Pantry Chef': return <PantryChef onRecipeGenerated={handleRecipeGenerated} />;
             case "Where's This From?": return <DishIdentifier onSearchForDish={handleSearchForDish} />;
-            case 'Featured Chefs': return <FeaturedChefs />;
+            case 'Featured Chefs': return <FeaturedChefs recipes={featuredChefs} onViewRecipe={handleCardClick} />;
             case 'AI Meal Planner': return currentUser?.isPremium || currentUser?.isAdmin ? <MealPlanGenerator allRecipes={allRecipes} allRecipeTitles={allRecipeTitles} onRecipeClick={handleCardClick} /> : <PremiumContent onUpgradeClick={() => setIsUpgradeModalOpen(true)} featureTitle="AI Meal Planner" features={["Generate custom meal plans", "Use any prompt", "AI selects from our recipes"]} isPremium={false} />;
             case 'My Cookbook': return currentUser?.isPremium || currentUser?.isAdmin ? (
                  <div className="space-y-8">
