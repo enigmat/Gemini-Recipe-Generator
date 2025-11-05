@@ -104,7 +104,6 @@ const AdminVideoManagement: React.FC = () => {
                     <p className="text-slate-500">No video categories found. Click "Add New Category" to get started.</p>
                 </div>
             )}
-            {/* FIX: Replaced `Object.entries` with `Object.keys` to prevent a potential type inference issue where the `videos` array was being incorrectly typed as `unknown`. This ensures that `videos` is correctly recognized as an array, allowing the `.map` method to be used without causing a type error. */}
             {Object.keys(videosByCategory).map((category) => {
                 const videos = videosByCategory[category];
                 return (

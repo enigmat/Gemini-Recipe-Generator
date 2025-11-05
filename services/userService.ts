@@ -1,177 +1,102 @@
-import { User } from '../types';
-import { getSupabaseClient } from './supabaseClient';
+import { User, UserData } from '../types';
+import { getDatabase, updateDatabase } from './database';
 
-// FIX: Add a helper function to map snake_case from the database to camelCase for the User type.
-// This ensures data consistency when fetching directly from the 'user_profiles' table.
-const mapProfileData = (data: any): User | null => {
-    if (!data) return null;
-    return {
-        id: data.id,
-        email: data.email,
-        name: data.name,
-        profileImage: data.profile_image,
-        isPremium: data.is_premium,
-        isAdmin: data.is_admin,
-        isSubscribed: data.is_subscribed,
-        planEndDate: data.plan_end_date,
-        foodPreferences: data.food_preferences
-    };
-};
+let currentUser: User | null = null;
+const listeners: ((user: User | null) => void)[] = [];
 
-// Helper function to get a user profile, and enforce admin roles.
-// It relies on the database trigger to create the profile on signup,
-// but now includes a robust server-side RPC fallback to prevent race conditions.
-const _getUserProfile = async (authUser: { id: string, email?: string }): Promise<User | null> => {
-    if (!authUser.email) return null;
-    const supabase = getSupabaseClient();
-
-    let userProfile: User | null = null;
-    let attempts = 0;
-    const maxAttempts = 3; // Retry 3 times
-    const delay = 250; // ms
-
-    // Retry fetching the profile to account for minor replication delay after the trigger fires.
-    while (attempts < maxAttempts) {
-        const { data, error } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', authUser.id)
-            .single();
-
-        if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
-            throw new Error(`Failed to fetch profile: ${error.message}`);
-        }
-        
-        if (data) {
-            // FIX: Use the mapping function to correctly handle snake_case from the database.
-            userProfile = mapProfileData(data);
-            break; // Profile found, exit loop.
-        }
-
-        attempts++;
-        if (attempts < maxAttempts) {
-            console.warn(`Profile for user ${authUser.id} not found on attempt ${attempts}. Retrying in ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-        }
-    }
-
-    // If profile is still not found, call the server-side function as a robust fallback.
-    if (!userProfile) {
-        console.warn(`User profile not found after client-side retries. Calling RPC fallback to ensure profile exists.`);
-        
-        // Pass a dummy parameter to match the new function signature. This helps bust the Supabase cache.
-        const { data: rpcProfile, error: rpcError } = await supabase
-            .rpc('get_or_create_user_profile', { dummy_param: 'force_refresh' });
-
-        if (rpcError) {
-            console.error('Failed to create or retrieve user profile via RPC fallback:', rpcError.message);
-            // Updated error message to reflect the new function name.
-            throw new Error("Could not retrieve or create user profile via RPC. Please check the `get_or_create_user_profile` database function and its permissions.");
-        }
-        
-        if (!rpcProfile) {
-             // This is a critical failure, as the function should always return a profile if the user is authenticated.
-             throw new Error("RPC fallback executed but returned no profile. This indicates a severe issue with the database function or user authentication state.");
-        }
-
-        console.log("Successfully retrieved user profile via RPC fallback.");
-        userProfile = rpcProfile as User;
-    }
-
-    return userProfile;
+const notifyListeners = () => {
+    listeners.forEach(cb => cb(currentUser));
 };
 
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
-    const supabase = getSupabaseClient();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-            try {
-                const user = await _getUserProfile(session.user);
-                callback(user);
-            } catch (error) {
-                console.error("onAuthStateChange error:", error);
-                callback(null);
-            }
-        } else if (event === 'SIGNED_OUT') {
-            callback(null);
+    listeners.push(callback);
+    // Immediately call with current user state
+    callback(currentUser);
+    return () => {
+        // Unsubscribe
+        const index = listeners.indexOf(callback);
+        if (index > -1) {
+            listeners.splice(index, 1);
+        }
+    };
+};
+
+export const signup = (email: string, password?: string): void => {
+    const db = getDatabase();
+    if (db.users.find(u => u.email === email)) {
+        throw new Error("A user with this email already exists. Please log in.");
+    }
+    const newUser: User = {
+        id: `user-${Date.now()}`,
+        email,
+        name: email.split('@')[0],
+        isPremium: false,
+        isAdmin: db.users.length === 0, // Make first user an admin
+        isSubscribed: false,
+    };
+    updateDatabase(draftDb => {
+        draftDb.users.push(newUser);
+        draftDb.userData[email] = { favorites: [], shoppingLists: [], cocktails: [] };
+    });
+    currentUser = newUser;
+    notifyListeners();
+};
+
+export const signIn = (email: string, password?: string): void => {
+    const db = getDatabase();
+    const user = db.users.find(u => u.email === email);
+    if (user) {
+        // For this mock system, we'll accept any password
+        currentUser = user;
+        notifyListeners();
+    } else {
+        throw new Error('User not found.');
+    }
+};
+
+export const signOut = (): void => {
+    currentUser = null;
+    notifyListeners();
+};
+
+export const getCurrentUser = (): User | null => {
+    return currentUser;
+};
+
+export const updateUser = (user: User): User | null => {
+    let updatedUser: User | null = null;
+    updateDatabase(draftDb => {
+        const userIndex = draftDb.users.findIndex(u => u.id === user.id);
+        if (userIndex > -1) {
+            draftDb.users[userIndex] = user;
+            updatedUser = user;
         }
     });
-
-    return () => {
-        subscription.unsubscribe();
-    };
+    return updatedUser;
 };
 
-export const signup = async (email: string, password?: string): Promise<void> => {
-    const supabase = getSupabaseClient();
-    if (!password) throw new Error("Password is required for sign up.");
+export const deleteUser = (email: string) => {
+    updateDatabase(draftDb => {
+        draftDb.users = draftDb.users.filter(u => u.email !== email);
+        delete draftDb.userData[email];
+    });
+};
 
-    const { error } = await supabase.auth.signUp({ email, password });
+export const getUserData = (email: string): UserData => {
+    const db = getDatabase();
+    return db.userData[email] || { favorites: [], shoppingLists: [], cocktails: [] };
+}
 
-    if (error) {
-        if (error.message.includes('User already registered')) {
-            throw new Error("A user with this email already exists. Please log in.");
+export const toggleFavorite = (email: string, recipeId: number) => {
+    updateDatabase(draftDb => {
+        const userData = draftDb.userData[email];
+        if (userData) {
+            const favIndex = userData.favorites.indexOf(recipeId);
+            if (favIndex > -1) {
+                userData.favorites.splice(favIndex, 1);
+            } else {
+                userData.favorites.push(recipeId);
+            }
         }
-        throw new Error(`Sign up failed: ${error.message}`);
-    }
-    // Success. The onAuthStateChange listener will handle the rest.
-};
-
-export const signIn = async (email: string, password?: string): Promise<void> => {
-    const supabase = getSupabaseClient();
-    if (!password) throw new Error("Password is required to sign in.");
-
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (error) {
-        throw new Error(`Sign in failed: ${error.message}`);
-    }
-    // Success. The onAuthStateChange listener will handle the rest.
-};
-
-export const signOut = async (): Promise<void> => {
-    const supabase = getSupabaseClient();
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-        console.error("Error signing out:", error.message);
-    }
-};
-
-export const getCurrentUser = async (): Promise<User | null> => {
-    const supabase = getSupabaseClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-        return await _getUserProfile(session.user);
-    }
-    return null;
-};
-
-export const updateUser = async (user: User): Promise<User | null> => {
-    const supabase = getSupabaseClient();
-    // Convert camelCase from JS User object to snake_case for DB
-    const profileData = {
-        name: user.name,
-        profile_image: user.profileImage,
-        is_premium: user.isPremium,
-        is_admin: user.isAdmin,
-        is_subscribed: user.isSubscribed,
-        plan_end_date: user.planEndDate,
-        food_preferences: user.foodPreferences
-    };
-    
-    const { data, error } = await supabase
-        .from('user_profiles')
-        .update(profileData)
-        .eq('id', user.id)
-        .select()
-        .single();
-    
-    if (error) {
-        console.error("Error updating user profile:", error.message);
-        return null;
-    }
-    
-    // FIX: Use the mapping function to correctly handle the snake_case response from the database.
-    // This prevents properties like 'isAdmin' and 'isPremium' from being lost on profile updates.
-    return mapProfileData(data);
+    });
 };

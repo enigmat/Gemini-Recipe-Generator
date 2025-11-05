@@ -7,7 +7,6 @@ const AdminAboutUs: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        // FIX: Await promise from async service call before setting state.
         const fetchContent = async () => {
             const data = await aboutUsService.getAboutUsContent();
             setContent(data);
@@ -21,14 +20,13 @@ const AdminAboutUs: React.FC = () => {
         setContent(prev => ({ ...prev!, [name]: value }));
     };
 
-    const handleSave = (e: React.FormEvent) => {
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!content) return;
         setIsSaving(true);
         
-        aboutUsService.saveAboutUsContent(content);
+        await aboutUsService.saveAboutUsContent(content);
         
-        // Simulate network delay for user feedback
         setTimeout(() => {
             alert('Information saved successfully!');
             setIsSaving(false);

@@ -8,7 +8,6 @@ const AboutUsPage: React.FC = () => {
   const [content, setContent] = useState<AboutUsContent | null>(null);
 
   useEffect(() => {
-    // FIX: Await promise from async service call before setting state.
     const fetchContent = async () => {
         const data = await aboutUsService.getAboutUsContent();
         setContent(data);

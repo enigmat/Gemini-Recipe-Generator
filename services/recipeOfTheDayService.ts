@@ -1,5 +1,6 @@
 import { Recipe } from '../types';
 import * as recipeService from './recipeService';
+import { updateDatabase, getDatabase } from './database';
 
 const LAST_ARCHIVE_KEY = 'recipeAppLastArchiveDate';
 
@@ -28,17 +29,32 @@ export const getTodaysRecipe = (scheduledRecipes: Recipe[]): Recipe | null => {
     }
 };
 
-// FIX: Accept `allRecipes` as an argument to avoid re-fetching data.
-export const archiveYesterdaysRecipe = async (scheduledRecipes: Recipe[], allRecipes: Recipe[]): Promise<Recipe | null> => {
+export const archiveRecipe = (recipe: Recipe): boolean => {
+    const db = getDatabase();
+    const isAlreadyArchived = db.recipes.all.some(r => r.title.toLowerCase() === recipe.title.toLowerCase());
+    if (isAlreadyArchived) {
+        console.log(`Recipe "${recipe.title}" is already in the main list.`);
+        return false;
+    }
+
+    updateDatabase(draftDb => {
+        draftDb.recipes.all.push(recipe);
+    });
+    
+    console.log(`Archived "${recipe.title}" to main list.`);
+    return true;
+}
+
+export const archiveYesterdaysRecipe = (): Recipe | null => {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const lastArchiveDate = localStorage.getItem(LAST_ARCHIVE_KEY);
 
     if (lastArchiveDate === today) {
-        // Already ran today
-        return null;
+        return null; // Already ran today
     }
 
     try {
+        const scheduledRecipes = getDatabase().recipes.scheduled;
         if (scheduledRecipes.length === 0) {
             localStorage.setItem(LAST_ARCHIVE_KEY, today);
             return null; // No recipes to archive
@@ -51,10 +67,10 @@ export const archiveYesterdaysRecipe = async (scheduledRecipes: Recipe[], allRec
         const yesterdaysRecipe = scheduledRecipes[dayIndex];
 
         if (yesterdaysRecipe) {
-            // FIX: Pass the `allRecipes` array down to the next service function.
-            const newlyAddedRecipe = await recipeService.addRecipeIfUnique(yesterdaysRecipe, allRecipes);
-            localStorage.setItem(LAST_ARCHIVE_KEY, today);
-            return newlyAddedRecipe;
+            if(archiveRecipe(yesterdaysRecipe)) {
+                localStorage.setItem(LAST_ARCHIVE_KEY, today);
+                return yesterdaysRecipe;
+            }
         }
         localStorage.setItem(LAST_ARCHIVE_KEY, today);
         return null;

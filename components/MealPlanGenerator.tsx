@@ -5,11 +5,12 @@ import Spinner from './Spinner';
 import SparklesIcon from './icons/SparklesIcon';
 
 interface MealPlanGeneratorProps {
-  allRecipes: Recipe[];
+  allRecipes: Recipe[]; // This will be passed allRecipeTitles, but component expects Recipe[] for onRecipeClick
+  allRecipeTitles: string[];
   onRecipeClick: (recipe: Recipe) => void;
 }
 
-const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({ allRecipes, onRecipeClick }) => {
+const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({ allRecipes, allRecipeTitles, onRecipeClick }) => {
   const [prompt, setPrompt] = useState('');
   const [plan, setPlan] = useState<GeneratedMealPlan | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,8 +28,7 @@ const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({ allRecipes, onRec
     setPlan(null);
 
     try {
-      const recipeTitles = allRecipes.map(r => r.title);
-      const generatedPlan = await geminiService.generateMealPlan(prompt, recipeTitles);
+      const generatedPlan = await geminiService.generateMealPlan(prompt, allRecipeTitles);
       setPlan(generatedPlan);
     } catch (e: any) {
       setError(e.message || "An unexpected error occurred.");

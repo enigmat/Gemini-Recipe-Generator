@@ -138,13 +138,13 @@ export const recipes: Recipe[] = [
     servings: '24 cookies',
     calories: 'Approx. 150 kcal per cookie',
     ingredients: [
-      { name: 'all-purpose flour', metric: { quantity: 270, unit: 'g' }, us: { quantity: '2 1/4', unit: 'cups' } },
-      { name: 'baking soda', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
-      { name: 'butter, softened', metric: { quantity: 227, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
-      { name: 'granulated sugar', metric: { quantity: 150, unit: 'g' }, us: { quantity: '3/4', unit: 'cup' } },
-      { name: 'brown sugar, packed', metric: { quantity: 165, unit: 'g' }, us: { quantity: '3/4', unit: 'cup' } },
+      { name: 'all-purpose flour', metric: { quantity: '2 1/4', unit: 'cups' }, us: { quantity: '2 1/4', unit: 'cups' } },
+      { name: 'baking soda', metric: { quantity: 1, unit: 'tsp' }, us: { quantity: 1, unit: 'tsp' } },
+      { name: 'butter, softened', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
+      { name: 'granulated sugar', metric: { quantity: '3/4', unit: 'cup' }, us: { quantity: '3/4', unit: 'cup' } },
+      { name: 'brown sugar, packed', metric: { quantity: '3/4', unit: 'cup' }, us: { quantity: '3/4', unit: 'cup' } },
       { name: 'large eggs', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
-      { name: 'chocolate chips', metric: { quantity: 340, unit: 'g' }, us: { quantity: 2, unit: 'cups' } }
+      { name: 'chocolate chips', metric: { quantity: 2, unit: 'cups' }, us: { quantity: 2, unit: 'cups' } }
     ],
     instructions: ['Preheat oven to [temp:190:375].', 'Cream butter and sugars.', 'Beat in eggs.', 'Stir in flour and baking soda.', 'Fold in chocolate chips.', 'Drop spoonfuls on a baking sheet and bake for 9-11 minutes.'],
     tags: ['Dessert', 'Baking'],
@@ -160,12 +160,12 @@ export const recipes: Recipe[] = [
     calories: 'Approx. 550 kcal',
     ingredients: [
         { name: 'beef chuck, cubed', metric: { quantity: 1, unit: 'kg' }, us: { quantity: 2.2, unit: 'lbs' } },
-        { name: 'olive oil', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
+        { name: 'olive oil', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
         { name: 'onions, chopped', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
         { name: 'carrots, chopped', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
         { name: 'celery stalks, chopped', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
-        { name: 'beef broth', metric: { quantity: 960, unit: 'ml' }, us: { quantity: 4, unit: 'cups' } },
-        { name: 'red wine', metric: { quantity: 240, unit: 'ml' }, us: { quantity: 1, unit: 'cup' } }
+        { name: 'beef broth', metric: { quantity: 4, unit: 'cups' }, us: { quantity: 4, unit: 'cups' } },
+        { name: 'red wine', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } }
     ],
     instructions: ['Brown the beef in olive oil.', 'Remove beef and sauté vegetables.', 'Add beef back to the pot with broth and wine.', 'Simmer for 2-3 hours until beef is tender.'],
     tags: ['Beef', 'Soup', 'Dinner'],
@@ -189,7 +189,7 @@ export const recipes: Recipe[] = [
         { name: 'sprigs of rosemary', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
         { name: 'sprigs of thyme', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
         { name: 'cloves garlic', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
-        { name: 'olive oil', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
+        { name: 'olive oil', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
         { name: 'Salt and pepper', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['Preheat oven to [temp:200:400].', 'Pat the chicken dry.', 'Stuff the cavity with lemon, herbs, and garlic.', 'Rub the outside with olive oil, salt, and pepper.', 'Roast for 1 hour 20 minutes or until juices run clear.'],
@@ -209,15 +209,15 @@ export const recipes: Recipe[] = [
     servings: '4',
     calories: 'Approx. 380 kcal',
     ingredients: [
-        { name: 'all-purpose flour', metric: { quantity: 180, unit: 'g' }, us: { quantity: '1 1/2', unit: 'cups' } },
-        { name: 'sugar', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
-        { name: 'baking powder', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
-        { name: 'salt', metric: { quantity: 2.5, unit: 'ml' }, us: { quantity: '1/2', unit: 'tsp' } },
-        { name: 'milk', metric: { quantity: 300, unit: 'ml' }, us: { quantity: '1 1/4', unit: 'cups' } },
+        { name: 'all-purpose flour', metric: { quantity: '1 1/2', unit: 'cups' }, us: { quantity: '1 1/2', unit: 'cups' } },
+        { name: 'sugar', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
+        { name: 'baking powder', metric: { quantity: 1, unit: 'tbsp' }, us: { quantity: 1, unit: 'tbsp' } },
+        { name: 'salt', metric: { quantity: '1/2', unit: 'tsp' }, us: { quantity: '1/2', unit: 'tsp' } },
+        { name: 'milk', metric: { quantity: '1 1/4', unit: 'cups' }, us: { quantity: '1 1/4', unit: 'cups' } },
         { name: 'egg', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
-        { name: 'melted butter', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } }
+        { name: 'melted butter', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } }
     ],
-    instructions: ['Whisk together dry ingredients.', 'In a separate bowl, whisk wet ingredients.', 'Combine wet and dry ingredients until just mixed.', 'Pour 60ml (1/4 cup) of batter onto a hot, greased griddle.', 'Cook until bubbles form, then flip and cook until golden brown.'],
+    instructions: ['Whisk together dry ingredients.', 'In a separate bowl, whisk wet ingredients.', 'Combine wet and dry ingredients until just mixed.', 'Pour 1/4 cup (60ml) of batter onto a hot, greased griddle.', 'Cook until bubbles form, then flip and cook until golden brown.'],
     tags: ['Breakfast'],
     cuisine: 'American',
   },
@@ -230,13 +230,13 @@ export const recipes: Recipe[] = [
     servings: '4',
     calories: 'Approx. 450 kcal',
     ingredients: [
-        { name: 'olive oil', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
+        { name: 'olive oil', metric: { quantity: 1, unit: 'tbsp' }, us: { quantity: 1, unit: 'tbsp' } },
         { name: 'mushrooms, sliced', metric: { quantity: 250, unit: 'g' }, us: { quantity: 8, unit: 'oz' } },
         { name: 'onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
         { name: 'Arborio rice', metric: { quantity: 300, unit: 'g' }, us: { quantity: '1 1/2', unit: 'cups' } },
-        { name: 'dry white wine', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
+        { name: 'dry white wine', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
         { name: 'hot vegetable broth', metric: { quantity: 1, unit: 'L' }, us: { quantity: 4, unit: 'cups' } },
-        { name: 'grated Parmesan', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } }
+        { name: 'grated Parmesan', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } }
     ],
     instructions: ['Sauté mushrooms until golden.', 'In the same pan, cook onion, then add rice and toast for 1 minute.', 'Add wine and cook until absorbed.', 'Add broth one ladle at a time, stirring constantly, until rice is creamy.', 'Stir in mushrooms and Parmesan.'],
     tags: ['Italian', 'Vegetarian', 'Dinner'],
@@ -258,10 +258,10 @@ export const recipes: Recipe[] = [
         { name: 'cucumber, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
         { name: 'tomatoes, chopped', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
         { name: 'red onion, thinly sliced', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
-        { name: 'Kalamata olives', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
+        { name: 'Kalamata olives', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
         { name: 'feta cheese, cubed', metric: { quantity: 200, unit: 'g' }, us: { quantity: 7, unit: 'oz' } },
-        { name: 'olive oil', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
-        { name: 'red wine vinegar', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } }
+        { name: 'olive oil', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
+        { name: 'red wine vinegar', metric: { quantity: 1, unit: 'tbsp' }, us: { quantity: 1, unit: 'tbsp' } }
     ],
     instructions: ['Combine cucumber, tomatoes, onion, and olives in a bowl.', 'Whisk together olive oil and vinegar for the dressing.', 'Pour dressing over the vegetables and toss gently.', 'Top with feta cheese before serving.'],
     tags: ['Salad', 'Vegetarian', 'Quick'],
@@ -277,10 +277,10 @@ export const recipes: Recipe[] = [
     calories: 'Approx. 400 kcal',
     ingredients: [
         { name: 'large onions, sliced', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
-        { name: 'butter', metric: { quantity: 60, unit: 'ml' }, us: { quantity: 4, unit: 'tbsp' } },
+        { name: 'butter', metric: { quantity: 4, unit: 'tbsp' }, us: { quantity: 4, unit: 'tbsp' } },
         { name: 'cloves garlic', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
         { name: 'beef broth', metric: { quantity: 2, unit: 'L' }, us: { quantity: 8, unit: 'cups' } },
-        { name: 'dry white wine', metric: { quantity: 240, unit: 'ml' }, us: { quantity: 1, unit: 'cup' } },
+        { name: 'dry white wine', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
         { name: 'Baguette slices', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } },
         { name: 'Gruyère cheese', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
@@ -291,7 +291,7 @@ export const recipes: Recipe[] = [
   {
     id: 14,
     title: 'Pad Thai',
-    image: 'https://images.unsplash.com/photo-1563245372-f217240f855e?auto=format&fit=crop&q=80&w=725&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1563245372-f217240f855e?auto=format&fit=crop&q=80&w=725&ixlib-rb-4.0.3',
     description: 'A popular Thai stir-fried noodle dish with a perfect balance of sweet, sour, and savory flavors.',
     cookTime: '30 minutes',
     servings: '2',
@@ -300,8 +300,8 @@ export const recipes: Recipe[] = [
         { name: 'rice noodles', metric: { quantity: 200, unit: 'g' }, us: { quantity: 7, unit: 'oz' } },
         { name: 'shrimp or chicken', metric: { quantity: 200, unit: 'g' }, us: { quantity: 7, unit: 'oz' } },
         { name: 'eggs', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
-        { name: 'bean sprouts', metric: { quantity: 240, unit: 'ml' }, us: { quantity: 1, unit: 'cup' } },
-        { name: 'crushed peanuts', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
+        { name: 'bean sprouts', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
+        { name: 'crushed peanuts', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
         { name: 'Pad Thai sauce (tamarind, fish sauce, sugar)', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Soak rice noodles until soft.', 'Stir-fry shrimp/chicken.', 'Push to one side, scramble eggs on the other.', 'Add noodles and sauce, toss to combine.', 'Stir in bean sprouts and top with peanuts.'],
@@ -311,7 +311,7 @@ export const recipes: Recipe[] = [
   {
     id: 15,
     title: 'Caprese Salad',
-    image: 'https://images.unsplash.com/photo-1579113800032-c38bd7635ba4?auto=format&fit=crop&q=80&w=774&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1579113800032-c38bd7635ba4?auto=format&fit=crop&q=80&w=774&ixlib-rb-4.0.3',
     description: 'A simple yet elegant Italian salad of sliced fresh mozzarella, tomatoes, and sweet basil, drizzled with balsamic glaze.',
     cookTime: '10 minutes',
     servings: '2',
@@ -330,16 +330,16 @@ export const recipes: Recipe[] = [
   {
     id: 16,
     title: 'Fish and Chips',
-    image: 'https://images.unsplash.com/photo-1579207980424-2c25325de85b?auto=format&fit=crop&q=80&w=774&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1579207980424-2c25325de85b?auto=format&fit=crop&q=80&w=774&ixlib-rb-4.0.3',
     description: 'A classic British comfort food featuring crispy beer-battered fish served with golden, fluffy chips.',
     cookTime: '35 minutes',
     servings: '2',
     calories: 'Approx. 950 kcal',
     ingredients: [
         { name: 'white fish fillets (cod, haddock)', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
-        { name: 'all-purpose flour', metric: { quantity: 120, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
-        { name: 'baking powder', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
-        { name: 'beer, cold', metric: { quantity: 240, unit: 'ml' }, us: { quantity: 1, unit: 'cup' } },
+        { name: 'all-purpose flour', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
+        { name: 'baking powder', metric: { quantity: 1, unit: 'tsp' }, us: { quantity: 1, unit: 'tsp' } },
+        { name: 'beer, cold', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
         { name: 'Potatoes for chips', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } },
         { name: 'Oil for frying', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
@@ -359,7 +359,7 @@ export const recipes: Recipe[] = [
         { name: 'ripe avocados', metric: { quantity: 3, unit: '' }, us: { quantity: 3, unit: '' } },
         { name: 'red onion, finely chopped', metric: { quantity: '1/2', unit: '' }, us: { quantity: '1/2', unit: '' } },
         { name: 'jalapeño, minced', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
-        { name: 'cilantro, chopped', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
+        { name: 'cilantro, chopped', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
         { name: 'Juice of 1 lime', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
         { name: 'Salt to taste', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
@@ -381,7 +381,7 @@ export const recipes: Recipe[] = [
         { name: 'celery stalks, chopped', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
         { name: 'potatoes, diced', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
         { name: 'chopped clams, with juice', metric: { quantity: 2, unit: 'cans' }, us: { quantity: 2, unit: 'cans' } },
-        { name: 'half-and-half', metric: { quantity: 480, unit: 'ml' }, us: { quantity: 2, unit: 'cups' } }
+        { name: 'half-and-half', metric: { quantity: 2, unit: 'cups' }, us: { quantity: 2, unit: 'cups' } }
     ],
     instructions: ['Cook bacon until crisp. Sauté onion and celery in bacon fat.', 'Add potatoes and clam juice. Simmer until potatoes are tender.', 'Stir in clams and half-and-half. Heat through but do not boil.', 'Garnish with bacon.'],
     tags: ['Soup', 'Seafood'],
@@ -398,11 +398,11 @@ export const recipes: Recipe[] = [
     ingredients: [
         { name: 'double-crust pie pastry', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
         { name: 'apples, peeled and sliced', metric: { quantity: '6-8', unit: '' }, us: { quantity: '6-8', unit: '' } },
-        { name: 'sugar', metric: { quantity: 150, unit: 'g' }, us: { quantity: '3/4', unit: 'cup' } },
-        { name: 'flour', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
-        { name: 'cinnamon', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
-        { name: 'nutmeg', metric: { quantity: 1.25, unit: 'ml' }, us: { quantity: '1/4', unit: 'tsp' } },
-        { name: 'butter', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } }
+        { name: 'sugar', metric: { quantity: '3/4', unit: 'cup' }, us: { quantity: '3/4', unit: 'cup' } },
+        { name: 'flour', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
+        { name: 'cinnamon', metric: { quantity: 1, unit: 'tsp' }, us: { quantity: 1, unit: 'tsp' } },
+        { name: 'nutmeg', metric: { quantity: '1/4', unit: 'tsp' }, us: { quantity: '1/4', unit: 'tsp' } },
+        { name: 'butter', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } }
     ],
     instructions: ['Preheat oven to [temp:220:425].', 'Line a pie plate with one crust.', 'Mix apples with sugar, flour, and spices. Pour into crust.', 'Dot with butter. Cover with top crust, seal and vent.', 'Bake for 40-50 minutes until crust is golden and filling is bubbly.'],
     tags: ['Dessert', 'Baking'],
@@ -421,7 +421,7 @@ export const recipes: Recipe[] = [
         { name: 'onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
         { name: 'carrots, chopped', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
         { name: 'vegetable broth', metric: { quantity: 1, unit: 'L' }, us: { quantity: 4, unit: 'cups' } },
-        { name: 'nutmeg', metric: { quantity: 2.5, unit: 'ml' }, us: { quantity: '1/2', unit: 'tsp' } },
+        { name: 'nutmeg', metric: { quantity: '1/2', unit: 'tsp' }, us: { quantity: '1/2', unit: 'tsp' } },
         { name: 'Salt and pepper', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['Roast butternut squash until tender.', 'Sauté onion and carrots.', 'Add roasted squash and broth to the pot. Simmer for 15 minutes.', 'Blend until smooth. Season with nutmeg, salt, and pepper.'],
@@ -440,9 +440,9 @@ export const recipes: Recipe[] = [
         { name: 'ground lamb', metric: { quantity: 500, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
         { name: 'onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
         { name: 'carrots, diced', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
-        { name: 'frozen peas', metric: { quantity: 240, unit: 'ml' }, us: { quantity: 1, unit: 'cup' } },
-        { name: 'flour', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
-        { name: 'beef broth', metric: { quantity: 240, unit: 'ml' }, us: { quantity: 1, unit: 'cup' } },
+        { name: 'frozen peas', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
+        { name: 'flour', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
+        { name: 'beef broth', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
         { name: 'large potatoes, for mashing', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } }
     ],
     instructions: ['Cook lamb, onion, and carrots until browned. Stir in flour, then broth. Simmer until thick. Add peas.', 'Boil, peel, and mash potatoes.', 'Spread meat mixture in a baking dish. Top with mashed potatoes.', 'Bake at [temp:200:400] for 20 minutes.'],
@@ -480,12 +480,12 @@ export const recipes: Recipe[] = [
     calories: 'Approx. 200 kcal per slice',
     ingredients: [
         { name: 'ripe bananas, mashed', metric: { quantity: 3, unit: '' }, us: { quantity: 3, unit: '' } },
-        { name: 'melted butter', metric: { quantity: 113, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } },
-        { name: 'baking soda', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
+        { name: 'melted butter', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
+        { name: 'baking soda', metric: { quantity: 1, unit: 'tsp' }, us: { quantity: 1, unit: 'tsp' } },
         { name: 'Pinch of salt', metric: { quantity: 1, unit: 'pinch' }, us: { quantity: 1, unit: 'pinch' } },
-        { name: 'sugar', metric: { quantity: 150, unit: 'g' }, us: { quantity: '3/4', unit: 'cup' } },
+        { name: 'sugar', metric: { quantity: '3/4', unit: 'cup' }, us: { quantity: '3/4', unit: 'cup' } },
         { name: 'large egg, beaten', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
-        { name: 'all-purpose flour', metric: { quantity: 180, unit: 'g' }, us: { quantity: '1 1/2', unit: 'cups' } }
+        { name: 'all-purpose flour', metric: { quantity: '1 1/2', unit: 'cups' }, us: { quantity: '1 1/2', unit: 'cups' } }
     ],
     instructions: ['Preheat oven to [temp:175:350].', 'Mix mashed bananas and melted butter.', 'Stir in sugar, egg, and baking soda.', 'Mix in flour.', 'Pour into a greased loaf pan and bake for 60-65 minutes.'],
     tags: ['Baking', 'Dessert', 'Breakfast'],
@@ -504,8 +504,8 @@ export const recipes: Recipe[] = [
         { name: 'ground beef', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
         { name: 'marinara sauce', metric: { quantity: 1, unit: 'jar' }, us: { quantity: 1, unit: 'jar' } },
         { name: 'ricotta cheese', metric: { quantity: 425, unit: 'g' }, us: { quantity: 15, unit: 'oz' } },
-        { name: 'grated Parmesan', metric: { quantity: 110, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
-        { name: 'shredded mozzarella', metric: { quantity: 225, unit: 'g' }, us: { quantity: 2, unit: 'cups' } }
+        { name: 'grated Parmesan', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
+        { name: 'shredded mozzarella', metric: { quantity: 2, unit: 'cups' }, us: { quantity: 2, unit: 'cups' } }
     ],
     instructions: ['Cook noodles. Brown beef and mix with marinara.', 'In a baking dish, layer sauce, noodles, ricotta, Parmesan, and mozzarella.', 'Repeat layers.', 'Bake at [temp:190:375] for 45 minutes until bubbly.'],
     tags: ['Italian', 'Pasta', 'Dinner', 'Beef'],
@@ -520,7 +520,7 @@ export const recipes: Recipe[] = [
     servings: '2-3',
     calories: 'Approx. 300 kcal per roll',
     ingredients: [
-        { name: 'sushi rice', metric: { quantity: 185, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
+        { name: 'sushi rice', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
         { name: 'sheets of nori', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
         { name: 'Fillings (e.g., cucumber, avocado, crab meat)', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } },
         { name: 'Soy sauce, wasabi, pickled ginger for serving', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
@@ -532,16 +532,16 @@ export const recipes: Recipe[] = [
   {
     id: 26,
     title: 'Chicken Noodle Soup',
-    image: 'https://images.unsplash.com/photo-1626372416458-75c35b5a4a58?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1626372416458-75101a75661b?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
     description: 'The ultimate comfort food. A simple, savory soup with shredded chicken, vegetables, and tender egg noodles.',
     cookTime: '30 minutes',
     servings: '4',
     calories: 'Approx. 200 kcal',
     ingredients: [
         { name: 'cooked chicken breast, shredded', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
-        { name: 'chicken broth', metric: { quantity: 1.4, unit: 'L' }, us: { quantity: 6, unit: 'cups' } },
-        { name: 'egg noodles', metric: { quantity: 85, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
-        { name: 'mixed vegetables (carrots, celery)', metric: { quantity: 150, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
+        { name: 'chicken broth', metric: { quantity: 6, unit: 'cups' }, us: { quantity: 6, unit: 'cups' } },
+        { name: 'egg noodles', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
+        { name: 'mixed vegetables (carrots, celery)', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
         { name: 'Salt and pepper', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['Bring chicken broth to a boil.', 'Add vegetables and noodles, cook until tender.', 'Stir in shredded chicken.', 'Season with salt and pepper.'],
@@ -557,11 +557,11 @@ export const recipes: Recipe[] = [
     servings: '4',
     calories: 'Approx. 600 kcal',
     ingredients: [
-        { name: 'macaroni', metric: { quantity: 225, unit: 'g' }, us: { quantity: 2, unit: 'cups' } },
-        { name: 'butter', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
-        { name: 'flour', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
-        { name: 'milk', metric: { quantity: 480, unit: 'ml' }, us: { quantity: 2, unit: 'cups' } },
-        { name: 'shredded cheddar cheese', metric: { quantity: 225, unit: 'g' }, us: { quantity: 2, unit: 'cups' } },
+        { name: 'macaroni', metric: { quantity: 2, unit: 'cups' }, us: { quantity: 2, unit: 'cups' } },
+        { name: 'butter', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
+        { name: 'flour', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
+        { name: 'milk', metric: { quantity: 2, unit: 'cups' }, us: { quantity: 2, unit: 'cups' } },
+        { name: 'shredded cheddar cheese', metric: { quantity: 2, unit: 'cups' }, us: { quantity: 2, unit: 'cups' } },
         { name: 'Salt and pepper', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['Cook macaroni. Make a roux with butter and flour.', 'Whisk in milk until it thickens.', 'Stir in cheese until melted.', 'Combine sauce with cooked macaroni.'],
@@ -580,8 +580,8 @@ export const recipes: Recipe[] = [
         { name: 'linguine', metric: { quantity: 250, unit: 'g' }, us: { quantity: 8, unit: 'oz' } },
         { name: 'shrimp, peeled', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
         { name: 'garlic, minced', metric: { quantity: 4, unit: 'cloves' }, us: { quantity: 4, unit: 'cloves' } },
-        { name: 'white wine', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
-        { name: 'butter', metric: { quantity: 60, unit: 'ml' }, us: { quantity: '1/4', unit: 'cup' } },
+        { name: 'white wine', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
+        { name: 'butter', metric: { quantity: '1/4', unit: 'cup' }, us: { quantity: '1/4', unit: 'cup' } },
         { name: 'Juice of 1 lemon', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
         { name: 'Fresh parsley, chopped', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
@@ -603,7 +603,7 @@ export const recipes: Recipe[] = [
     calories: 'Approx. 300 kcal',
     ingredients: [
         { name: 'large eggs', metric: { quantity: 3, unit: '' }, us: { quantity: 3, unit: '' } },
-        { name: 'milk', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
+        { name: 'milk', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
         { name: 'Salt and pepper', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } },
         { name: 'Fillings (e.g., cheese, mushrooms, spinach)', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
@@ -620,12 +620,12 @@ export const recipes: Recipe[] = [
     servings: '2',
     calories: 'Approx. 450 kcal',
     ingredients: [
-        { name: 'butter', metric: { quantity: 113, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } },
+        { name: 'butter', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
         { name: 'bittersweet chocolate', metric: { quantity: 120, unit: 'g' }, us: { quantity: 4, unit: 'oz' } },
         { name: 'eggs', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
         { name: 'egg yolks', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
-        { name: 'sugar', metric: { quantity: 50, unit: 'g' }, us: { quantity: '1/4', unit: 'cup' } },
-        { name: 'flour', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } }
+        { name: 'sugar', metric: { quantity: '1/4', unit: 'cup' }, us: { quantity: '1/4', unit: 'cup' } },
+        { name: 'flour', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } }
     ],
     instructions: ['Preheat oven to [temp:220:425]. Grease ramekins.', 'Melt butter and chocolate together.', 'Whisk eggs, yolks, and sugar until pale. Fold in chocolate mixture, then flour.', 'Pour into ramekins and bake for 12-14 minutes until sides are firm and center is soft.'],
     tags: ['Dessert', 'Baking', 'Quick'],
@@ -641,10 +641,10 @@ export const recipes: Recipe[] = [
     calories: 'Approx. 100 kcal per serving',
     ingredients: [
       { name: 'chickpeas, drained', metric: { quantity: 1, unit: 'can (425g)' }, us: { quantity: 1, unit: 'can (15 oz)' } },
-      { name: 'tahini', metric: { quantity: 60, unit: 'ml' }, us: { quantity: '1/4', unit: 'cup' } },
-      { name: 'lemon juice', metric: { quantity: 60, unit: 'ml' }, us: { quantity: '1/4', unit: 'cup' } },
+      { name: 'tahini', metric: { quantity: '1/4', unit: 'cup' }, us: { quantity: '1/4', unit: 'cup' } },
+      { name: 'lemon juice', metric: { quantity: '1/4', unit: 'cup' }, us: { quantity: '1/4', unit: 'cup' } },
       { name: 'garlic', metric: { quantity: 1, unit: 'clove' }, us: { quantity: 1, unit: 'clove' } },
-      { name: 'olive oil', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
+      { name: 'olive oil', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
       { name: 'Salt to taste', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['Combine all ingredients in a food processor.', 'Blend until smooth and creamy, adding a little water if needed.', 'Serve drizzled with more olive oil and pita bread.'],
@@ -684,7 +684,7 @@ export const recipes: Recipe[] = [
     ingredients: [
       { name: 'bell peppers, tops cut off', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
       { name: 'ground beef or turkey', metric: { quantity: 500, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
-      { name: 'cooked rice', metric: { quantity: 185, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
+      { name: 'cooked rice', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
       { name: 'diced tomatoes', metric: { quantity: 1, unit: 'can (425g)' }, us: { quantity: 1, unit: 'can (15 oz)' } },
       { name: 'onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
       { name: 'Shredded cheese', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
@@ -704,9 +704,9 @@ export const recipes: Recipe[] = [
     ingredients: [
       { name: 'slices of thick bread', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
       { name: 'large eggs', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
-      { name: 'milk', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
-      { name: 'cinnamon', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
-      { name: 'vanilla extract', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
+      { name: 'milk', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
+      { name: 'cinnamon', metric: { quantity: 1, unit: 'tsp' }, us: { quantity: 1, unit: 'tsp' } },
+      { name: 'vanilla extract', metric: { quantity: 1, unit: 'tsp' }, us: { quantity: 1, unit: 'tsp' } },
       { name: 'Butter for cooking', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Whisk together eggs, milk, cinnamon, and vanilla.', 'Soak each slice of bread in the egg mixture.', 'Cook on a hot, buttered skillet until golden brown on both sides.', 'Serve with syrup and fruit.'],
@@ -724,9 +724,9 @@ export const recipes: Recipe[] = [
     ingredients: [
       { name: 'flank steak, thinly sliced', metric: { quantity: 500, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
       { name: 'large head of broccoli, cut into florets', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
-      { name: 'soy sauce', metric: { quantity: 45, unit: 'ml' }, us: { quantity: 3, unit: 'tbsp' } },
-      { name: 'cornstarch', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
-      { name: 'ginger, grated', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
+      { name: 'soy sauce', metric: { quantity: 3, unit: 'tbsp' }, us: { quantity: 3, unit: 'tbsp' } },
+      { name: 'cornstarch', metric: { quantity: 1, unit: 'tbsp' }, us: { quantity: 1, unit: 'tbsp' } },
+      { name: 'ginger, grated', metric: { quantity: 1, unit: 'tbsp' }, us: { quantity: 1, unit: 'tbsp' } },
       { name: 'garlic, minced', metric: { quantity: 2, unit: 'cloves' }, us: { quantity: 2, unit: 'cloves' } }
     ],
     instructions: ['Marinate steak in soy sauce, cornstarch, ginger, and garlic.', 'Stir-fry steak until browned. Remove from pan.', 'Stir-fry broccoli until tender-crisp.', 'Return steak to pan and toss to combine.'],
@@ -743,8 +743,8 @@ export const recipes: Recipe[] = [
     calories: 'Approx. 360 kcal',
     ingredients: [
       { name: 'potatoes, boiled and diced', metric: { quantity: 1, unit: 'kg' }, us: { quantity: 2.2, unit: 'lbs' } },
-      { name: 'mayonnaise', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
-      { name: 'mustard', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
+      { name: 'mayonnaise', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
+      { name: 'mustard', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
       { name: 'hard-boiled eggs, chopped', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
       { name: 'red onion, chopped', metric: { quantity: '1/2', unit: '' }, us: { quantity: '1/2', unit: '' } },
       { name: 'celery stalks, chopped', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } }
@@ -767,8 +767,8 @@ export const recipes: Recipe[] = [
       { name: 'green bell pepper, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
       { name: 'red onion, chopped', metric: { quantity: '1/2', unit: '' }, us: { quantity: '1/2', unit: '' } },
       { name: 'garlic', metric: { quantity: 2, unit: 'cloves' }, us: { quantity: 2, unit: 'cloves' } },
-      { name: 'olive oil', metric: { quantity: 60, unit: 'ml' }, us: { quantity: '1/4', unit: 'cup' } },
-      { name: 'sherry vinegar', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } }
+      { name: 'olive oil', metric: { quantity: '1/4', unit: 'cup' }, us: { quantity: '1/4', unit: 'cup' } },
+      { name: 'sherry vinegar', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } }
     ],
     instructions: ['Combine all vegetables in a blender.', 'Blend until smooth.', 'With the blender running, slowly stream in the olive oil.', 'Stir in vinegar, salt, and pepper. Chill thoroughly before serving.'],
     tags: ['Soup', 'Vegetarian', 'Quick', 'Vegan'],
@@ -784,7 +784,7 @@ export const recipes: Recipe[] = [
     calories: 'Approx. 400 kcal',
     ingredients: [
       { name: 'salmon fillets', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
-      { name: 'olive oil', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
+      { name: 'olive oil', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
       { name: 'garlic, minced', metric: { quantity: 2, unit: 'cloves' }, us: { quantity: 2, unit: 'cloves' } },
       { name: 'lemon, sliced', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
       { name: 'Fresh dill or parsley', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } },
@@ -808,11 +808,11 @@ export const recipes: Recipe[] = [
     calories: 'Approx. 250 kcal',
     ingredients: [
       { name: 'crabmeat, picked over', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
-      { name: 'breadcrumbs', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
-      { name: 'mayonnaise', metric: { quantity: 60, unit: 'ml' }, us: { quantity: '1/4', unit: 'cup' } },
+      { name: 'breadcrumbs', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
+      { name: 'mayonnaise', metric: { quantity: '1/4', unit: 'cup' }, us: { quantity: '1/4', unit: 'cup' } },
       { name: 'egg, beaten', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
-      { name: 'Dijon mustard', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
-      { name: 'lemon juice', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
+      { name: 'Dijon mustard', metric: { quantity: 1, unit: 'tbsp' }, us: { quantity: 1, unit: 'tbsp' } },
+      { name: 'lemon juice', metric: { quantity: 1, unit: 'tbsp' }, us: { quantity: 1, unit: 'tbsp' } },
       { name: 'Oil for frying', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Gently mix all ingredients except oil.', 'Shape into patties.', 'Pan-fry in oil for 3-5 minutes per side until golden brown.', 'Serve with a lemon wedge.'],
@@ -828,13 +828,13 @@ export const recipes: Recipe[] = [
     servings: '6',
     calories: 'Approx. 200 kcal',
     ingredients: [
-      { name: 'olive oil', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
+      { name: 'olive oil', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
       { name: 'onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
       { name: 'carrots, chopped', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
       { name: 'celery stalks, chopped', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
       { name: 'diced tomatoes', metric: { quantity: 1, unit: 'can (425g)' }, us: { quantity: 1, unit: 'can (15 oz)' } },
-      { name: 'vegetable broth', metric: { quantity: 1.4, unit: 'L' }, us: { quantity: 6, unit: 'cups' } },
-      { name: 'small pasta', metric: { quantity: 100, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
+      { name: 'vegetable broth', metric: { quantity: 6, unit: 'cups' }, us: { quantity: 6, unit: 'cups' } },
+      { name: 'small pasta', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
       { name: 'kidney beans, rinsed', metric: { quantity: 1, unit: 'can (425g)' }, us: { quantity: 1, unit: 'can (15 oz)' } }
     ],
     instructions: ['Sauté onion, carrots, and celery in olive oil.', 'Add tomatoes and broth. Bring to a simmer.', 'Stir in pasta and cook until al dente.', 'Add beans and heat through. Season to taste.'],
@@ -844,7 +844,7 @@ export const recipes: Recipe[] = [
   {
     id: 41,
     title: 'Quiche Lorraine',
-    image: 'https://images.unsplash.com/photo-1627883149594-6725a3b7da75?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1627883149594-6725a3b7da75?auto=format&fit=crop&q=80&w=870',
     description: 'A classic French tart with a rich egg and cream custard, filled with bacon and Gruyère cheese in a flaky pastry crust.',
     cookTime: '50 minutes',
     servings: '6-8',
@@ -852,9 +852,9 @@ export const recipes: Recipe[] = [
     ingredients: [
       { name: 'unbaked 9-inch pie crust', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
       { name: 'bacon, cooked and crumbled', metric: { quantity: 150, unit: 'g' }, us: { quantity: 5, unit: 'oz' } },
-      { name: 'shredded Gruyère cheese', metric: { quantity: 110, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
+      { name: 'shredded Gruyère cheese', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
       { name: 'large eggs', metric: { quantity: 3, unit: '' }, us: { quantity: 3, unit: '' } },
-      { name: 'heavy cream', metric: { quantity: 360, unit: 'ml' }, us: { quantity: '1 1/2', unit: 'cups' } },
+      { name: 'heavy cream', metric: { quantity: '1 1/2', unit: 'cups' }, us: { quantity: '1 1/2', unit: 'cups' } },
       { name: 'Pinch of nutmeg', metric: { quantity: 1, unit: 'pinch' }, us: { quantity: 1, unit: 'pinch' } }
     ],
     instructions: ['Preheat oven to [temp:190:375]. Prick pie crust and bake for 10 minutes.', 'Sprinkle bacon and cheese into the crust.', 'Whisk eggs, cream, salt, pepper, and nutmeg. Pour over fillings.', 'Bake for 30-35 minutes until the center is set.'],
@@ -864,15 +864,15 @@ export const recipes: Recipe[] = [
   {
     id: 42,
     title: 'Chicken Parmesan',
-    image: 'https://images.unsplash.com/photo-1632778149955-e83f0ce722e1?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1632778149955-e83f0ce722e1?auto=format&fit=crop&q=80&w=870',
     description: 'A beloved Italian-American comfort food featuring breaded chicken cutlets topped with marinara sauce and melted mozzarella.',
     cookTime: '40 minutes',
     servings: '4',
     calories: 'Approx. 650 kcal',
     ingredients: [
       { name: 'chicken cutlets, pounded thin', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
-      { name: 'breadcrumbs', metric: { quantity: 120, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
-      { name: 'Parmesan cheese', metric: { quantity: 50, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } },
+      { name: 'breadcrumbs', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
+      { name: 'Parmesan cheese', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
       { name: 'eggs, beaten', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
       { name: 'Marinara sauce', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } },
       { name: 'mozzarella, sliced', metric: { quantity: 200, unit: 'g' }, us: { quantity: 7, unit: 'oz' } }
@@ -890,11 +890,11 @@ export const recipes: Recipe[] = [
     servings: '4',
     calories: 'Approx. 250 kcal',
     ingredients: [
-      { name: 'butter', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
+      { name: 'butter', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
       { name: 'onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
       { name: 'crushed tomatoes', metric: { quantity: 1, unit: 'can (794g)' }, us: { quantity: 1, unit: 'can (28 oz)' } },
-      { name: 'vegetable broth', metric: { quantity: 480, unit: 'ml' }, us: { quantity: 2, unit: 'cups' } },
-      { name: 'heavy cream', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
+      { name: 'vegetable broth', metric: { quantity: 2, unit: 'cups' }, us: { quantity: 2, unit: 'cups' } },
+      { name: 'heavy cream', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
       { name: 'Fresh basil', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
     instructions: ['Melt butter and sauté onion.', 'Add tomatoes and broth. Simmer for 20 minutes.', 'Blend until smooth.', 'Stir in cream and heat through. Garnish with basil.'],
@@ -911,9 +911,9 @@ export const recipes: Recipe[] = [
     calories: 'Approx. 500 kcal',
     ingredients: [
       { name: 'egg yolks', metric: { quantity: 6, unit: '' }, us: { quantity: 6, unit: '' } },
-      { name: 'sugar', metric: { quantity: 150, unit: 'g' }, us: { quantity: '3/4', unit: 'cup' } },
-      { name: 'mascarpone cheese', metric: { quantity: 227, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
-      { name: 'strong brewed coffee, cooled', metric: { quantity: 360, unit: 'ml' }, us: { quantity: '1 1/2', unit: 'cups' } },
+      { name: 'sugar', metric: { quantity: '3/4', unit: 'cup' }, us: { quantity: '3/4', unit: 'cup' } },
+      { name: 'mascarpone cheese', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
+      { name: 'strong brewed coffee, cooled', metric: { quantity: '1 1/2', unit: 'cups' }, us: { quantity: '1 1/2', unit: 'cups' } },
       { name: 'ladyfinger biscuits', metric: { quantity: 24, unit: '' }, us: { quantity: 24, unit: '' } },
       { name: 'Cocoa powder for dusting', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
@@ -931,11 +931,11 @@ export const recipes: Recipe[] = [
     calories: 'Approx. 450 kcal',
     ingredients: [
       { name: 'medium eggplants, sliced', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
-      { name: 'breadcrumbs', metric: { quantity: 120, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
+      { name: 'breadcrumbs', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
       { name: 'eggs, beaten', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
       { name: 'Marinara sauce', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } },
       { name: 'mozzarella, sliced', metric: { quantity: 200, unit: 'g' }, us: { quantity: 7, unit: 'oz' } },
-      { name: 'Parmesan cheese', metric: { quantity: 50, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } }
+      { name: 'Parmesan cheese', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } }
     ],
     instructions: ['Dredge eggplant slices in egg, then breadcrumbs. Pan-fry until golden.', 'In a baking dish, layer marinara, eggplant, mozzarella, and Parmesan.', 'Repeat layers.', 'Bake at [temp:190:375] for 20-25 minutes.'],
     tags: ['Italian', 'Vegetarian', 'Dinner'],
@@ -951,7 +951,7 @@ export const recipes: Recipe[] = [
     calories: 'Approx. 350 kcal',
     ingredients: [
       { name: 'strawberries, sliced', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
-      { name: 'sugar', metric: { quantity: 50, unit: 'g' }, us: { quantity: '1/4', unit: 'cup' } },
+      { name: 'sugar', metric: { quantity: '1/4', unit: 'cup' }, us: { quantity: '1/4', unit: 'cup' } },
       { name: 'Shortcake biscuits', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } },
       { name: 'Whipped cream', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
     ],
@@ -969,7 +969,7 @@ export const recipes: Recipe[] = [
     calories: 'Approx. 600 kcal',
     ingredients: [
       { name: 'pork shoulder', metric: { quantity: 1.5, unit: 'kg' }, us: { quantity: 3.3, unit: 'lbs' } },
-      { name: 'BBQ sauce', metric: { quantity: 240, unit: 'ml' }, us: { quantity: 1, unit: 'cup' } },
+      { name: 'BBQ sauce', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
       { name: 'onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
       { name: 'Hamburger buns', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } },
       { name: 'Coleslaw for serving', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
@@ -1007,12 +1007,12 @@ export const recipes: Recipe[] = [
     servings: '12',
     calories: 'Approx. 400 kcal per slice',
     ingredients: [
-      { name: 'graham cracker crumbs', metric: { quantity: 150, unit: 'g' }, us: { quantity: '1 1/2', unit: 'cups' } },
-      { name: 'melted butter', metric: { quantity: 113, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } },
+      { name: 'graham cracker crumbs', metric: { quantity: '1 1/2', unit: 'cups' }, us: { quantity: '1 1/2', unit: 'cups' } },
+      { name: 'melted butter', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
       { name: 'packages cream cheese, softened', metric: { quantity: 4, unit: '(225g each)' }, us: { quantity: 4, unit: '(8 oz each)' } },
-      { name: 'sugar', metric: { quantity: 200, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
+      { name: 'sugar', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
       { name: 'large eggs', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
-      { name: 'vanilla extract', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } }
+      { name: 'vanilla extract', metric: { quantity: 1, unit: 'tsp' }, us: { quantity: 1, unit: 'tsp' } }
     ],
     instructions: ['Preheat oven to [temp:160:325]. Mix crumbs and butter; press into a springform pan.', 'Beat cream cheese and sugar until smooth. Beat in eggs one at a time, then vanilla.', 'Pour over crust. Bake for 55 minutes.', 'Let cool, then chill for at least 4 hours.'],
     tags: ['Dessert', 'Baking'],
@@ -1029,9 +1029,9 @@ export const recipes: Recipe[] = [
     ingredients: [
       { name: 'chicken breasts', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } },
       { name: 'frozen spinach, thawed and squeezed dry', metric: { quantity: 280, unit: 'g' }, us: { quantity: '10', unit: 'oz' } },
-      { name: 'feta cheese, crumbled', metric: { quantity: 110, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } },
+      { name: 'feta cheese, crumbled', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
       { name: 'garlic, minced', metric: { quantity: 2, unit: 'cloves' }, us: { quantity: 2, unit: 'cloves' } },
-      { name: 'olive oil', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
+      { name: 'olive oil', metric: { quantity: 1, unit: 'tbsp' }, us: { quantity: 1, unit: 'tbsp' } },
       { name: 'Salt and pepper', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['Preheat oven to [temp:200:400].', 'Cut a pocket into the side of each chicken breast.', 'Mix spinach, feta, and garlic. Stuff into the chicken pockets.', 'Season outside of chicken. Sear in an oiled skillet, then bake for 15-20 minutes.'],
@@ -1047,15 +1047,15 @@ export const recipes: Recipe[] = [
     servings: '6',
     calories: 'Approx. 250 kcal',
     ingredients: [
-      { name: 'olive oil', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
+      { name: 'olive oil', metric: { quantity: 1, unit: 'tbsp' }, us: { quantity: 1, unit: 'tbsp' } },
       { name: 'large onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
       { name: 'carrots, diced', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
       { name: 'celery stalks, diced', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
       { name: 'garlic, minced', metric: { quantity: 2, unit: 'cloves' }, us: { quantity: 2, unit: 'cloves' } },
-      { name: 'brown or green lentils, rinsed', metric: { quantity: 200, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
+      { name: 'brown or green lentils, rinsed', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
       { name: 'vegetable broth', metric: { quantity: 2, unit: 'L' }, us: { quantity: 8, unit: 'cups' } },
       { name: 'diced tomatoes', metric: { quantity: 1, unit: 'can (400g)' }, us: { quantity: 1, unit: 'can (14.5 oz)' } },
-      { name: 'dried thyme', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
+      { name: 'dried thyme', metric: { quantity: 1, unit: 'tsp' }, us: { quantity: 1, unit: 'tsp' } },
       { name: 'Salt and pepper to taste', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],
     instructions: ['In a large pot, heat olive oil. Sauté onion, carrots, and celery until softened.', 'Add garlic and cook for another minute.', 'Stir in lentils, vegetable broth, diced tomatoes, and thyme.', 'Bring to a boil, then reduce heat and simmer for 30-40 minutes, until lentils are tender.', 'Season with salt and pepper before serving.'],
@@ -1092,14 +1092,14 @@ export const recipes: Recipe[] = [
     servings: '4',
     calories: 'Approx. 400 kcal',
     ingredients: [
-      { name: 'quinoa, rinsed', metric: { quantity: 185, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
-      { name: 'water or vegetable broth', metric: { quantity: 480, unit: 'ml' }, us: { quantity: 2, unit: 'cups' } },
+      { name: 'quinoa, rinsed', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
+      { name: 'water or vegetable broth', metric: { quantity: 2, unit: 'cups' }, us: { quantity: 2, unit: 'cups' } },
       { name: 'large sweet potato, cubed', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
       { name: 'head broccoli, cut into florets', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
-      { name: 'olive oil', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
-      { name: 'Dressing: tahini', metric: { quantity: 60, unit: 'ml' }, us: { quantity: '1/4', unit: 'cup' } },
-      { name: 'Dressing: lemon juice', metric: { quantity: 60, unit: 'ml' }, us: { quantity: '1/4', unit: 'cup' } },
-      { name: 'Dressing: water', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
+      { name: 'olive oil', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
+      { name: 'Dressing: tahini', metric: { quantity: '1/4', unit: 'cup' }, us: { quantity: '1/4', unit: 'cup' } },
+      { name: 'Dressing: lemon juice', metric: { quantity: '1/4', unit: 'cup' }, us: { quantity: '1/4', unit: 'cup' } },
+      { name: 'Dressing: water', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
       { name: 'Dressing: garlic', metric: { quantity: 1, unit: 'clove' }, us: { quantity: 1, unit: 'clove' } }
     ],
     instructions: ['Preheat oven to [temp:200:400]. Toss sweet potato and broccoli with olive oil, salt, and pepper. Roast for 20-25 minutes.', 'Cook quinoa with water or broth until liquid is absorbed.', 'Whisk together all dressing ingredients.', 'In a large bowl, combine cooked quinoa, roasted vegetables, and dressing. Toss to combine.'],
@@ -1109,19 +1109,19 @@ export const recipes: Recipe[] = [
   {
     id: 54,
     title: 'Shakshuka',
-    image: 'https://images.unsplash.com/photo-1590412200988-a436970781fa?auto=format&fit=crop&q=80&w=733&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1590412200988-a436970781fa?auto=format&fit=crop&q=80&w=733&ixlib-rb-4.0.3',
     description: 'A delicious Middle Eastern and North African dish of eggs poached in a flavorful tomato and bell pepper sauce.',
     cookTime: '30 minutes',
     servings: '2-3',
     calories: 'Approx. 350 kcal',
     ingredients: [
-      { name: 'olive oil', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
+      { name: 'olive oil', metric: { quantity: 1, unit: 'tbsp' }, us: { quantity: 1, unit: 'tbsp' } },
       { name: 'large onion, chopped', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
       { name: 'red bell pepper, sliced', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
       { name: 'garlic, minced', metric: { quantity: 3, unit: 'cloves' }, us: { quantity: 3, unit: 'cloves' } },
       { name: 'crushed tomatoes', metric: { quantity: 1, unit: 'can (794g)' }, us: { quantity: 1, unit: 'can (28 oz)' } },
-      { name: 'cumin', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
-      { name: 'paprika', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
+      { name: 'cumin', metric: { quantity: 1, unit: 'tsp' }, us: { quantity: 1, unit: 'tsp' } },
+      { name: 'paprika', metric: { quantity: 1, unit: 'tsp' }, us: { quantity: 1, unit: 'tsp' } },
       { name: 'Pinch of cayenne pepper', metric: { quantity: 1, unit: 'pinch' }, us: { quantity: 1, unit: 'pinch' } },
       { name: 'large eggs', metric: { quantity: '4-5', unit: '' }, us: { quantity: '4-5', unit: '' } },
       { name: 'Fresh cilantro or parsley for garnish', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } }
@@ -1140,11 +1140,11 @@ export const recipes: Recipe[] = [
     calories: 'Approx. 500 kcal',
     ingredients: [
       { name: 'cooked lobsters (about 680g each)', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '(about 1.5 lbs each)' } },
-      { name: 'butter', metric: { quantity: 60, unit: 'ml' }, us: { quantity: 4, unit: 'tbsp' } },
-      { name: 'chopped shallots', metric: { quantity: 60, unit: 'ml' }, us: { quantity: '1/4', unit: 'cup' } },
-      { name: 'sherry', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
-      { name: 'fish or vegetable stock', metric: { quantity: 1.4, unit: 'L' }, us: { quantity: 6, unit: 'cups' } },
-      { name: 'heavy cream', metric: { quantity: 240, unit: 'ml' }, us: { quantity: 1, unit: 'cup' } },
+      { name: 'butter', metric: { quantity: 4, unit: 'tbsp' }, us: { quantity: 4, unit: 'tbsp' } },
+      { name: 'chopped shallots', metric: { quantity: '1/4', unit: 'cup' }, us: { quantity: '1/4', unit: 'cup' } },
+      { name: 'sherry', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
+      { name: 'fish or vegetable stock', metric: { quantity: 6, unit: 'cups' }, us: { quantity: 6, unit: 'cups' } },
+      { name: 'heavy cream', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
       { name: 'Pinch of cayenne pepper', metric: { quantity: 1, unit: 'pinch' }, us: { quantity: 1, unit: 'pinch' } }
     ],
     instructions: ['Remove meat from lobster shells, chop the meat, and set aside. Crush the shells.', 'In a large pot, melt butter and sauté shells and shallots for 5 minutes.', 'Add sherry and cook for 1 minute. Add stock and simmer for 30 minutes.', 'Strain the stock, discarding shells. Return stock to pot.', 'Stir in heavy cream and cayenne. Add lobster meat and heat through. Do not boil.'],
@@ -1160,17 +1160,17 @@ export const recipes: Recipe[] = [
     servings: '16',
     calories: 'Approx. 180 kcal per brownie',
     ingredients: [
-      { name: 'gluten-free all-purpose flour', metric: { quantity: 120, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
-      { name: 'unsweetened cocoa powder', metric: { quantity: 60, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } },
-      { name: 'baking powder', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
-      { name: 'salt', metric: { quantity: 2.5, unit: 'ml' }, us: { quantity: '1/2', unit: 'tsp' } },
-      { name: 'granulated sugar', metric: { quantity: 200, unit: 'g' }, us: { quantity: 1, unit: 'cup' } },
-      { name: 'melted coconut oil or butter', metric: { quantity: 120, unit: 'ml' }, us: { quantity: '1/2', unit: 'cup' } },
+      { name: 'gluten-free all-purpose flour', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
+      { name: 'unsweetened cocoa powder', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
+      { name: 'baking powder', metric: { quantity: 1, unit: 'tsp' }, us: { quantity: 1, unit: 'tsp' } },
+      { name: 'salt', metric: { quantity: '1/2', unit: 'tsp' }, us: { quantity: '1/2', unit: 'tsp' } },
+      { name: 'granulated sugar', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } },
+      { name: 'melted coconut oil or butter', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
       { name: 'large eggs', metric: { quantity: 2, unit: '' }, us: { quantity: 2, unit: '' } },
-      { name: 'vanilla extract', metric: { quantity: 5, unit: 'ml' }, us: { quantity: 1, unit: 'tsp' } },
-      { name: 'chocolate chips', metric: { quantity: 170, unit: 'g' }, us: { quantity: 1, unit: 'cup' } }
+      { name: 'vanilla extract', metric: { quantity: 1, unit: 'tsp' }, us: { quantity: 1, unit: 'tsp' } },
+      { name: 'chocolate chips', metric: { quantity: 1, unit: 'cup' }, us: { quantity: 1, unit: 'cup' } }
     ],
-    instructions: ['Preheat oven to [temp:175:350]. Grease an 20x20cm (8x8 inch) pan.', 'In a bowl, whisk together flour, cocoa powder, baking powder, and salt.', 'In another bowl, mix sugar, melted oil, eggs, and vanilla.', 'Combine wet and dry ingredients. Fold in chocolate chips.', 'Pour batter into prepared pan and bake for 25-30 minutes.'],
+    instructions: ['Preheat oven to [temp:175:350]. Grease an 8x8 inch (20x20cm) pan.', 'In a bowl, whisk together flour, cocoa powder, baking powder, and salt.', 'In another bowl, mix sugar, melted oil, eggs, and vanilla.', 'Combine wet and dry ingredients. Fold in chocolate chips.', 'Pour batter into prepared pan and bake for 25-30 minutes.'],
     tags: ['Dessert', 'Baking', 'Gluten-Free'],
     cuisine: 'American',
   },
@@ -1187,9 +1187,9 @@ export const recipes: Recipe[] = [
       { name: 'green bell pepper, chopped', metric: { quantity: '1/2', unit: '' }, us: { quantity: '1/2', unit: '' } },
       { name: 'onion, chopped', metric: { quantity: '1/2', unit: '' }, us: { quantity: '1/2', unit: '' } },
       { name: 'garlic', metric: { quantity: 2, unit: 'cloves' }, us: { quantity: 2, unit: 'cloves' } },
-      { name: 'chili powder', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
-      { name: 'cumin', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
-      { name: 'bread crumbs', metric: { quantity: 60, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } },
+      { name: 'chili powder', metric: { quantity: 1, unit: 'tbsp' }, us: { quantity: 1, unit: 'tbsp' } },
+      { name: 'cumin', metric: { quantity: 1, unit: 'tbsp' }, us: { quantity: 1, unit: 'tbsp' } },
+      { name: 'bread crumbs', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } },
       { name: 'burger buns', metric: { quantity: 4, unit: '' }, us: { quantity: 4, unit: '' } }
     ],
     instructions: ['Preheat oven to [temp:190:375].', 'Mash black beans in a large bowl.', 'Sauté bell pepper, onion, and garlic until soft. Add to black beans.', 'Stir in spices and bread crumbs. Form into 4 patties.', 'Bake for 10 minutes on each side. Serve on buns with your favorite toppings.'],
@@ -1205,10 +1205,10 @@ export const recipes: Recipe[] = [
     servings: '4',
     calories: 'Approx. 350 kcal',
     ingredients: [
-      { name: 'heavy cream', metric: { quantity: 480, unit: 'ml' }, us: { quantity: 2, unit: 'cups' } },
+      { name: 'heavy cream', metric: { quantity: 2, unit: 'cups' }, us: { quantity: 2, unit: 'cups' } },
       { name: 'vanilla bean, split lengthwise', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
       { name: 'large egg yolks', metric: { quantity: 5, unit: '' }, us: { quantity: 5, unit: '' } },
-      { name: 'granulated sugar, plus more for topping', metric: { quantity: 100, unit: 'g' }, us: { quantity: '1/2', unit: 'cup' } }
+      { name: 'granulated sugar, plus more for topping', metric: { quantity: '1/2', unit: 'cup' }, us: { quantity: '1/2', unit: 'cup' } }
     ],
     instructions: ['Preheat oven to [temp:165:325].', 'Heat cream and vanilla bean in a saucepan until just simmering. Remove from heat and let infuse for 15 minutes.', 'Whisk egg yolks and sugar until pale.', 'Slowly pour the warm cream into the egg mixture, whisking constantly. Strain the custard.', 'Pour into four ramekins. Place in a baking dish and add hot water to come halfway up the sides.', 'Bake for 30-35 minutes. Let cool, then refrigerate for at least 4 hours.', 'Sprinkle sugar on top and caramelize with a kitchen torch.'],
     tags: ['Dessert', 'French', 'Baking'],
@@ -1225,7 +1225,7 @@ export const recipes: Recipe[] = [
     ingredients: [
       { name: 'beef bones', metric: { quantity: 1, unit: 'kg' }, us: { quantity: 2, unit: 'lbs' } },
       { name: 'onion, halved', metric: { quantity: 1, unit: '' }, us: { quantity: 1, unit: '' } },
-      { name: 'ginger, halved', metric: { quantity: 10, unit: 'cm piece' }, us: { quantity: '4-inch piece', unit: '' } },
+      { name: 'ginger, halved', metric: { quantity: '10cm piece', unit: '' }, us: { quantity: '4-inch piece', unit: '' } },
       { name: 'Spices: star anise, cloves, cinnamon stick', metric: { quantity: 'as needed', unit: '' }, us: { quantity: 'as needed', unit: '' } },
       { name: 'rice noodles', metric: { quantity: 225, unit: 'g' }, us: { quantity: 8, unit: 'oz' } },
       { name: 'sirloin, thinly sliced', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
@@ -1244,10 +1244,9 @@ export const recipes: Recipe[] = [
     servings: '2',
     calories: 'Approx. 250 kcal',
     ingredients: [
-      // FIX: Added missing 'unit' property to conform to the IngredientUnit interface.
       { name: 'large sea scallops, patted dry', metric: { quantity: 450, unit: 'g' }, us: { quantity: 1, unit: 'lb' } },
-      { name: 'butter', metric: { quantity: 30, unit: 'ml' }, us: { quantity: 2, unit: 'tbsp' } },
-      { name: 'olive oil', metric: { quantity: 15, unit: 'ml' }, us: { quantity: 1, unit: 'tbsp' } },
+      { name: 'butter', metric: { quantity: 2, unit: 'tbsp' }, us: { quantity: 2, unit: 'tbsp' } },
+      { name: 'olive oil', metric: { quantity: 1, unit: 'tbsp' }, us: { quantity: 1, unit: 'tbsp' } },
       { name: 'garlic, minced', metric: { quantity: 2, unit: 'cloves' }, us: { quantity: 2, unit: 'cloves' } },
       { name: 'Salt and pepper', metric: { quantity: 'to taste', unit: '' }, us: { quantity: 'to taste', unit: '' } }
     ],

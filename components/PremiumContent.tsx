@@ -6,7 +6,6 @@ import SparklesIcon from './icons/SparklesIcon';
 interface PremiumContentProps {
   isPremium: boolean;
   onUpgradeClick: () => void;
-  // FIX: Make the 'children' prop optional to support cases where this component is used solely as a paywall display.
   children?: React.ReactNode;
   featureTitle?: string;
   featureDescription?: string;

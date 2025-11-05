@@ -1,15 +1,12 @@
 import { AboutUsContent } from '../types';
-// FIX: saveDatabase removed, use granular async savers.
-import { getDatabase, saveAboutUsContent as saveAboutUsContentToCloud } from './cloudService';
+import { getDatabase, updateDatabase } from './database';
 
-// FIX: make async
-export const getAboutUsContent = async (): Promise<AboutUsContent> => {
-    // FIX: await promise
-    const db = await getDatabase();
-    return db.aboutUs;
+export const getAboutUsContent = (): AboutUsContent => {
+    return getDatabase().aboutUs;
 };
 
-// FIX: make async and use specific saver from cloudService
-export const saveAboutUsContent = async (content: AboutUsContent): Promise<void> => {
-    await saveAboutUsContentToCloud(content);
+export const saveAboutUsContent = (content: AboutUsContent): void => {
+    updateDatabase(db => {
+        db.aboutUs = content;
+    });
 };

@@ -1,7 +1,5 @@
 import React from 'react';
 
-// FIX: The PencilIcon component was missing from this file, causing an import error.
-// This component provides the pencil SVG icon used for renaming shopping lists.
 const PencilIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"

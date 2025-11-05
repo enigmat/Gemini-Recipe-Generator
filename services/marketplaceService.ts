@@ -1,46 +1,44 @@
 import { Product } from '../types';
 import * as imageStore from './imageStore';
-// FIX: saveDatabase removed, use granular async savers.
-import { getDatabase, saveProducts as saveProductsToCloud } from './cloudService';
+import { getDatabase, updateDatabase } from './database';
 
-// FIX: make async
-export const getProducts = async (): Promise<Product[]> => {
-    // FIX: await promise
-    const db = await getDatabase();
-    return db.products;
+export const getProducts = (): Product[] => {
+    return getDatabase().products;
 };
 
-// FIX: make async and use specific saver from cloudService
-export const saveProducts = async (products: Product[]): Promise<void> => {
-    await saveProductsToCloud(products);
+export const saveProducts = (products: Product[]): void => {
+    updateDatabase(db => {
+        db.products = products;
+    });
 };
 
-// FIX: make async
-export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product> => {
-    const products = await getProducts();
+export const addProduct = (product: Omit<Product, 'id'>): Product => {
     const newProduct: Product = { ...product, id: `prod${Date.now()}` };
-    await saveProducts([newProduct, ...products]);
+    updateDatabase(db => {
+        db.products.unshift(newProduct);
+    });
     return newProduct;
 };
 
-// FIX: make async
-export const updateProduct = async (updatedProduct: Product): Promise<Product> => {
-    const products = await getProducts();
-    const updatedProducts = products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
-    await saveProducts(updatedProducts);
+export const updateProduct = (updatedProduct: Product): Product => {
+    updateDatabase(db => {
+        const index = db.products.findIndex(p => p.id === updatedProduct.id);
+        if (index > -1) {
+            db.products[index] = updatedProduct;
+        }
+    });
     return updatedProduct;
 };
 
-// FIX: make async
-export const deleteProduct = async (productId: string): Promise<Product[]> => {
-    const products = await getProducts();
-    const productToDelete = products.find(p => p.id === productId);
-    const updatedProducts = products.filter(p => p.id !== productId);
-    await saveProducts(updatedProducts);
-
-    // Also delete the image from IndexedDB if it's stored there
-    if (productToDelete && productToDelete.imageUrl.startsWith('indexeddb:')) {
-        await imageStore.deleteImage(productId);
-    }
+export const deleteProduct = (productId: string): Product[] => {
+    let updatedProducts: Product[] = [];
+    updateDatabase(db => {
+        const productToDelete = db.products.find(p => p.id === productId);
+        if (productToDelete && productToDelete.imageUrl.startsWith('indexeddb:')) {
+            imageStore.deleteImage(productId);
+        }
+        db.products = db.products.filter(p => p.id !== productId);
+        updatedProducts = db.products;
+    });
     return updatedProducts;
 };

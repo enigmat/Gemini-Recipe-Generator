@@ -10,7 +10,6 @@ import AdminCookingClasses from './AdminCookingClasses';
 import AdminVideoManagement from './AdminVideoManagement';
 import AdminMarketplace from './AdminMarketplace';
 import EditUserModal from './EditUserModal';
-import AdminApiKeyManagement from './AdminApiKeyManagement';
 import AdminNewRecipeManagement from './AdminNewRecipeManagement';
 import Spinner from './Spinner';
 import CheckIcon from './icons/CheckIcon';
@@ -66,7 +65,7 @@ const PlaceholderPanel: React.FC<{ title: string }> = ({ title }) => (
 const menuStructure = [
     {
         title: 'User Management',
-        items: ['User Management', 'API Key Management']
+        items: ['User Management']
     },
     {
         title: 'Marketing',
@@ -111,19 +110,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-    const handleCustomDomain = async () => {
-        if ((window as any).aistudio && typeof (window as any).aistudio.openCustomDomain === 'function') {
-            try {
-                await (window as any).aistudio.openCustomDomain();
-            } catch (error) {
-                console.error("Error opening custom domain dialog:", error);
-                alert("Could not open the custom domain dialog.");
-            }
-        } else {
-            alert('Custom domain management is not available in this environment.');
-        }
-    };
 
     const handleBulkImport = async (htmlContent: string) => {
         setIsImporting(true);
@@ -172,8 +158,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
         switch (activePanel) {
             case 'User Management':
                 return <AdminUserManagement users={props.users} onDeleteUser={props.onDeleteUser} onEditUser={setEditingUser} />;
-            case 'API Key Management':
-                return <AdminApiKeyManagement />;
             case 'Leads':
                 return <AdminLeadsManagement leads={props.collectedLeads} />;
             case 'Recipe Management':
@@ -228,13 +212,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
             <header className="container mx-auto flex items-center justify-between mb-8">
                 <h1 className="text-4xl font-bold text-slate-800">Admin Dashboard</h1>
                  <div className="flex items-center gap-4">
-                    <button 
-                        onClick={handleCustomDomain}
-                        className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white font-semibold rounded-lg shadow-md hover:bg-purple-600 transition-colors"
-                    >
-                        <GlobeAltIcon className="w-5 h-5" />
-                        <span>Custom Domain</span>
-                    </button>
                     <button 
                         onClick={props.onExit}
                         className="flex items-center gap-1 px-4 py-2 bg-teal-500 text-white font-semibold rounded-lg shadow-md hover:bg-teal-600 transition-colors"

@@ -4,14 +4,11 @@ import CheckCircleIcon from './icons/CheckCircleIcon';
 import XCircleIcon from './icons/XCircleIcon';
 import Spinner from './Spinner';
 
-// The TypeScript error indicates this is declared elsewhere, so this redeclaration was causing a conflict.
-
 const AdminApiKeyManagement: React.FC = () => {
     const [isKeySet, setIsKeySet] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
     const checkApiKeyStatus = async () => {
-        // FIX: Add `(window as any)` type casting when accessing the `window.aistudio` object.
         if ((window as any).aistudio && typeof (window as any).aistudio.hasSelectedApiKey === 'function') {
             try {
                 const hasKey = await (window as any).aistudio.hasSelectedApiKey();
@@ -33,7 +30,6 @@ const AdminApiKeyManagement: React.FC = () => {
     }, []);
 
     const handleSetKey = async () => {
-        // FIX: Add `(window as any)` type casting when accessing the `window.aistudio` object.
         if ((window as any).aistudio && typeof (window as any).aistudio.openSelectKey === 'function') {
             try {
                 await (window as any).aistudio.openSelectKey();

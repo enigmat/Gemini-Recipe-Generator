@@ -49,7 +49,6 @@ const AdminCookingClasses: React.FC = () => {
             description: 'A brief description of the new class.',
             thumbnailUrl: 'https://via.placeholder.com/400x200.png?text=Class+Image',
             steps: [],
-            // FIX: Added missing properties to conform to the CookingClass type.
             whatYouWillLearn: [],
             techniquesCovered: [],
             proTips: [],

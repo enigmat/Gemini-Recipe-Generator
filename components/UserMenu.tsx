@@ -46,7 +46,6 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout, onShowFavorites, on
         </div>
         <span className="flex items-center gap-1.5">
           <span>Hello, {user.name}</span>
-          {/* FIX: The 'title' attribute is not a standard prop on SVG components in some strict TS setups. Wrapping with a span and using its title attribute is a more robust solution for tooltips. */}
           {user.isPremium && <span title="Premium Member"><CrownIcon className="w-4 h-4 text-amber-500" /></span>}
         </span>
         <ChevronDownIcon className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />

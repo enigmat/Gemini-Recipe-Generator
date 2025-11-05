@@ -1,44 +1,60 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Recipe, AggregatedIngredient, ShoppingList } from '../types';
 import * as shoppingListService from '../services/shoppingListService';
+import * as recipeService from '../services/recipeService';
 import PrintIcon from './icons/PrintIcon';
 import ShareIcon from './icons/ShareIcon';
 import TrashIcon from './icons/TrashIcon';
 import InstacartIcon from './icons/InstacartIcon';
 import XIcon from './icons/XIcon';
+import Spinner from './Spinner';
 
 interface ShoppingListModalProps {
   list: ShoppingList | null;
   onClose: () => void;
-  allRecipes: Recipe[];
   measurementSystem: 'metric' | 'us';
 }
 
-const ShoppingListModal: React.FC<ShoppingListModalProps> = ({ list, onClose, allRecipes, measurementSystem }) => {
+const ShoppingListModal: React.FC<ShoppingListModalProps> = ({ list, onClose, measurementSystem }) => {
   const [shareText, setShareText] = useState('Share');
   const [checkedItems, setCheckedItems] = useState<string[]>([]);
+  const [selectedRecipes, setSelectedRecipes] = useState<Recipe[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const selectedRecipes = useMemo(() => {
-    if (!list) return [];
-    return allRecipes.filter(r => list.recipeIds.includes(r.id));
-  }, [list, allRecipes]);
+  useEffect(() => {
+    // FIX: The `getRecipesByIds` function is synchronous and does not return a promise.
+    // Removed the `.then()` chain and replaced with a direct call inside a try/catch.
+    if (list && list.recipeIds.length > 0) {
+        setIsLoading(true);
+        try {
+            const recipes = recipeService.getRecipesByIds(list.recipeIds);
+            setSelectedRecipes(recipes);
+        } catch (err) {
+            console.error("Failed to fetch shopping list recipes", err);
+        } finally {
+            setIsLoading(false);
+        }
+    } else {
+        setSelectedRecipes([]);
+        setIsLoading(false);
+    }
+  }, [list]);
 
   const aggregatedIngredients = useMemo(() => {
     return shoppingListService.generateShoppingList(selectedRecipes, measurementSystem);
   }, [selectedRecipes, measurementSystem]);
 
   useEffect(() => {
-    // Load checked items specific to this list
     if (list) {
       const savedCheckedItems = localStorage.getItem(`shoppingListChecked_${list.id}`);
       if (savedCheckedItems) {
         setCheckedItems(JSON.parse(savedCheckedItems));
       }
     }
+    return () => setCheckedItems([]);
   }, [list]);
 
   useEffect(() => {
-    // Save checked items specific to this list
     if (list) {
       localStorage.setItem(`shoppingListChecked_${list.id}`, JSON.stringify(checkedItems));
     }
@@ -122,28 +138,36 @@ const ShoppingListModal: React.FC<ShoppingListModalProps> = ({ list, onClose, al
         </button>
         <h2 className="text-2xl font-bold text-slate-800 mb-4">{list.name}</h2>
         <div className="flex-grow overflow-y-auto pr-2">
-          <p className="text-sm text-slate-500 mb-4">
-            Generated from {selectedRecipes.length} recipe{selectedRecipes.length > 1 && 's'}.
-          </p>
-          <ul className="space-y-3">
-            {aggregatedIngredients.map((ing, i) => (
-              <li key={`${ing.name}-${i}`} className="flex items-center">
-                <input
-                  type="checkbox"
-                  id={`ing-${i}`}
-                  checked={checkedItems.includes(ing.name)}
-                  onChange={() => handleToggleCheck(ing.name)}
-                  className="h-5 w-5 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                />
-                <label
-                  htmlFor={`ing-${i}`}
-                  className={`ml-3 text-slate-700 cursor-pointer ${checkedItems.includes(ing.name) ? 'line-through text-slate-400' : ''}`}
-                >
-                  {formatIngredient(ing)}
-                </label>
-              </li>
-            ))}
-          </ul>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-48">
+              <Spinner />
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-slate-500 mb-4">
+                Generated from {selectedRecipes.length} recipe{selectedRecipes.length > 1 && 's'}.
+              </p>
+              <ul className="space-y-3">
+                {aggregatedIngredients.map((ing, i) => (
+                  <li key={`${ing.name}-${i}`} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`ing-${i}`}
+                      checked={checkedItems.includes(ing.name)}
+                      onChange={() => handleToggleCheck(ing.name)}
+                      className="h-5 w-5 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                    />
+                    <label
+                      htmlFor={`ing-${i}`}
+                      className={`ml-3 text-slate-700 cursor-pointer ${checkedItems.includes(ing.name) ? 'line-through text-slate-400' : ''}`}
+                    >
+                      {formatIngredient(ing)}
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
         <div className="mt-6 pt-4 border-t flex flex-wrap gap-2">
            <button 

@@ -1,7 +1,5 @@
 import React from 'react';
 
-// FIX: The CameraIcon component was missing from this file, causing an import error.
-// This component provides the camera SVG icon used in the ProfileModal.
 const CameraIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
