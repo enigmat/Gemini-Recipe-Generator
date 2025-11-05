@@ -19,6 +19,7 @@ import ChatBubbleIcon from './icons/ChatBubbleIcon';
 import GlobeAltIcon from './icons/GlobeAltIcon';
 import LayoutDashboardIcon from './icons/LayoutDashboardIcon';
 import ArrowPathIcon from './icons/ArrowPathIcon';
+import UsersIcon from './icons/UsersIcon';
 
 interface MainTabsProps {
   activeTab: string;
@@ -29,6 +30,7 @@ interface MainTabsProps {
 const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser }) => {
   const allTabs: any[] = [
     { id: 'All Recipes', name: 'Home', icon: <HomeIcon className="w-5 h-5" /> },
+    { id: 'Featured Chefs', name: 'Featured Chefs', icon: <UsersIcon className="w-5 h-5" /> },
     { id: "Where's This From?", name: "Where's This From?", icon: <GlobeAltIcon className="w-5 h-5" /> },
     { id: 'Community Chat', name: 'Community Chat', icon: <ChatBubbleIcon className="w-5 h-5" /> },
     { id: 'Pantry Chef', name: 'Pantry Chef', icon: <RefrigeratorIcon className="w-5 h-5" /> },

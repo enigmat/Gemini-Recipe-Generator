@@ -59,7 +59,7 @@ import PantryChef from './components/PantryChef';
 import AboutUsPage from './components/AboutUsPage';
 import * as imageStore from './services/imageStore';
 import MealPlanGenerator from './components/MealPlanGenerator';
-import FeaturedChefRecipe from './components/RecipeOfTheDay';
+import FeaturedChef from './components/RecipeOfTheDay';
 import * as recipeOfTheDayService from './services/recipeOfTheDayService';
 import UnitToggleButton from './components/UnitToggleButton';
 import CocktailBook from './components/CocktailBook';
@@ -73,6 +73,7 @@ import DishIdentifier from './components/DishIdentifier';
 import AdminDashboard from './components/AdminDashboard';
 import AdminDataSync from './components/AdminDataSync';
 import * as shoppingListManager from './services/shoppingListManager';
+import FeaturedChefs from './components/FeaturedChefs';
 
 
 const RECIPES_PER_PAGE = 12;
@@ -113,8 +114,7 @@ const App: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [standardCocktails, setStandardCocktails] = useState<SavedCocktail[]>([]);
     const [featuredChefRecipe, setFeaturedChefRecipe] = useState<Recipe | null>(null);
-    const [isFeaturedRecipeArchived, setIsFeaturedRecipeArchived] = useState(false);
-
+    
     // --- Authenticated Data ---
     const [expertQuestions, setExpertQuestions] = useState<ExpertQuestion[]>([]);
     const [communityChat, setCommunityChat] = useState<ChatMessage[]>([]);
@@ -203,10 +203,6 @@ const App: React.FC = () => {
             
             const rotd = recipeOfTheDayService.getTodaysRecipe(db.recipes?.scheduled || []);
             setFeaturedChefRecipe(rotd);
-            if(rotd) {
-                const existing = recipeService.getRecipesByIds([rotd.id]);
-                setIsFeaturedRecipeArchived(existing.length > 0);
-            }
 
             const tags = recipeService.getDistinctRecipeTags();
             setAllTags(tags);
@@ -472,6 +468,7 @@ const App: React.FC = () => {
         switch(activeTab) {
             case 'Pantry Chef': return <PantryChef onRecipeGenerated={handleRecipeGenerated} />;
             case "Where's This From?": return <DishIdentifier onSearchForDish={handleSearchForDish} />;
+            case 'Featured Chefs': return <FeaturedChefs />;
             case 'AI Meal Planner': return currentUser?.isPremium || currentUser?.isAdmin ? <MealPlanGenerator allRecipes={allRecipes} allRecipeTitles={allRecipeTitles} onRecipeClick={handleCardClick} /> : <PremiumContent onUpgradeClick={() => setIsUpgradeModalOpen(true)} featureTitle="AI Meal Planner" features={["Generate custom meal plans", "Use any prompt", "AI selects from our recipes"]} isPremium={false} />;
             case 'My Cookbook': return currentUser?.isPremium || currentUser?.isAdmin ? (
                  <div className="space-y-8">
@@ -496,7 +493,7 @@ const App: React.FC = () => {
             case 'Meal Plans': if (viewingMealPlan) { return (<div className="animate-fade-in"><button onClick={() => setViewingMealPlan(null)} className="flex items-center gap-2 mb-4"><ChevronLeftIcon className="w-5 h-5"/>Back</button><div className="text-center mb-8"><h2 className="text-3xl font-bold">{viewingMealPlan.title}</h2><p className="mt-2 text-lg">{viewingMealPlan.description}</p></div><div className="grid grid-cols-1 sm:grid-cols-4 gap-6">{viewingMealPlanRecipes.map(r => <RecipeCard key={r.id} recipe={r} onClick={handleCardClick} isFavorite={userData.favorites.includes(r.id)} onToggleFavorite={handleToggleFavorite} isSelected={selectedRecipeIds.includes(r.id)} onToggleSelect={handleToggleSelect} />)}</div></div>); } return <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">{mealPlans.map(plan => <MealPlanCard key={plan.id} plan={plan} allRecipes={allMealPlanRecipes} onViewPlan={setViewingMealPlan} />)}</div>;
             default: return (
                 <div className="space-y-12">
-                    <FeaturedChefRecipe recipe={featuredChefRecipe} isLoading={false} onClick={handleCardClick} onArchive={recipeOfTheDayService.archiveRecipe} isArchived={isFeaturedRecipeArchived} />
+                    <FeaturedChef recipe={featuredChefRecipe} isLoading={false} onClick={handleCardClick} />
                     <RecipeCarousel title={carouselTitle} recipes={recommendedRecipes.slice(0, 10)} favorites={userData.favorites} selectedRecipeIds={selectedRecipeIds} onCardClick={handleCardClick} onToggleFavorite={handleToggleFavorite} onToggleSelect={handleToggleSelect} />
                     <div>
                         <div className="text-center mb-8"><h2 className="text-3xl font-bold tracking-tight">Discover Our Recipes</h2><p className="mt-2 text-lg">Browse from <span className="font-bold text-green-600">{totalRecipeCount.toLocaleString()}</span> authentic recipes</p></div>
