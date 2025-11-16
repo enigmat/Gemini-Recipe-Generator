@@ -36,7 +36,7 @@ export const signup = (email: string, password?: string): void => {
     };
     updateDatabase(draftDb => {
         draftDb.users.push(newUser);
-        draftDb.userData[email] = { favorites: [], shoppingLists: [], cocktails: [] };
+        draftDb.userData[email] = { favorites: [], shoppingLists: [], cocktails: [], calorieEntries: [], calorieSettings: { dailyTarget: 2000 } };
     });
     currentUser = newUser;
     notifyListeners();
@@ -84,7 +84,7 @@ export const deleteUser = (email: string) => {
 
 export const getUserData = (email: string): UserData => {
     const db = getDatabase();
-    return db.userData[email] || { favorites: [], shoppingLists: [], cocktails: [] };
+    return db.userData[email] || { favorites: [], shoppingLists: [], cocktails: [], calorieEntries: [], calorieSettings: { dailyTarget: 2000 } };
 }
 
 export const toggleFavorite = (email: string, recipeId: number) => {

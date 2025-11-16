@@ -20,6 +20,7 @@ import GlobeAltIcon from './icons/GlobeAltIcon';
 import LayoutDashboardIcon from './icons/LayoutDashboardIcon';
 import ArrowPathIcon from './icons/ArrowPathIcon';
 import UsersIcon from './icons/UsersIcon';
+import CalculatorIcon from './icons/CalculatorIcon';
 
 interface MainTabsProps {
   activeTab: string;
@@ -32,6 +33,7 @@ const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser
     { id: 'All Recipes', name: 'Home', icon: <HomeIcon className="w-5 h-5" /> },
     { id: 'Featured Chefs', name: 'Featured Chefs', icon: <UsersIcon className="w-5 h-5" /> },
     { id: "Where's This From?", name: "Where's This From?", icon: <GlobeAltIcon className="w-5 h-5" /> },
+    { id: 'Calorie Tracker', name: 'Calorie Tracker', icon: <CalculatorIcon className="w-5 h-5" /> },
     { id: 'Community Chat', name: 'Community Chat', icon: <ChatBubbleIcon className="w-5 h-5" /> },
     { id: 'Pantry Chef', name: 'Pantry Chef', icon: <RefrigeratorIcon className="w-5 h-5" /> },
     { id: 'AI Meal Planner', name: 'AI Meal Planner', icon: <ClipboardListIcon className="w-5 h-5" /> },
@@ -52,7 +54,7 @@ const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser
       allTabs.push({ id: 'Admin Dashboard', name: 'Admin', icon: <LayoutDashboardIcon className="w-5 h-5" /> });
   }
 
-  const premiumTabs = ['Cooking Classes', 'Ask an Expert', 'AI Meal Planner'];
+  const premiumTabs = ['Cooking Classes', 'Ask an Expert', 'AI Meal Planner', 'Calorie Tracker'];
 
   return (
     <div className="px-4 sm:px-0 flex overflow-x-auto scrollbar-hide space-x-4 sm:justify-center sm:flex-wrap sm:space-x-0 sm:gap-3 my-8">
@@ -72,7 +74,7 @@ const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser
 
         const isActive = activeTab === tab.id;
         const isPremiumFeature = premiumTabs.includes(tab.id);
-        const showPremiumBadge = isPremiumFeature && !currentUser?.isPremium;
+        const showPremiumBadge = isPremiumFeature && !currentUser?.isPremium && !currentUser?.isAdmin;
         return (
           <button
             key={tab.id}

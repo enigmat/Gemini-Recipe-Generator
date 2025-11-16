@@ -22,6 +22,12 @@ export const recipes: Recipe[] = [
     winePairing: {
       suggestion: 'Pinot Grigio',
       description: 'A crisp Pinot Grigio cuts through the richness of the pancetta and egg, cleansing the palate with each sip.'
+    },
+    chef: {
+      name: 'Luciano Rossi',
+      bio: 'Hailing from Rome, Chef Luciano Rossi is a culinary purist dedicated to preserving the authentic flavors of classic Italian cuisine. His philosophy is simple: use the best ingredients and let them speak for themselves.',
+      signatureDish: 'Cacio e Pepe',
+      image: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&q=80&w=870'
     }
   },
   {
@@ -47,6 +53,12 @@ export const recipes: Recipe[] = [
     winePairing: {
       suggestion: 'Off-Dry Riesling',
       description: 'The slight sweetness of an off-dry Riesling balances the spice of the curry, while its acidity complements the tomato-based sauce.'
+    },
+    chef: {
+      name: 'Anjali Sharma',
+      bio: 'Chef Anjali Sharma is celebrated for her modern take on traditional Indian cuisine. She combines authentic flavors with contemporary techniques to create unforgettable dishes.',
+      signatureDish: 'Butter Chicken',
+      image: 'https://images.unsplash.com/photo-1542992176-6c7159a3765e?auto=format&fit=crop&q=80&w=870'
     }
   },
   {
@@ -69,6 +81,12 @@ export const recipes: Recipe[] = [
     winePairing: {
         suggestion: 'Malbec',
         description: 'A juicy Malbec with soft tannins and dark fruit flavors complements the seasoned beef without overpowering the toppings.'
+    },
+    chef: {
+      name: 'Carlos Garcia',
+      bio: 'From the heart of Mexico City, Chef Carlos Garcia brings the vibrant and bold flavors of his homeland to the world. His passion lies in simple, fresh ingredients.',
+      signatureDish: 'Carnitas',
+      image: 'https://images.unsplash.com/photo-1599555778108-37f0a53b51b3?auto=format&fit=crop&q=80&w=870'
     }
   },
   {
@@ -88,6 +106,12 @@ export const recipes: Recipe[] = [
     instructions: ['Toast the bread to your liking.', 'Mash the avocado with lemon juice, salt, and pepper.', 'Spread the avocado on the toast.', 'Sprinkle with red pepper flakes.'],
     tags: ['Breakfast', 'Vegetarian', 'Quick', 'Healthy'],
     cuisine: 'American',
+    chef: {
+      name: 'Isabella Chen',
+      bio: 'A champion of healthy and mindful eating, Chef Isabella Chen is known for her simple, beautiful, and nutrient-packed creations that prove healthy food can be delicious.',
+      signatureDish: 'Quinoa Power Bowl',
+      image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=764'
+    }
   },
   {
     id: 5,
@@ -109,6 +133,12 @@ export const recipes: Recipe[] = [
     winePairing: {
         suggestion: 'Sauvignon Blanc',
         description: 'A crisp Sauvignon Blanc has the acidity to cut through the creamy dressing and complement the tangy Parmesan cheese.'
+    },
+    chef: {
+      name: 'Julian Vance',
+      bio: 'Chef Julian Vance is a culinary historian who revives classic dishes with a modern flair. He believes that even the simplest salad can be a masterpiece with the right technique.',
+      signatureDish: 'Classic French Onion Soup',
+      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=687'
     }
   },
   {
@@ -224,7 +254,7 @@ export const recipes: Recipe[] = [
   {
     id: 11,
     title: 'Mushroom Risotto',
-    image: 'https://images.unsplash.com/photo-1621996346565-e326b20f5451?auto=format&fit=crop&q=80&w=1064&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1621996346565-e326b20f5451?auto=format&fit=crop&q=80&w=1064&ixlib-rb-4.0.3',
     description: 'A creamy, decadent Italian rice dish cooked slowly with broth, mushrooms, and Parmesan cheese.',
     cookTime: '40 minutes',
     servings: '4',
@@ -249,7 +279,7 @@ export const recipes: Recipe[] = [
   {
     id: 12,
     title: 'Greek Salad',
-    image: 'https://images.unsplash.com/photo-1607532941433-304659e8198a?auto=format&fit=crop&q=80&w=1078&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1607532941433-304659e8198a?auto=format&fit=crop&q=80&w=1078&ixlib-rb-4.0.3',
     description: 'A refreshing salad with crisp cucumber, juicy tomatoes, red onion, olives, and creamy feta cheese in a light vinaigrette.',
     cookTime: '15 minutes',
     servings: '4',
@@ -270,7 +300,7 @@ export const recipes: Recipe[] = [
   {
     id: 13,
     title: 'French Onion Soup',
-    image: 'https://images.unsplash.com/photo-1546953329-3262313854d9?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1546953329-3262313854d9?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A rich and savory soup with sweet caramelized onions, topped with a crusty baguette and melted Gruyère cheese.',
     cookTime: '1 hour 15 minutes',
     servings: '4',
@@ -350,7 +380,7 @@ export const recipes: Recipe[] = [
   {
     id: 17,
     title: 'Guacamole',
-    image: 'https://images.unsplash.com/photo-1598512752271-33f913a5af13?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1598512752271-33f913a5af13?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A creamy and zesty dip made from mashed avocados, onion, cilantro, jalapeño, and lime juice. Perfect with chips!',
     cookTime: '10 minutes',
     servings: '4',
@@ -411,7 +441,7 @@ export const recipes: Recipe[] = [
   {
     id: 20,
     title: 'Butternut Squash Soup',
-    image: 'https://images.unsplash.com/photo-1603579590920-692716b60c49?auto=format&fit=crop&q=80&w=871&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1603579590920-692716b60c49?auto=format&fit=crop&q=80&w=871&ixlib-rb-4.0.3',
     description: 'A velvety smooth and warming soup with the sweet, nutty flavor of roasted butternut squash.',
     cookTime: '50 minutes',
     servings: '6',
@@ -431,7 +461,7 @@ export const recipes: Recipe[] = [
   {
     id: 21,
     title: "Shepherd's Pie",
-    image: 'https://images.unsplash.com/photo-1628045339387-a81673e528b3?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1628045339387-a81673e528b3?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A comforting casserole of savory ground lamb and vegetables topped with a creamy layer of mashed potatoes.',
     cookTime: '1 hour',
     servings: '4-6',
@@ -452,7 +482,7 @@ export const recipes: Recipe[] = [
   {
     id: 22,
     title: 'Ratatouille',
-    image: 'https://images.unsplash.com/photo-1594916259960-e67c85859942?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1594916259960-e67c85859942?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A beautiful and rustic French vegetable stew with eggplant, zucchini, peppers, and tomatoes.',
     cookTime: '1 hour',
     servings: '6',
@@ -473,7 +503,7 @@ export const recipes: Recipe[] = [
   {
     id: 23,
     title: 'Banana Bread',
-    image: 'https://images.unsplash.com/photo-1627834377411-8da5f4f09de8?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1627834377411-8da5f4f09de8?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A moist and delicious quick bread perfect for using up ripe bananas. Great for breakfast or a snack.',
     cookTime: '1 hour 10 minutes',
     servings: '10 slices',
@@ -494,7 +524,7 @@ export const recipes: Recipe[] = [
   {
     id: 24,
     title: 'Lasagna',
-    image: 'https://images.unsplash.com/photo-1619895092494-b28c084f4a32?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1619895092494-b28c084f4a32?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A hearty Italian-American classic with layers of pasta, rich meat sauce, creamy ricotta, and melted mozzarella cheese.',
     cookTime: '1 hour 30 minutes',
     servings: '8',
@@ -532,7 +562,7 @@ export const recipes: Recipe[] = [
   {
     id: 26,
     title: 'Chicken Noodle Soup',
-    image: 'https://images.unsplash.com/photo-1626372416458-75101a75661b?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1626372416458-75101a75661b?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'The ultimate comfort food. A simple, savory soup with shredded chicken, vegetables, and tender egg noodles.',
     cookTime: '30 minutes',
     servings: '4',
@@ -551,7 +581,7 @@ export const recipes: Recipe[] = [
   {
     id: 27,
     title: 'Macaroni and Cheese',
-    image: 'https://images.unsplash.com/photo-1541592106381-b58e7c13a523?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1541592106381-b58e7c13a523?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A creamy, cheesy, and incredibly satisfying homemade macaroni and cheese that beats the boxed version every time.',
     cookTime: '25 minutes',
     servings: '4',
@@ -571,7 +601,7 @@ export const recipes: Recipe[] = [
   {
     id: 28,
     title: 'Shrimp Scampi',
-    image: 'https://images.unsplash.com/photo-1625944026293-9a3a91015f4a?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1625944026293-9a3a91015f4a?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A quick and elegant pasta dish with plump shrimp sautéed in a delicious garlic, butter, and white wine sauce.',
     cookTime: '20 minutes',
     servings: '2',
@@ -596,7 +626,7 @@ export const recipes: Recipe[] = [
   {
     id: 29,
     title: 'Omelette',
-    image: 'https://images.unsplash.com/photo-1587339144365-993c4cc529e0?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1587339144365-993c4cc529e0?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A versatile and quick breakfast staple. Master the perfect fluffy omelette and customize it with your favorite fillings.',
     cookTime: '10 minutes',
     servings: '1',
@@ -614,7 +644,7 @@ export const recipes: Recipe[] = [
   {
     id: 30,
     title: 'Chocolate Lava Cakes',
-    image: 'https://images.unsplash.com/photo-1586985289936-a8a72a15c81d?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1586985289936-a8a72a15c81d?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'An impressive and decadent dessert with a warm, molten chocolate center that flows out when you cut into it.',
     cookTime: '25 minutes',
     servings: '2',
@@ -634,7 +664,7 @@ export const recipes: Recipe[] = [
   {
     id: 31,
     title: 'Hummus',
-    image: 'https://images.unsplash.com/photo-1630409349896-e41c4f45d179?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1630409349896-e41c4f45d179?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A smooth and creamy Middle Eastern dip made from chickpeas, tahini, lemon, and garlic. Perfect for dipping vegetables or pita.',
     cookTime: '10 minutes',
     servings: '6',
@@ -654,7 +684,7 @@ export const recipes: Recipe[] = [
   {
     id: 32,
     title: 'Cobb Salad',
-    image: 'https://images.unsplash.com/photo-1559847844-5315695d0464?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1559847844-5315695d0464?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A classic American garden salad with rows of chicken, bacon, hard-boiled eggs, avocado, and blue cheese.',
     cookTime: '20 minutes',
     servings: '2-4',
@@ -676,7 +706,7 @@ export const recipes: Recipe[] = [
   {
     id: 33,
     title: 'Stuffed Bell Peppers',
-    image: 'https://images.unsplash.com/photo-1621326901841-3b8e4cb4f553?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1621326901841-3b8e4cb4f553?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'Hollowed-out bell peppers filled with a savory mixture of ground meat, rice, and tomatoes, then baked to perfection.',
     cookTime: '45 minutes',
     servings: '4',
@@ -696,7 +726,7 @@ export const recipes: Recipe[] = [
   {
     id: 34,
     title: 'French Toast',
-    image: 'https://images.unsplash.com/photo-1639108097123-5e3630c14b6c?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1639108097123-5e3630c14b6c?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A breakfast favorite where bread slices are soaked in a sweet egg batter and pan-fried to golden perfection.',
     cookTime: '15 minutes',
     servings: '2',
@@ -716,7 +746,7 @@ export const recipes: Recipe[] = [
   {
     id: 35,
     title: 'Beef and Broccoli',
-    image: 'https://images.unsplash.com/photo-1608375983732-b25b14c3165b?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1608375983732-b25b14c3165b?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A quick and healthy Chinese-American stir-fry with tender slices of beef and crisp broccoli florets in a savory sauce.',
     cookTime: '20 minutes',
     servings: '3-4',
@@ -736,7 +766,7 @@ export const recipes: Recipe[] = [
   {
     id: 36,
     title: 'Potato Salad',
-    image: 'https://images.unsplash.com/photo-1604467721588-75101a75661b?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1604467721588-75101a75661b?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A creamy and classic side dish for picnics and barbecues, made with boiled potatoes, hard-boiled eggs, and a tangy mayonnaise dressing.',
     cookTime: '30 minutes',
     servings: '6-8',
@@ -756,7 +786,7 @@ export const recipes: Recipe[] = [
   {
     id: 37,
     title: 'Gazpacho',
-    image: 'https://images.unsplash.com/photo-1598273618474-5145b2b2a632?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1598273618474-5145b2b2a632?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A refreshing chilled soup from Spain, made with blended raw vegetables like tomatoes, peppers, and cucumbers.',
     cookTime: '15 minutes (+ chilling)',
     servings: '4-6',
@@ -777,7 +807,7 @@ export const recipes: Recipe[] = [
   {
     id: 38,
     title: 'Baked Salmon',
-    image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A simple, healthy, and elegant main course. Tender salmon fillets baked with lemon, garlic, and fresh herbs.',
     cookTime: '20 minutes',
     servings: '4',
@@ -801,7 +831,7 @@ export const recipes: Recipe[] = [
   {
     id: 39,
     title: 'Crab Cakes',
-    image: 'https://images.unsplash.com/photo-1639108097123-5e3630c14b6c?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1639108097123-5e3630c14b6c?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'Flavorful patties of crab meat and breadcrumbs, pan-fried to golden perfection. A delicious seafood appetizer or main.',
     cookTime: '20 minutes',
     servings: '4',
@@ -822,7 +852,7 @@ export const recipes: Recipe[] = [
   {
     id: 40,
     title: 'Minestrone Soup',
-    image: 'https://images.unsplash.com/photo-1530983333393-02a1b1834241?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1530983333393-02a1b1834241?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A thick and hearty Italian soup loaded with vegetables, beans, and small pasta in a tomato-based broth.',
     cookTime: '45 minutes',
     servings: '6',
@@ -884,7 +914,7 @@ export const recipes: Recipe[] = [
   {
     id: 43,
     title: 'Tomato Soup',
-    image: 'https://images.unsplash.com/photo-1599221142502-3855a7465612?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1599221142502-3855a7465612?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A creamy and comforting soup made from ripe tomatoes, perfect for pairing with a grilled cheese sandwich.',
     cookTime: '30 minutes',
     servings: '4',
@@ -904,7 +934,7 @@ export const recipes: Recipe[] = [
   {
     id: 44,
     title: 'Tiramisu',
-    image: 'https://images.unsplash.com/photo-1571683418299-23de79822e12?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1571683418299-23de79822e12?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'An elegant no-bake Italian dessert with layers of coffee-soaked ladyfingers and a rich mascarpone cream, dusted with cocoa.',
     cookTime: '25 minutes (+ chilling)',
     servings: '8',
@@ -924,7 +954,7 @@ export const recipes: Recipe[] = [
   {
     id: 45,
     title: 'Eggplant Parmesan',
-    image: 'https://images.unsplash.com/photo-1616748443360-a818c397a618?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1616748443360-a818c397a618?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A delicious vegetarian casserole with layers of fried eggplant, marinara sauce, and melted mozzarella and Parmesan cheeses.',
     cookTime: '50 minutes',
     servings: '6',
@@ -944,7 +974,7 @@ export const recipes: Recipe[] = [
   {
     id: 46,
     title: 'Strawberry Shortcake',
-    image: 'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A classic summer dessert featuring sweet, juicy strawberries and fluffy whipped cream served over tender shortcake biscuits.',
     cookTime: '25 minutes',
     servings: '6',
@@ -962,7 +992,7 @@ export const recipes: Recipe[] = [
   {
     id: 47,
     title: 'Pulled Pork Sandwich',
-    image: 'https://images.unsplash.com/photo-1603874318797-293672007b8a?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1603874318797-293672007b8a?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'Tender, slow-cooked pork shoulder shredded and mixed with tangy BBQ sauce, served on a soft bun.',
     cookTime: '8 hours',
     servings: '8',
@@ -981,7 +1011,7 @@ export const recipes: Recipe[] = [
   {
     id: 48,
     title: 'Chicken Fajitas',
-    image: 'https://images.unsplash.com/photo-1625938139268-2b3a75745199?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1625938139268-2b3a75745199?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A sizzling skillet of seasoned chicken, bell peppers, and onions served with warm tortillas and your favorite toppings.',
     cookTime: '25 minutes',
     servings: '4',
@@ -1001,7 +1031,7 @@ export const recipes: Recipe[] = [
   {
     id: 49,
     title: 'Cheesecake',
-    image: 'https://images.unsplash.com/photo-1542826438-c32144d12a2f?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1542826438-c32144d12a2f?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A rich, dense, and creamy dessert with a graham cracker crust and a smooth cream cheese filling.',
     cookTime: '1 hour 15 minutes (+ chilling)',
     servings: '12',
@@ -1021,7 +1051,7 @@ export const recipes: Recipe[] = [
   {
     id: 50,
     title: 'Spinach and Feta Stuffed Chicken',
-    image: 'https://images.unsplash.com/photo-1604321946356-a3699015119b?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1604321946356-a3699015119b?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'Juicy chicken breasts filled with a savory mixture of spinach, feta cheese, and garlic, then baked to perfection.',
     cookTime: '30 minutes',
     servings: '4',
@@ -1041,7 +1071,7 @@ export const recipes: Recipe[] = [
   {
     id: 51,
     title: 'Vegan Lentil Soup',
-    image: 'https://images.unsplash.com/photo-1595333936902-19d5f7203a1b?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1595333936902-19d5f7203a1b?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A hearty and nutritious vegan soup made with brown lentils, vegetables, and savory herbs. Perfect for a cold day.',
     cookTime: '45 minutes',
     servings: '6',
@@ -1065,7 +1095,7 @@ export const recipes: Recipe[] = [
   {
     id: 52,
     title: 'Classic Ramen',
-    image: 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A comforting bowl of Japanese ramen with a rich broth, tender noodles, soft-boiled egg, and chashu pork.',
     cookTime: '2 hours',
     servings: '2',
@@ -1086,7 +1116,7 @@ export const recipes: Recipe[] = [
   {
     id: 53,
     title: 'Quinoa Salad with Roasted Vegetables',
-    image: 'https://images.unsplash.com/photo-1512428237938-0f7f637b51e2?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1512428237938-0f7f637b51e2?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A vibrant and healthy gluten-free salad with fluffy quinoa, roasted sweet potatoes and broccoli, and a lemon-tahini dressing.',
     cookTime: '40 minutes',
     servings: '4',
@@ -1133,7 +1163,7 @@ export const recipes: Recipe[] = [
   {
     id: 55,
     title: 'Lobster Bisque',
-    image: 'https://images.unsplash.com/photo-1625943555412-a89e9071b7e2?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1625943555412-a89e9071b7e2?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A luxurious, creamy, and smooth soup made from lobster stock, cream, and a hint of sherry.',
     cookTime: '1 hour',
     servings: '4',
@@ -1154,7 +1184,7 @@ export const recipes: Recipe[] = [
   {
     id: 56,
     title: 'Gluten-Free Brownies',
-    image: 'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'Fudgy, decadent, and completely gluten-free chocolate brownies that are sure to satisfy any sweet tooth.',
     cookTime: '40 minutes',
     servings: '16',
@@ -1177,7 +1207,7 @@ export const recipes: Recipe[] = [
   {
     id: 57,
     title: 'Black Bean Burgers',
-    image: 'https://images.unsplash.com/photo-1598645199656-5219e5e783da?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1598645199656-5219e5e783da?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'Hearty, flavorful, and satisfying vegan burgers made from black beans and spices.',
     cookTime: '30 minutes',
     servings: '4',
@@ -1199,7 +1229,7 @@ export const recipes: Recipe[] = [
   {
     id: 58,
     title: 'Crème Brûlée',
-    image: 'https://images.unsplash.com/photo-1542372403-14c680194896?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1542372403-14c680194896?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A classic French dessert consisting of a rich custard base topped with a contrasting layer of hard caramel.',
     cookTime: '1 hour',
     servings: '4',
@@ -1217,7 +1247,7 @@ export const recipes: Recipe[] = [
   {
     id: 59,
     title: 'Vietnamese Pho',
-    image: 'https://images.unsplash.com/photo-1585101643922-2826c7a7f451?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1585101643922-2826c7a7f451?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'A fragrant Vietnamese noodle soup with a savory broth, rice noodles, herbs, and thinly sliced beef or chicken.',
     cookTime: '4 hours',
     servings: '4-6',
@@ -1238,7 +1268,7 @@ export const recipes: Recipe[] = [
   {
     id: 60,
     title: 'Seared Scallops',
-    image: 'https://images.unsplash.com/photo-1595000574888-29a25ab58384?auto=format&fit=crop&q=80&w=870&ixlib=rb-4.0.3',
+    image: 'https://images.unsplash.com/photo-1595000574888-29a25ab58384?auto=format&fit=crop&q=80&w=870&ixlib-rb-4.0.3',
     description: 'Perfectly seared sea scallops with a golden-brown crust and a sweet, tender interior. An elegant and quick meal.',
     cookTime: '10 minutes',
     servings: '2',

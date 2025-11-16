@@ -208,6 +208,21 @@ export interface DishInfo {
   description: string;
 }
 
+export interface CalorieEntry {
+  id: string;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  date: string; // YYYY-MM-DD
+}
+
+export interface CalorieTrackerSettings {
+  dailyTarget: number;
+}
+
+
 // Centralized DB types
 export type RatingsStore = Record<number, { totalScore: number; count: number; userRatings: Record<string, number> }>;
 
@@ -215,6 +230,8 @@ export interface UserData {
     favorites: number[];
     shoppingLists: ShoppingList[];
     cocktails: SavedCocktail[];
+    calorieEntries?: CalorieEntry[];
+    calorieSettings?: CalorieTrackerSettings;
 }
 
 export interface AppDatabase {

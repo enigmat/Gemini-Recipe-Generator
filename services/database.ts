@@ -32,6 +32,8 @@ let db: AppDatabase = {
             favorites: [],
             shoppingLists: [],
             cocktails: [],
+            calorieEntries: [],
+            calorieSettings: { dailyTarget: 2000 },
         };
         return acc;
     }, {} as Record<string, UserData>),

@@ -74,6 +74,7 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminDataSync from './components/AdminDataSync';
 import * as shoppingListManager from './services/shoppingListManager';
 import FeaturedChefs from './components/FeaturedChefs';
+import CalorieTracker from './components/CalorieTracker';
 
 
 const RECIPES_PER_PAGE = 12;
@@ -152,6 +153,7 @@ const App: React.FC = () => {
     const [isPrivacyPolicyOpen, setIsPrivacyPolicyOpen] = useState(false);
     const [isCookbookMakerOpen, setIsCookbookMakerOpen] = useState(false);
     const [isAdminView, setIsAdminView] = useState(false);
+    const [adminAddToNewFlag, setAdminAddToNewFlag] = useState(false);
     
     // --- Data Loading ---
     
@@ -322,7 +324,7 @@ const App: React.FC = () => {
     const handleSelectTab = (tab: string) => {
         if (tab === 'Admin Dashboard') { setIsAdminView(true); return; }
         setIsAdminView(false);
-        if (['My Cookbook', 'Shopping List', 'Cocktail Book', 'AI Meal Planner', 'Community Chat', 'Bartender Helper', 'Data Sync'].includes(tab)) {
+        if (['My Cookbook', 'Shopping List', 'Cocktail Book', 'AI Meal Planner', 'Community Chat', 'Bartender Helper', 'Data Sync', 'Calorie Tracker'].includes(tab)) {
             if (!currentUser) { setIsLoginModalOpen(true); return; }
         }
         if (tab === 'Shopping List') {
@@ -406,7 +408,8 @@ const App: React.FC = () => {
     };
     
     const handleSaveNewRecipe = (recipe: Recipe) => {
-        recipeService.addRecipe(recipe);
+        recipeService.addRecipe(recipe, adminAddToNewFlag);
+        setAdminAddToNewFlag(false); // Reset flag
         setPreviewRecipe(null);
     };
 
@@ -419,18 +422,46 @@ const App: React.FC = () => {
     const handleSearchForDish = (dishName: string) => { setActiveTab('All Recipes'); setSearchQuery(dishName); };
 
     // --- Admin Handlers ---
-    const handleAddRecipeAdmin = async (title: string, addToNew: boolean, addToRotd: boolean) => {
-        const recipeDetails = await generateRecipeDetailsFromTitle(title);
-        const image = await generateImageFromPrompt(recipeDetails.title);
-        const newId = Date.now();
-        let finalChef: Chef | undefined;
-        if (recipeDetails.chef && (recipeDetails.chef as any).imagePrompt) {
-            const chefImage = await generateImage((recipeDetails.chef as any).imagePrompt);
-            await imageStore.setImage(`chef-${newId}`, chefImage);
-            finalChef = { name: recipeDetails.chef.name, bio: recipeDetails.chef.bio, signatureDish: recipeDetails.chef.signatureDish, image: `indexeddb:chef-${newId}` };
+    const handleGenerateRecipeForAdmin = async (title: string, addToNew: boolean) => {
+        try {
+            const recipeDetails = await generateRecipeDetailsFromTitle(title);
+            const image = await generateImageFromPrompt(recipeDetails.title);
+            const newId = Date.now();
+            let finalChef: Chef | undefined;
+            if (recipeDetails.chef && (recipeDetails.chef as any).imagePrompt) {
+                const chefImage = await generateImage((recipeDetails.chef as any).imagePrompt);
+                await imageStore.setImage(`chef-${newId}`, chefImage);
+                finalChef = { name: recipeDetails.chef.name, bio: recipeDetails.chef.bio, signatureDish: recipeDetails.chef.signatureDish, image: `indexeddb:chef-${newId}` };
+            }
+            const newRecipe: Recipe = { id: newId, image: image, ...recipeDetails, chef: finalChef };
+            
+            setAdminAddToNewFlag(addToNew);
+            setPreviewRecipe(newRecipe);
+        } catch (error) {
+            console.error("Error generating recipe for admin:", error);
+            throw error;
         }
-        const newRecipe: Recipe = { id: newId, image: image, ...recipeDetails, chef: finalChef };
-        recipeService.addRecipe(newRecipe, addToNew, addToRotd);
+    };
+
+    const handleGenerateRecipeFromUrl = async (url: string, addToNew: boolean) => {
+        try {
+            const recipeDetails = await generateRecipeFromUrl(url);
+            const image = await generateImageFromPrompt(recipeDetails.title);
+            const newId = Date.now();
+            let finalChef: Chef | undefined;
+            if (recipeDetails.chef && (recipeDetails.chef as any).imagePrompt) {
+                const chefImage = await generateImage((recipeDetails.chef as any).imagePrompt);
+                await imageStore.setImage(`chef-${newId}`, chefImage);
+                finalChef = { name: recipeDetails.chef.name, bio: recipeDetails.chef.bio, signatureDish: recipeDetails.chef.signatureDish, image: `indexeddb:chef-${newId}` };
+            }
+            const newRecipe: Recipe = { id: newId, image: image, ...recipeDetails, chef: finalChef };
+
+            setAdminAddToNewFlag(addToNew);
+            setPreviewRecipe(newRecipe);
+        } catch (error) {
+            console.error("Error generating recipe from URL for admin:", error);
+            throw error;
+        }
     };
     
     const handleDeleteRecipeAdmin = (recipeId: number) => recipeService.deleteRecipe(recipeId);
@@ -471,7 +502,7 @@ const App: React.FC = () => {
     }, [favoriteRecipes]);
     
     if (isLoading) return <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50"><Spinner size="w-12 h-12" /><p className="mt-4 text-slate-600 font-semibold">Loading your kitchen...</p></div>;
-    if (isAdminView && currentUser?.isAdmin) return <AdminDashboard currentUser={currentUser} onExit={() => setIsAdminView(false)} allRecipes={allRecipes} newRecipes={newThisMonthRecipes} scheduledRecipes={databaseService.getDatabase().recipes.scheduled} users={users} sentNewsletters={newsletters.sent} collectedLeads={newsletters.leads} products={products} standardCocktails={standardCocktails} featuredChefs={featuredChefs} onAddRecipe={handleAddRecipeAdmin} onDeleteRecipe={handleDeleteRecipeAdmin} onUpdateRecipeWithAI={handleUpdateRecipeAdmin} onUpdateAllRecipeImages={handleUpdateAllRecipeImagesAdmin} isUpdatingAllImages={false} imageUpdateProgress={null} onUpdateUserRoles={handleUpdateUser} onDeleteUser={handleDeleteUserAdmin} onSendNewsletter={handleSendNewsletterAdmin} onUpdateProducts={handleUpdateProductsAdmin} onDeleteProduct={handleDeleteProductAdmin} onUpdateStandardCocktails={handleUpdateStandardCocktailsAdmin} onRemoveFromNew={handleRemoveFromNewAdmin} onAddToNew={handleAddToNewAdmin} onAddToRotd={handleAddToRotdAdmin} onMoveRecipeFromRotdToMain={handleMoveRecipeFromRotdToMainAdmin} onUpdateScheduledRecipes={handleUpdateScheduledRecipesAdmin} onImportData={handleImportDataAdmin} onFeatureChef={handleFeatureChef} />;
+    if (isAdminView && currentUser?.isAdmin) return <AdminDashboard currentUser={currentUser} onExit={() => setIsAdminView(false)} allRecipes={allRecipes} newRecipes={newThisMonthRecipes} scheduledRecipes={databaseService.getDatabase().recipes.scheduled} users={users} sentNewsletters={newsletters.sent} collectedLeads={newsletters.leads} products={products} standardCocktails={standardCocktails} featuredChefs={featuredChefs} onGenerateRecipeForAdmin={handleGenerateRecipeForAdmin} onGenerateRecipeFromUrl={handleGenerateRecipeFromUrl} onDeleteRecipe={handleDeleteRecipeAdmin} onUpdateRecipeWithAI={handleUpdateRecipeAdmin} onUpdateAllRecipeImages={handleUpdateAllRecipeImagesAdmin} isUpdatingAllImages={false} imageUpdateProgress={null} onUpdateUserRoles={handleUpdateUser} onDeleteUser={handleDeleteUserAdmin} onSendNewsletter={handleSendNewsletterAdmin} onUpdateProducts={handleUpdateProductsAdmin} onDeleteProduct={handleDeleteProductAdmin} onUpdateStandardCocktails={handleUpdateStandardCocktailsAdmin} onRemoveFromNew={handleRemoveFromNewAdmin} onAddToNew={handleAddToNewAdmin} onAddToRotd={handleAddToRotdAdmin} onMoveRecipeFromRotdToMain={handleMoveRecipeFromRotdToMainAdmin} onUpdateScheduledRecipes={handleUpdateScheduledRecipesAdmin} onImportData={handleImportDataAdmin} onFeatureChef={handleFeatureChef} />;
     if (cookModeRecipe) return <CookMode recipe={cookModeRecipe} onExit={handleExitCookMode} measurementSystem={measurementSystem} />;
     
     const renderContent = () => {
@@ -479,6 +510,7 @@ const App: React.FC = () => {
             case 'Pantry Chef': return <PantryChef onRecipeGenerated={handleRecipeGenerated} />;
             case "Where's This From?": return <DishIdentifier onSearchForDish={handleSearchForDish} />;
             case 'Featured Chefs': return <FeaturedChefs recipes={featuredChefs} onViewRecipe={handleCardClick} />;
+            case 'Calorie Tracker': return currentUser?.isPremium || currentUser?.isAdmin ? <CalorieTracker currentUser={currentUser} userData={userData} forceUpdate={forceUpdate} /> : <PremiumContent onUpgradeClick={() => setIsUpgradeModalOpen(true)} featureTitle="Calorie & Macro Tracker" features={["Set your daily calorie goal", "Log food items with macros", "Track your progress"]} isPremium={false} />;
             case 'AI Meal Planner': return currentUser?.isPremium || currentUser?.isAdmin ? <MealPlanGenerator allRecipes={allRecipes} allRecipeTitles={allRecipeTitles} onRecipeClick={handleCardClick} /> : <PremiumContent onUpgradeClick={() => setIsUpgradeModalOpen(true)} featureTitle="AI Meal Planner" features={["Generate custom meal plans", "Use any prompt", "AI selects from our recipes"]} isPremium={false} />;
             case 'My Cookbook': return currentUser?.isPremium || currentUser?.isAdmin ? (
                  <div className="space-y-8">

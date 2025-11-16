@@ -13,6 +13,14 @@ const embedImages = async (items: any[] | undefined, imageKey: string) => {
                 item[imageKey] = imageData;
             }
         }
+        // Handle nested chef image
+        if (item && item.chef && item.chef.image && typeof item.chef.image === 'string' && item.chef.image.startsWith('indexeddb:')) {
+            const chefImageId = item.chef.image.split(':')[1].split('?')[0];
+            const chefImageData = await imageStore.getImage(chefImageId);
+            if (chefImageData) {
+                item.chef.image = chefImageData;
+            }
+        }
     }
 };
 
@@ -25,6 +33,7 @@ export const exportDatabaseWithImages = async (): Promise<AppDatabase> => {
     await embedImages(exportDb.recipes.all, 'image');
     await embedImages(exportDb.recipes.new, 'image');
     await embedImages(exportDb.recipes.scheduled, 'image');
+    await embedImages(exportDb.featuredChefs, 'image');
     
     // Process products
     await embedImages(exportDb.products, 'imageUrl');
@@ -32,7 +41,10 @@ export const exportDatabaseWithImages = async (): Promise<AppDatabase> => {
     // Process standard cocktails
     await embedImages(exportDb.standardCocktails, 'image');
 
-    // Process user-specific data (saved cocktails)
+    // Process user-specific data (saved cocktails & profile images)
+    if (exportDb.users) {
+        await embedImages(exportDb.users, 'profileImage');
+    }
     if (exportDb.userData) {
         for (const userEmail in exportDb.userData) {
             const userData = exportDb.userData[userEmail];
@@ -58,6 +70,16 @@ const extractAndStoreImages = async (items: any[] | undefined, imageKey: string,
                 // Continue with other images
             }
         }
+         // Handle nested chef image
+        if (item && item[idKey] && item.chef && item.chef.image && typeof item.chef.image === 'string' && item.chef.image.startsWith('data:image')) {
+            const chefImageId = `chef-${String(item[idKey])}`;
+            try {
+                await imageStore.setImage(chefImageId, item.chef.image);
+                item.chef.image = `indexeddb:${chefImageId}`;
+            } catch (error) {
+                console.error(`Failed to store image for chef of item ${item[idKey]}:`, error);
+            }
+        }
     }
 };
 
@@ -71,6 +93,7 @@ export const importDatabaseWithImages = async (importedDb: AppDatabase): Promise
     await extractAndStoreImages(importedDb.recipes.all, 'image', 'id');
     await extractAndStoreImages(importedDb.recipes.new, 'image', 'id');
     await extractAndStoreImages(importedDb.recipes.scheduled, 'image', 'id');
+    await extractAndStoreImages(importedDb.featuredChefs, 'image', 'id');
 
     // Process products
     await extractAndStoreImages(importedDb.products, 'imageUrl', 'id');
@@ -79,6 +102,9 @@ export const importDatabaseWithImages = async (importedDb: AppDatabase): Promise
     await extractAndStoreImages(importedDb.standardCocktails, 'image', 'id');
 
     // Process user-specific data
+    if (importedDb.users) {
+        await extractAndStoreImages(importedDb.users, 'profileImage', 'id');
+    }
     if (importedDb.userData) {
         for (const userEmail in importedDb.userData) {
             const userData = importedDb.userData[userEmail];

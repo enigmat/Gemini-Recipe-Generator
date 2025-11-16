@@ -35,7 +35,8 @@ interface AdminDashboardProps {
     products: Product[];
     standardCocktails: SavedCocktail[];
     featuredChefs: Recipe[];
-    onAddRecipe: (title: string, addToNew: boolean, addToRecipeOfTheDayPool: boolean) => Promise<void>;
+    onGenerateRecipeForAdmin: (title: string, addToNew: boolean) => Promise<void>;
+    onGenerateRecipeFromUrl: (url: string, addToNew: boolean) => Promise<void>;
     onDeleteRecipe: (recipeId: number) => void;
     onUpdateRecipeWithAI: (recipeId: number, title: string) => Promise<void>;
     onUpdateAllRecipeImages: () => Promise<void>;
@@ -142,7 +143,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
             for (let i = 0; i < titles.length; i++) {
                 const title = titles[i];
                 setImportProgress(`(${i + 1}/${titles.length}) Generating recipe for "${title}"...`);
-                await props.onAddRecipe(title, false, false);
+                await props.onGenerateRecipeForAdmin(title, false);
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
 
@@ -177,7 +178,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                     </div>
                 );
             case 'Add Recipe':
-                 return <AdminAddRecipe onAddRecipe={props.onAddRecipe} />;
+                 return <AdminAddRecipe onGenerate={props.onGenerateRecipeForAdmin} onGenerateFromUrl={props.onGenerateRecipeFromUrl} />;
             case 'Featured Chef Recipe Pool':
                  return <AdminFeaturedChefManagement 
                     recipes={props.scheduledRecipes} 
