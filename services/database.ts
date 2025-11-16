@@ -10,10 +10,12 @@ import { videos as initialVideos } from '../data/videos';
 import { cookingClasses as initialCookingClasses } from '../data/cookingClasses';
 import { initialExpertQuestions } from '../data/expertQuestions';
 
+const DB_LOCAL_STORAGE_KEY = 'recipe-extracter-database-v1';
+
 // A simple listener system to notify App.tsx to re-render
 let listener: (() => void) | null = null;
 
-let db: AppDatabase = {
+const initialDb: AppDatabase = {
     users: initialUsers,
     recipes: {
         all: initialAllRecipes,
@@ -46,13 +48,40 @@ let db: AppDatabase = {
     expertQuestions: initialExpertQuestions,
 };
 
+const loadDatabase = (): AppDatabase => {
+    try {
+        const storedDb = localStorage.getItem(DB_LOCAL_STORAGE_KEY);
+        if (storedDb) {
+            // A simple check to ensure it's not malformed
+            const parsed = JSON.parse(storedDb);
+            if(parsed.recipes && parsed.users) {
+                return parsed;
+            }
+        }
+    } catch (e) {
+        console.error("Failed to parse database from localStorage, resetting.", e);
+    }
+    // If nothing in storage or parsing fails, return a deep copy of initial data
+    return JSON.parse(JSON.stringify(initialDb));
+};
+
+const saveDatabase = () => {
+    try {
+        localStorage.setItem(DB_LOCAL_STORAGE_KEY, JSON.stringify(db));
+    } catch (e) {
+        console.error("Failed to save database to localStorage", e);
+    }
+};
+
+let db: AppDatabase = loadDatabase();
+
 export const getDatabase = (): AppDatabase => db;
 
 export const updateDatabase = (updater: (currentDb: AppDatabase) => void) => {
-    // The updater function mutates the draft (a copy)
     const dbCopy = JSON.parse(JSON.stringify(db));
     updater(dbCopy);
     db = dbCopy;
+    saveDatabase(); // Save after updating
     if (listener) {
         listener();
     }
@@ -60,13 +89,13 @@ export const updateDatabase = (updater: (currentDb: AppDatabase) => void) => {
 
 export const setDatabase = (newDb: AppDatabase) => {
     db = newDb;
-     if (listener) {
+    saveDatabase(); // Save after setting
+    if (listener) {
         listener();
     }
 }
 
 export const subscribe = (newListener: () => void): (() => void) => {
     listener = newListener;
-    // Return an unsubscribe function
     return () => { listener = null; };
 };

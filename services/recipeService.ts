@@ -114,3 +114,52 @@ export const getRecipesByIds = (ids: (number | string)[]): Recipe[] => {
     const db = getDatabase();
     return db.recipes.all.filter(r => numericIds.includes(r.id));
 };
+
+export const getRecommendedRecipes = (preferences: string[], allRecipes: Recipe[], count: number = 10): Recipe[] => {
+    if (!preferences || preferences.length === 0) {
+        return allRecipes.slice(0, count); // Fallback
+    }
+
+    const lowercasedPrefs = preferences.map(p => p.toLowerCase());
+
+    const scoredRecipes = allRecipes.map(recipe => {
+        let score = 0;
+        const recipeTags = (recipe.tags || []).map(t => t.toLowerCase());
+        if (recipe.cuisine) {
+            recipeTags.push(recipe.cuisine.toLowerCase());
+        }
+
+        for (const pref of lowercasedPrefs) {
+            if (recipeTags.includes(pref)) {
+                score++;
+            }
+        }
+        
+        // Boost score for recipes that have a high rating
+        if (recipe.rating && recipe.rating.score > 4) {
+            score += 0.5;
+        }
+
+        return { recipe, score };
+    });
+
+    // Filter out recipes with no matching tags and sort by score
+    const sorted = scoredRecipes
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score);
+
+    // Get the top recipes
+    const topRecipes = sorted.map(item => item.recipe);
+
+    // If not enough recommended recipes, fill with other popular ones
+    if (topRecipes.length < count) {
+        const otherRecipes = allRecipes
+            .filter(r => !topRecipes.some(tr => tr.id === r.id)) // Exclude already selected
+            .sort((a, b) => (b.rating?.count || 0) - (a.rating?.count || 0)); // Sort by popularity
+        
+        const needed = count - topRecipes.length;
+        topRecipes.push(...otherRecipes.slice(0, needed));
+    }
+
+    return topRecipes.slice(0, count);
+};

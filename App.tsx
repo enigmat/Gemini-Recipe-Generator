@@ -75,6 +75,7 @@ import AdminDataSync from './components/AdminDataSync';
 import * as shoppingListManager from './services/shoppingListManager';
 import FeaturedChefs from './components/FeaturedChefs';
 import CalorieTracker from './components/CalorieTracker';
+import OfflineBanner from './components/OfflineBanner';
 
 
 const RECIPES_PER_PAGE = 12;
@@ -157,6 +158,21 @@ const App: React.FC = () => {
     
     // --- Data Loading ---
     
+    // Service Worker Registration
+    useEffect(() => {
+        if ('serviceWorker' in navigator) {
+            const registerServiceWorker = async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+                    console.log('Service Worker registered with scope:', registration.scope);
+                } catch (error) {
+                    console.error('Service Worker registration failed:', error);
+                }
+            };
+            window.addEventListener('load', registerServiceWorker);
+        }
+    }, []);
+
     const fetchRecipes = useCallback((pageToFetch: number, search: string, tag: string) => {
         setIsLoadingRecipes(true);
         const { recipes: fetchedRecipes, count } = recipeService.getPaginatedFilteredRecipes(
@@ -488,7 +504,14 @@ const App: React.FC = () => {
     };
 
     // --- Render Logic ---
-    const recommendedRecipes = useMemo(() => newThisMonthRecipes, [newThisMonthRecipes]);
+    const recommendedRecipes = useMemo(() => {
+        if (currentUser?.isPremium && currentUser.foodPreferences?.length) {
+            const allDbRecipes = recipeService.getAllRecipes();
+            return recipeService.getRecommendedRecipes(currentUser.foodPreferences, allDbRecipes);
+        }
+        return newThisMonthRecipes;
+    }, [currentUser, newThisMonthRecipes]);
+
     const carouselTitle = (currentUser?.isPremium && currentUser.foodPreferences?.length) ? "Recommended For You" : "New This Month";
 
     const filteredAndSortedCookbook = useMemo(() => {
@@ -588,6 +611,8 @@ const App: React.FC = () => {
             {isPrivacyPolicyOpen && <PrivacyPolicy isOpen={isPrivacyPolicyOpen} onClose={() => setIsPrivacyPolicyOpen(false)} />}
     
             <Footer onAboutClick={() => handleSelectTab('About Us')} onPrivacyClick={() => setIsPrivacyPolicyOpen(true)} />
+            
+            <OfflineBanner />
     
             {selectedRecipeIds.length > 0 && (<div className="fixed bottom-6 right-6 z-30"><button onClick={() => setIsSaveListModalOpen(true)} className="flex items-center gap-3 px-5 py-3 bg-green-500 text-white font-bold rounded-full shadow-lg hover:bg-green-600 animate-fade-in"><ShoppingCartIcon className="w-6 h-6"/><span>Save {selectedRecipeIds.length} Recipe{selectedRecipeIds.length > 1 && 's'}</span><span className="ml-2 w-7 h-7 bg-white text-green-600 flex items-center justify-center rounded-full text-sm font-bold">{selectedRecipeIds.length}</span></button></div>)}
         </div>
