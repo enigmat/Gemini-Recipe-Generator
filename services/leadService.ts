@@ -1,19 +1,19 @@
 import { Lead } from '../types';
-import { getDatabase, updateDatabase } from './database';
+import { getSupabaseClient } from './supabaseClient';
 
-export const getLeads = (): Lead[] => {
-    return getDatabase().newsletters.leads;
+export const getLeads = async (): Promise<Lead[]> => {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.from('leads').select('*');
+    if (error) throw error;
+    return data.map(({ date_collected, ...rest }) => ({...rest, dateCollected: date_collected}));
 };
 
-export const addLead = (email: string): void => {
-    const db = getDatabase();
-    if (!db.newsletters.leads.some(l => l.email === email)) {
-        const newLead: Lead = {
-            email,
-            dateCollected: new Date().toISOString()
-        };
-        updateDatabase(draftDb => {
-            draftDb.newsletters.leads.push(newLead);
-        });
-    }
+export const addLead = async (email: string): Promise<void> => {
+    const supabase = getSupabaseClient();
+    const newLead = {
+        email,
+        date_collected: new Date().toISOString()
+    };
+    const { error } = await supabase.from('leads').upsert(newLead, { onConflict: 'email' });
+    if (error) throw error;
 };

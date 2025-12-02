@@ -1,44 +1,50 @@
-import { Recipe, RatingsStore } from '../types';
-import { getDatabase, updateDatabase } from './database';
+import { Recipe } from '../types';
+import { getSupabaseClient } from './supabaseClient';
 
-const getRatings = (): RatingsStore => {
-    return getDatabase().ratings;
-};
-
-const saveRatings = (ratings: RatingsStore): void => {
-    updateDatabase(db => {
-        db.ratings = ratings;
-    });
-};
-
-export const addRating = (recipeId: number, score: number, userEmail: string): void => {
-    const ratings = getRatings();
-    if (!ratings[recipeId]) {
-        ratings[recipeId] = { totalScore: 0, count: 0, userRatings: {} };
-    }
-
-    const recipeRating = ratings[recipeId];
-    const previousScore = recipeRating.userRatings[userEmail];
-
-    if (previousScore !== undefined) {
-        recipeRating.totalScore = recipeRating.totalScore - previousScore + score;
-    } else {
-        recipeRating.totalScore += score;
-        recipeRating.count += 1;
-    }
+export const addRating = async (recipeId: number, score: number, userId: string): Promise<void> => {
+    const supabase = getSupabaseClient();
     
-    recipeRating.userRatings[userEmail] = score;
-    saveRatings(ratings);
+    // Fetch current rating data
+    const { data: currentRating, error: fetchError } = await supabase
+        .from('ratings')
+        .select('*')
+        .eq('recipe_id', recipeId)
+        .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') { // Ignore 'not found' error
+        throw fetchError;
+    }
+
+    const newTotalScore = (currentRating?.total_score || 0) + score;
+    const newCount = (currentRating?.count || 0) + 1;
+    const newUserRatings = { ...(currentRating?.user_ratings || {}), [userId]: score };
+
+    const { error: upsertError } = await supabase
+        .from('ratings')
+        .upsert({
+            recipe_id: recipeId,
+            total_score: newTotalScore,
+            count: newCount,
+            user_ratings: newUserRatings
+        }, { onConflict: 'recipe_id' });
+
+    if (upsertError) throw upsertError;
 };
 
-export const getRating = (recipeId: number): Recipe['rating'] | undefined => {
-    const ratings = getRatings();
-    const ratingData = ratings[recipeId];
-    if (!ratingData || ratingData.count === 0) {
+export const getRating = async (recipeId: number): Promise<Recipe['rating'] | undefined> => {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+        .from('ratings')
+        .select('total_score, count')
+        .eq('recipe_id', recipeId)
+        .single();
+
+    if (error || !data || data.count === 0) {
         return undefined;
     }
+    
     return {
-        score: ratingData.totalScore / ratingData.count,
-        count: ratingData.count,
+        score: data.total_score / data.count,
+        count: data.count,
     };
 };

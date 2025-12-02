@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Recipe, User, Newsletter, Lead, Product, SavedCocktail, AppDatabase } from '../types';
 import AdminRecipeManagement from './AdminRecipeManagement';
@@ -23,6 +24,7 @@ import AdminAboutUs from './AdminAboutUs';
 import ChevronDownIcon from './icons/ChevronDownIcon';
 import AdminDataSync from './AdminDataSync';
 import GlobeAltIcon from './icons/GlobeAltIcon';
+import TrashIcon from './icons/TrashIcon';
 
 interface AdminDashboardProps {
     currentUser: User;
@@ -35,10 +37,10 @@ interface AdminDashboardProps {
     products: Product[];
     standardCocktails: SavedCocktail[];
     featuredChefs: Recipe[];
-    onGenerateRecipeForAdmin: (title: string, addToNew: boolean) => Promise<void>;
-    onGenerateRecipeFromUrl: (url: string, addToNew: boolean) => Promise<void>;
+    onAddRecipe: (title: string, addToNew: boolean, addToRecipeOfTheDayPool: boolean) => Promise<void>;
     onDeleteRecipe: (recipeId: number) => void;
     onUpdateRecipeWithAI: (recipeId: number, title: string) => Promise<void>;
+    onUpdateRecipeImageManual?: (recipeId: number, base64Image: string) => Promise<void>;
     onUpdateAllRecipeImages: () => Promise<void>;
     isUpdatingAllImages: boolean;
     imageUpdateProgress: string | null;
@@ -56,6 +58,8 @@ interface AdminDashboardProps {
     onUpdateScheduledRecipes: (recipes: Recipe[]) => Promise<void>;
     onImportData: (db: AppDatabase) => Promise<void>;
     onFeatureChef: (recipe: Recipe) => void;
+    onFactoryReset?: () => void;
+    onGenerateRecipeFromUrl?: (url: string, addToNew: boolean) => Promise<void>;
 }
 
 const PlaceholderPanel: React.FC<{ title: string }> = ({ title }) => (
@@ -143,7 +147,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
             for (let i = 0; i < titles.length; i++) {
                 const title = titles[i];
                 setImportProgress(`(${i + 1}/${titles.length}) Generating recipe for "${title}"...`);
-                await props.onGenerateRecipeForAdmin(title, false);
+                await props.onAddRecipe(title, false, false);
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
 
@@ -174,11 +178,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                             scheduledRecipes={props.scheduledRecipes}
                             onAddToRotd={props.onAddToRotd}
                             imageUpdateProgress={props.imageUpdateProgress}
+                            onUpdateRecipeImageManual={props.onUpdateRecipeImageManual}
                         />
                     </div>
                 );
             case 'Add Recipe':
-                 return <AdminAddRecipe onGenerate={props.onGenerateRecipeForAdmin} onGenerateFromUrl={props.onGenerateRecipeFromUrl} />;
+                 return <AdminAddRecipe 
+                    onGenerate={(title, addToNew) => props.onAddRecipe(title, addToNew, false)}
+                    onGenerateFromUrl={props.onGenerateRecipeFromUrl ? (url, addToNew) => props.onGenerateRecipeFromUrl!(url, addToNew) : async () => {}}
+                 />;
             case 'Featured Chef Recipe Pool':
                  return <AdminFeaturedChefManagement 
                     recipes={props.scheduledRecipes} 
@@ -200,7 +208,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
             case 'Cocktail Distribution':
                 return <AdminCocktailDistribution users={props.users} currentUser={props.currentUser} />;
             case 'Newsletter':
-                 return <AdminNewsletter {...props} />;
+                 return <AdminNewsletter allRecipes={props.allRecipes} users={props.users} sentNewsletters={props.sentNewsletters} onSendNewsletter={props.onSendNewsletter} />;
             case 'Cooking Classes':
                 return <AdminCookingClasses />;
             case 'Video Management':
@@ -219,6 +227,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
             <header className="container mx-auto flex items-center justify-between mb-8">
                 <h1 className="text-4xl font-bold text-slate-800">Admin Dashboard</h1>
                  <div className="flex items-center gap-4">
+                    {props.onFactoryReset && (
+                        <button 
+                            onClick={props.onFactoryReset}
+                            className="flex items-center gap-1 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors border border-red-700"
+                            title="Reset entire app to initial state"
+                        >
+                            <TrashIcon className="w-5 h-5" />
+                            <span className="hidden sm:inline">Factory Reset</span>
+                        </button>
+                    )}
                     <button 
                         onClick={props.onExit}
                         className="flex items-center gap-1 px-4 py-2 bg-teal-500 text-white font-semibold rounded-lg shadow-md hover:bg-teal-600 transition-colors"

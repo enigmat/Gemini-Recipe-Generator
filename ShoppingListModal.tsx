@@ -22,22 +22,23 @@ const ShoppingListModal: React.FC<ShoppingListModalProps> = ({ list, onClose, me
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // FIX: The `getRecipesByIds` function is synchronous and does not return a promise.
-    // Removed the `.then()` chain and replaced with a direct call inside a try/catch.
-    if (list && list.recipeIds.length > 0) {
-        setIsLoading(true);
-        try {
-            const recipes = recipeService.getRecipesByIds(list.recipeIds);
-            setSelectedRecipes(recipes);
-        } catch (err) {
-            console.error("Failed to fetch shopping list recipes", err);
-        } finally {
+    const fetchRecipes = async () => {
+        if (list && list.recipeIds.length > 0) {
+            setIsLoading(true);
+            try {
+                const recipes = await recipeService.getRecipesByIds(list.recipeIds);
+                setSelectedRecipes(recipes);
+            } catch (err) {
+                console.error("Failed to fetch shopping list recipes", err);
+            } finally {
+                setIsLoading(false);
+            }
+        } else {
+            setSelectedRecipes([]);
             setIsLoading(false);
         }
-    } else {
-        setSelectedRecipes([]);
-        setIsLoading(false);
-    }
+    };
+    fetchRecipes();
   }, [list]);
 
   const aggregatedIngredients = useMemo(() => {
@@ -145,7 +146,7 @@ const ShoppingListModal: React.FC<ShoppingListModalProps> = ({ list, onClose, me
           ) : (
             <>
               <p className="text-sm text-slate-500 mb-4">
-                Generated from ${selectedRecipes.length} recipe{selectedRecipes.length > 1 && 's'}.
+                Generated from {selectedRecipes.length} recipe{selectedRecipes.length > 1 && 's'}.
               </p>
               <ul className="space-y-3">
                 {aggregatedIngredients.map((ing, i) => (

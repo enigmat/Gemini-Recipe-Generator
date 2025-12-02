@@ -21,6 +21,7 @@ import LayoutDashboardIcon from './icons/LayoutDashboardIcon';
 import ArrowPathIcon from './icons/ArrowPathIcon';
 import UsersIcon from './icons/UsersIcon';
 import CalculatorIcon from './icons/CalculatorIcon';
+import LinkIcon from './icons/LinkIcon';
 
 interface MainTabsProps {
   activeTab: string;
@@ -36,6 +37,7 @@ const MainTabs: React.FC<MainTabsProps> = ({ activeTab, onSelectTab, currentUser
     { id: 'Calorie Tracker', name: 'Calorie Tracker', icon: <CalculatorIcon className="w-5 h-5" /> },
     { id: 'Community Chat', name: 'Community Chat', icon: <ChatBubbleIcon className="w-5 h-5" /> },
     { id: 'Pantry Chef', name: 'Pantry Chef', icon: <RefrigeratorIcon className="w-5 h-5" /> },
+    { id: 'Import from URL', name: 'Import from URL', icon: <LinkIcon className="w-5 h-5" /> },
     { id: 'AI Meal Planner', name: 'AI Meal Planner', icon: <ClipboardListIcon className="w-5 h-5" /> },
     { id: 'My Cookbook', name: 'My Cookbook', icon: <HeartIcon className="w-5 h-5" /> },
     { id: 'Cocktail Book', name: 'Cocktail Book', icon: <BookOpenIcon className="w-5 h-5" /> },

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { User, UserData, CalorieEntry, CalorieTrackerSettings } from '../types';
-import { updateDatabase } from '../services/database';
+import { getSupabaseClient } from '../services/supabaseClient';
 import TrashIcon from './icons/TrashIcon';
 import Cog6ToothIcon from './icons/Cog6ToothIcon';
 import XIcon from './icons/XIcon';
@@ -42,39 +42,38 @@ const CalorieTracker: React.FC<CalorieTrackerProps> = ({ currentUser, userData, 
     const progress = settings.dailyTarget > 0 ? (totals.calories / settings.dailyTarget) * 100 : 0;
 
     // --- Handlers ---
-    const handleAddEntry = (entry: Omit<CalorieEntry, 'id' | 'date'>) => {
+    const handleAddEntry = async (entry: Omit<CalorieEntry, 'id' | 'date'>) => {
         const newEntry: CalorieEntry = {
             ...entry,
             id: `cal-${Date.now()}`,
             date: getTodayDateString()
         };
-        updateDatabase(db => {
-            const userDb = db.userData[currentUser.email];
-            if (userDb) {
-                if (!userDb.calorieEntries) userDb.calorieEntries = [];
-                userDb.calorieEntries.push(newEntry);
-            }
-        });
+        const newUserData = { ...userData };
+        if (!newUserData.calorieEntries) {
+            newUserData.calorieEntries = [];
+        }
+        newUserData.calorieEntries.push(newEntry);
+        
+        const supabase = getSupabaseClient();
+        await supabase.from('user_data').upsert({ user_id: currentUser.id, data: newUserData });
         forceUpdate();
     };
 
-    const handleDeleteEntry = (entryId: string) => {
-        updateDatabase(db => {
-            const userDb = db.userData[currentUser.email];
-            if (userDb && userDb.calorieEntries) {
-                userDb.calorieEntries = userDb.calorieEntries.filter(e => e.id !== entryId);
-            }
-        });
+    const handleDeleteEntry = async (entryId: string) => {
+        const newUserData = { ...userData };
+        if (newUserData.calorieEntries) {
+            newUserData.calorieEntries = newUserData.calorieEntries.filter(e => e.id !== entryId);
+        }
+
+        const supabase = getSupabaseClient();
+        await supabase.from('user_data').upsert({ user_id: currentUser.id, data: newUserData });
         forceUpdate();
     };
 
-    const handleUpdateSettings = (newSettings: CalorieTrackerSettings) => {
-        updateDatabase(db => {
-            const userDb = db.userData[currentUser.email];
-            if (userDb) {
-                userDb.calorieSettings = newSettings;
-            }
-        });
+    const handleUpdateSettings = async (newSettings: CalorieTrackerSettings) => {
+        const newUserData = { ...userData, calorieSettings: newSettings };
+        const supabase = getSupabaseClient();
+        await supabase.from('user_data').upsert({ user_id: currentUser.id, data: newUserData });
         forceUpdate();
         setIsSettingsModalOpen(false);
     };

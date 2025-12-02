@@ -1,12 +1,35 @@
-import { getDatabase, updateDatabase } from './database';
+import { getSupabaseClient } from './supabaseClient';
+import { getUserData } from './userService';
+import { UserData } from '../types';
 
-export const distributeCocktails = (sourceUserEmail: string, targetUserEmails: string[]): { successCount: number; newCocktails: number } => {
+const saveUserData = async (userId: string, data: UserData) => {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase
+        .from('user_data')
+        .upsert({ user_id: userId, data: data }, { onConflict: 'user_id' });
+    if (error) throw error;
+};
+
+
+export const distributeCocktails = async (sourceUserEmail: string, targetUserEmails: string[]): Promise<{ successCount: number; newCocktails: number }> => {
     if (!sourceUserEmail || !targetUserEmails || targetUserEmails.length === 0) {
         throw new Error("Source user and at least one target user must be selected.");
     }
     
-    const db = getDatabase();
-    const sourceUserData = db.userData[sourceUserEmail];
+    const supabase = getSupabaseClient();
+    const { data: users, error: usersError } = await supabase.from('user_profiles').select('id, email');
+    if (usersError) throw new Error("Could not fetch user list.");
+
+    const userMap = new Map(users.map(u => [u.email, u.id]));
+
+    const sourceUserId = userMap.get(sourceUserEmail);
+
+    if (!sourceUserId) {
+        throw new Error(`Source user '${sourceUserEmail}' not found.`);
+    }
+
+    // Fix: Cast sourceUserId from 'any' to 'string' to satisfy getUserData's parameter type.
+    const sourceUserData = await getUserData(sourceUserId as string);
     
     if (!sourceUserData || !sourceUserData.cocktails || sourceUserData.cocktails.length === 0) {
         throw new Error(`Source user '${sourceUserEmail}' has no saved cocktails in 'My Bar'.`);
@@ -16,26 +39,32 @@ export const distributeCocktails = (sourceUserEmail: string, targetUserEmails: s
     let newCocktailsCount = 0;
     let successCount = 0;
 
-    updateDatabase(draftDb => {
-        for (const targetEmail of targetUserEmails) {
-            if (targetEmail === sourceUserEmail) continue;
+    for (const targetEmail of targetUserEmails) {
+        if (targetEmail === sourceUserEmail) continue;
 
-            const targetUserData = draftDb.userData[targetEmail];
-            if (!targetUserData) continue; // Skip if user has no data object
+        const targetUserId = userMap.get(targetEmail);
+        if (!targetUserId) continue; // Skip if user not found
 
-            const targetCocktailTitles = new Set(targetUserData.cocktails.map(c => c.title.toLowerCase()));
+        // Fix: Cast targetUserId from 'any' to 'string' to satisfy getUserData's parameter type.
+        const targetUserData = await getUserData(targetUserId as string);
+        
+        const targetCocktailTitles = new Set((targetUserData.cocktails || []).map(c => c.title.toLowerCase()));
 
-            const cocktailsToAdd = sourceCocktails.filter(sourceCocktail =>
-                !targetCocktailTitles.has(sourceCocktail.title.toLowerCase())
-            );
+        const cocktailsToAdd = sourceCocktails.filter(sourceCocktail =>
+            !targetCocktailTitles.has(sourceCocktail.title.toLowerCase())
+        );
 
-            if (cocktailsToAdd.length > 0) {
-                targetUserData.cocktails.push(...cocktailsToAdd);
-                newCocktailsCount += cocktailsToAdd.length;
+        if (cocktailsToAdd.length > 0) {
+            if (!targetUserData.cocktails) {
+                targetUserData.cocktails = [];
             }
-            successCount++;
+            targetUserData.cocktails.push(...cocktailsToAdd);
+            // Fix: Cast targetUserId from 'any' to 'string' to satisfy saveUserData's parameter type.
+            await saveUserData(targetUserId as string, targetUserData);
+            newCocktailsCount += cocktailsToAdd.length;
         }
-    });
+        successCount++;
+    }
 
     return { successCount, newCocktails: newCocktailsCount };
 };

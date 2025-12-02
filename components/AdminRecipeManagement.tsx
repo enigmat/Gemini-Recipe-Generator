@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { Recipe } from '../types';
 import TrashIcon from './icons/TrashIcon';
 import SparklesIcon from './icons/SparklesIcon';
@@ -6,6 +7,7 @@ import Spinner from './Spinner';
 import PlusIcon from './icons/PlusIcon';
 import StoredImage from './StoredImage';
 import TrophyIcon from './icons/TrophyIcon';
+import CameraIcon from './icons/CameraIcon';
 
 interface AdminRecipeManagementProps {
     recipes: Recipe[];
@@ -18,11 +20,14 @@ interface AdminRecipeManagementProps {
     imageUpdateProgress: string | null;
     onAddToNew: (recipeId: number) => void;
     onAddToRotd: (recipeId: number) => void;
+    onUpdateRecipeImageManual?: (recipeId: number, base64Image: string) => Promise<void>;
 }
 
-const AdminRecipeManagement: React.FC<AdminRecipeManagementProps> = ({ recipes, newRecipeIds, scheduledRecipes, onDeleteRecipe, onUpdateRecipeWithAI, onUpdateAllRecipeImages, isUpdatingAllImages, imageUpdateProgress, onAddToNew, onAddToRotd }) => {
+const AdminRecipeManagement: React.FC<AdminRecipeManagementProps> = ({ recipes, newRecipeIds, scheduledRecipes, onDeleteRecipe, onUpdateRecipeWithAI, onUpdateAllRecipeImages, isUpdatingAllImages, imageUpdateProgress, onAddToNew, onAddToRotd, onUpdateRecipeImageManual }) => {
     const [updatingId, setUpdatingId] = useState<number | null>(null);
     const [updateErrors, setUpdateErrors] = useState<Record<number, string>>({});
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploadingForId, setUploadingForId] = useState<number | null>(null);
 
     const handleDelete = (recipeId: number, recipeTitle: string) => {
         if (window.confirm(`Are you sure you want to permanently delete "${recipeTitle}"? This cannot be undone.`)) {
@@ -52,9 +57,52 @@ const AdminRecipeManagement: React.FC<AdminRecipeManagementProps> = ({ recipes, 
             await onUpdateAllRecipeImages();
         }
     };
+    
+    const triggerFileUpload = (recipeId: number) => {
+        setUploadingForId(recipeId);
+        // Delay click slightly to ensure state update has processed, although refs are synchronous
+        setTimeout(() => {
+            if (fileInputRef.current) {
+                fileInputRef.current.click();
+            }
+        }, 0);
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        const recipeId = uploadingForId;
+        
+        if (file && recipeId !== null && onUpdateRecipeImageManual) {
+            setUpdatingId(recipeId); // Show spinner
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                try {
+                    const base64String = (reader.result as string).split(',')[1];
+                    await onUpdateRecipeImageManual(recipeId, base64String);
+                } catch (error: any) {
+                    console.error("Manual image update failed:", error);
+                    setUpdateErrors(prev => ({ ...prev, [recipeId]: "Failed to upload image." }));
+                } finally {
+                    setUpdatingId(null);
+                    setUploadingForId(null);
+                    if(fileInputRef.current) fileInputRef.current.value = '';
+                }
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setUploadingForId(null);
+        }
+    };
 
     return (
         <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md relative">
+            <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
+                accept="image/png, image/jpeg, image/webp" 
+            />
             {isUpdatingAllImages && (
                 <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-lg z-10 animate-fade-in">
                     <div className="flex flex-col items-center gap-3 p-4 bg-white rounded-lg shadow-2xl border text-center">
@@ -81,7 +129,7 @@ const AdminRecipeManagement: React.FC<AdminRecipeManagementProps> = ({ recipes, 
                 <table className="min-w-full">
                     <thead className="bg-slate-50">
                         <tr>
-                            <th scope="col" className="pl-6 pr-3 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Image</th>
+                            <th scope="col" className="pl-6 pr-3 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-32">Image</th>
                             <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
                             <th scope="col" className="pl-3 pr-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                         </tr>
@@ -94,7 +142,27 @@ const AdminRecipeManagement: React.FC<AdminRecipeManagementProps> = ({ recipes, 
                                 <React.Fragment key={recipe.id}>
                                     <tr className={updatingId === recipe.id ? 'opacity-50' : ''}>
                                         <td className="pl-6 pr-3 py-4 whitespace-nowrap">
-                                            <StoredImage src={recipe.image} alt={recipe.title} className="w-20 h-14 object-cover rounded-md border border-slate-200" />
+                                            <div className="flex flex-col items-center gap-2 w-24">
+                                                <StoredImage src={recipe.image} alt={recipe.title} className="w-24 h-16 object-cover rounded-md border border-slate-200" />
+                                                <div className="flex justify-center gap-2 w-full">
+                                                    <button 
+                                                        onClick={() => triggerFileUpload(recipe.id)} 
+                                                        disabled={updatingId !== null || isUpdatingAllImages}
+                                                        className="flex-1 p-1.5 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 hover:text-slate-800 disabled:opacity-50 transition-colors flex justify-center"
+                                                        title="Upload New Image"
+                                                    >
+                                                        <CameraIcon className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleUpdate(recipe.id, recipe.title)} 
+                                                        disabled={updatingId !== null || isUpdatingAllImages}
+                                                        className="flex-1 p-1.5 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 hover:text-blue-800 disabled:opacity-50 transition-colors flex justify-center"
+                                                        title="Regenerate Image with AI"
+                                                    >
+                                                        {updatingId === recipe.id ? <Spinner size="w-4 h-4" /> : <SparklesIcon className="w-4 h-4" />}
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td className="px-3 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-slate-900">{recipe.title}</div>
@@ -119,10 +187,7 @@ const AdminRecipeManagement: React.FC<AdminRecipeManagementProps> = ({ recipes, 
                                                 >
                                                     <PlusIcon className="w-5 h-5" />
                                                 </button>
-                                                <button onClick={() => handleUpdate(recipe.id, recipe.title)} disabled={updatingId !== null || isUpdatingAllImages} className="text-blue-500 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed" aria-label={`Update ${recipe.title} with AI`}>
-                                                    {updatingId === recipe.id ? <Spinner size="w-5 h-5" /> : <SparklesIcon className="w-5 h-5" />}
-                                                </button>
-                                                <button onClick={() => handleDelete(recipe.id, recipe.title)} disabled={updatingId !== null || isUpdatingAllImages} className="text-red-500 hover:text-red-800 disabled:opacity-50" aria-label={`Delete ${recipe.title}`}>
+                                                <button onClick={() => handleDelete(recipe.id, recipe.title)} disabled={updatingId !== null || isUpdatingAllImages} className="text-red-500 hover:text-red-800 disabled:opacity-50" aria-label={`Delete ${recipe.title}`} title="Delete Recipe">
                                                     <TrashIcon className="w-5 h-5" />
                                                 </button>
                                             </div>

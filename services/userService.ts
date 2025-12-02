@@ -1,102 +1,144 @@
+
 import { User, UserData } from '../types';
-import { getDatabase, updateDatabase } from './database';
+import { getSupabaseClient } from './supabaseClient';
+import { PostgrestError } from '@supabase/supabase-js';
 
-let currentUser: User | null = null;
-const listeners: ((user: User | null) => void)[] = [];
+export const onAuthStateChange = (callback: (user: User | null, userData: UserData | null) => void) => {
+    try {
+        const supabase = getSupabaseClient();
+        const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+            try {
+                if (!session?.user) {
+                    callback(null, null);
+                    return;
+                }
 
-const notifyListeners = () => {
-    listeners.forEach(cb => cb(currentUser));
-};
+                // Use RPC to ensure profile exists, especially on first sign-in
+                const { data: profile, error: rpcError } = await supabase.rpc('get_or_create_user_profile', { dummy_param: 'ensure' });
 
-export const onAuthStateChange = (callback: (user: User | null) => void) => {
-    listeners.push(callback);
-    // Immediately call with current user state
-    callback(currentUser);
-    return () => {
-        // Unsubscribe
-        const index = listeners.indexOf(callback);
-        if (index > -1) {
-            listeners.splice(index, 1);
-        }
-    };
-};
+                if (rpcError || !profile) {
+                    console.error('Error ensuring user profile exists:', rpcError?.message);
+                    callback(null, null);
+                    return;
+                }
 
-export const signup = (email: string, password?: string): void => {
-    const db = getDatabase();
-    if (db.users.find(u => u.email === email)) {
-        throw new Error("A user with this email already exists. Please log in.");
-    }
-    const newUser: User = {
-        id: `user-${Date.now()}`,
-        email,
-        name: email.split('@')[0],
-        isPremium: false,
-        isAdmin: db.users.length === 0, // Make first user an admin
-        isSubscribed: false,
-    };
-    updateDatabase(draftDb => {
-        draftDb.users.push(newUser);
-        draftDb.userData[email] = { favorites: [], shoppingLists: [], cocktails: [], calorieEntries: [], calorieSettings: { dailyTarget: 2000 } };
-    });
-    currentUser = newUser;
-    notifyListeners();
-};
+                const { data: userDataRow, error: userDataError } = await supabase
+                    .from('user_data')
+                    .select('data')
+                    .eq('user_id', session.user.id)
+                    .single();
+                
+                if (userDataError && userDataError.code !== 'PGRST116') { // Ignore 'exact one row' error if no data exists yet
+                    console.error('Error fetching user data:', userDataError.message);
+                }
 
-export const signIn = (email: string, password?: string): void => {
-    const db = getDatabase();
-    const user = db.users.find(u => u.email === email);
-    if (user) {
-        // For this mock system, we'll accept any password
-        currentUser = user;
-        notifyListeners();
-    } else {
-        throw new Error('User not found.');
-    }
-};
-
-export const signOut = (): void => {
-    currentUser = null;
-    notifyListeners();
-};
-
-export const getCurrentUser = (): User | null => {
-    return currentUser;
-};
-
-export const updateUser = (user: User): User | null => {
-    let updatedUser: User | null = null;
-    updateDatabase(draftDb => {
-        const userIndex = draftDb.users.findIndex(u => u.id === user.id);
-        if (userIndex > -1) {
-            draftDb.users[userIndex] = user;
-            updatedUser = user;
-        }
-    });
-    return updatedUser;
-};
-
-export const deleteUser = (email: string) => {
-    updateDatabase(draftDb => {
-        draftDb.users = draftDb.users.filter(u => u.email !== email);
-        delete draftDb.userData[email];
-    });
-};
-
-export const getUserData = (email: string): UserData => {
-    const db = getDatabase();
-    return db.userData[email] || { favorites: [], shoppingLists: [], cocktails: [], calorieEntries: [], calorieSettings: { dailyTarget: 2000 } };
-}
-
-export const toggleFavorite = (email: string, recipeId: number) => {
-    updateDatabase(draftDb => {
-        const userData = draftDb.userData[email];
-        if (userData) {
-            const favIndex = userData.favorites.indexOf(recipeId);
-            if (favIndex > -1) {
-                userData.favorites.splice(favIndex, 1);
-            } else {
-                userData.favorites.push(recipeId);
+                const userData = userDataRow?.data as UserData || { favorites: [], shoppingLists: [], cocktails: [] };
+                
+                callback(profile as User, userData);
+            } catch (innerError) {
+                console.error("Error in auth state change handler:", innerError);
+                callback(null, null);
             }
-        }
-    });
+        });
+
+        // The subscription object returned by Supabase v2 has an `unsubscribe` method directly on it inside `data.subscription`.
+        return { authSubscription: data.subscription };
+    } catch (error) {
+        console.error("Failed to initialize auth listener:", error);
+        // Return a dummy subscription to prevent App crash
+        return { authSubscription: { unsubscribe: () => {} } as any };
+    }
+};
+
+export const signup = async (email: string, password?: string): Promise<void> => {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+};
+
+export const signIn = async (email: string, password?: string): Promise<void> => {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+};
+
+export const signOut = async (): Promise<void> => {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+};
+
+export const getCurrentUser = async (): Promise<{ user: User | null; error: PostgrestError | null }> => {
+    const supabase = getSupabaseClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return { user: null, error: null };
+
+    const { data, error } = await supabase.from('user_profiles').select('*').eq('id', session.user.id).single();
+    return { user: data, error };
+};
+
+export const getAllUsers = async (): Promise<User[]> => {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.from('user_profiles').select('*');
+    if (error) {
+        console.error("Error fetching all users:", error);
+        return [];
+    }
+    return data || [];
+};
+
+export const updateUser = async (user: User): Promise<User | null> => {
+    const supabase = getSupabaseClient();
+    const { id, ...updateData } = user;
+    const { data, error } = await supabase
+        .from('user_profiles')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+    
+    if (error) {
+        console.error("Error updating user:", error);
+        return null;
+    }
+    return data;
+};
+
+export const deleteUser = async (userId: string): Promise<void> => {
+    const supabase = getSupabaseClient();
+    // This requires admin privileges configured in Supabase.
+    const { error } = await supabase.auth.admin.deleteUser(userId);
+    if (error) throw new Error(`Failed to delete user: ${error.message}`);
+};
+
+export const getUserData = async (userId: string): Promise<UserData> => {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+        .from('user_data')
+        .select('data')
+        .eq('user_id', userId)
+        .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    
+    return data?.data || { favorites: [], shoppingLists: [], cocktails: [], calorieEntries: [], calorieSettings: { dailyTarget: 2000 } };
+};
+
+const saveUserData = async (userId: string, data: UserData) => {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase
+        .from('user_data')
+        .upsert({ user_id: userId, data }, { onConflict: 'user_id' });
+    if (error) throw error;
+};
+
+export const toggleFavorite = async (userId: string, recipeId: number) => {
+    const data = await getUserData(userId);
+    const favIndex = data.favorites.indexOf(recipeId);
+    if (favIndex > -1) {
+        data.favorites.splice(favIndex, 1);
+    } else {
+        data.favorites.push(recipeId);
+    }
+    await saveUserData(userId, data);
 };

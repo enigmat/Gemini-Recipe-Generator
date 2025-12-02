@@ -1,20 +1,52 @@
-import { Recipe } from '../types';
-import * as imageStore from './imageStore';
-import { getDatabase, updateDatabase } from './database';
+import { Recipe, MealPlan, Video, CookingClass, ExpertQuestion } from '../types';
+import { getSupabaseClient } from './supabaseClient';
 
-export const getAllRecipes = (): Recipe[] => {
-    return getDatabase().recipes.all;
+const mapRecipeFromDb = (dbRecipe: any): Recipe => {
+    if (!dbRecipe) return null as any;
+    const { cook_time, wine_pairing, ...rest } = dbRecipe;
+    return { ...rest, cookTime: cook_time, winePairing: wine_pairing } as Recipe;
 };
 
-export const getAllRecipeTitles = (): string[] => {
-    const db = getDatabase();
-    return db.recipes.all.map(r => r.title);
+export const getPaginatedFilteredRecipes = async (
+    page: number,
+    pageSize: number,
+    search: string,
+    tag: string
+): Promise<{ recipes: Recipe[], count: number | null }> => {
+    const supabase = getSupabaseClient();
+    let query = supabase.from('recipes').select('*', { count: 'exact' });
+
+    if (search) {
+        query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+    }
+    if (tag && tag !== 'All') {
+        query = query.contains('tags', [tag]);
+    }
+
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    query = query.range(from, to).order('title', { ascending: true });
+    
+    const { data, error, count } = await query;
+    if (error) throw error;
+
+    const recipes = data.map(mapRecipeFromDb);
+    return { recipes, count };
 };
 
-export const getDistinctRecipeTags = (): string[] => {
-    const db = getDatabase();
+export const getAllRecipeTitles = async (): Promise<string[]> => {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.from('recipes').select('title');
+    if (error) throw error;
+    return data.map(r => r.title);
+};
+
+export const getDistinctRecipeTags = async (): Promise<string[]> => {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.from('recipes').select('tags');
+    if (error) throw error;
     const allTags = new Set<string>();
-    db.recipes.all.forEach(item => {
+    data.forEach(item => {
         if (item.tags && Array.isArray(item.tags)) {
             item.tags.forEach(tag => allTags.add(tag));
         }
@@ -22,97 +54,126 @@ export const getDistinctRecipeTags = (): string[] => {
     return Array.from(allTags).sort();
 };
 
-export const getPaginatedFilteredRecipes = (
-    page: number,
-    pageSize: number,
-    search: string,
-    tag: string
-): { recipes: Recipe[], count: number | null } => {
-    const db = getDatabase();
-    let all = [...db.recipes.all]; // Make a copy
-
-    if (search) {
-        const lowercasedSearch = search.toLowerCase();
-        all = all.filter(r => 
-            r.title.toLowerCase().includes(lowercasedSearch) || 
-            r.description.toLowerCase().includes(lowercasedSearch)
-        );
-    }
-    if (tag && tag !== 'All') {
-        all = all.filter(r => r.tags?.includes(tag));
-    }
-
-    const count = all.length;
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize;
-    const paginated = all.slice(from, to).sort((a,b) => a.title.localeCompare(b.title));
-
-    return { recipes: paginated, count };
+export const getNewRecipes = async (): Promise<Recipe[]> => {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.from('new_recipes').select('*');
+    if (error) throw error;
+    return data.map(mapRecipeFromDb);
 };
 
-export const addRecipe = (recipe: Recipe, addToNew?: boolean, addToRotd?: boolean): void => {
-     updateDatabase(db => {
-        // Ensure ID is unique
-        if (db.recipes.all.some(r => r.id === recipe.id)) {
-            recipe.id = Date.now();
-        }
-        db.recipes.all.unshift(recipe);
-        if(addToNew) {
-            db.recipes.new.unshift(recipe);
-        }
-        if(addToRotd) {
-            db.recipes.scheduled.unshift(recipe);
-        }
-     });
+export const getRecipesByIds = async (ids: number[]): Promise<Recipe[]> => {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.from('recipes').select('*').in('id', ids);
+    if (error) throw error;
+    return data.map(mapRecipeFromDb);
 };
 
-export const deleteRecipe = (recipeId: number) => {
-    updateDatabase(db => {
-        db.recipes.all = db.recipes.all.filter(r => r.id !== recipeId);
-    });
+export const getMealPlans = async (): Promise<MealPlan[]> => {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.from('meal_plans').select('*');
+    if (error) throw error;
+    return data.map(({ recipe_ids, ...rest }) => ({ ...rest, recipeIds: recipe_ids }));
+}
+
+export const getVideos = async (): Promise<Video[]> => {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.from('videos').select('*');
+    if (error) throw error;
+    return data.map(({ video_url, thumbnail_url, ...rest }) => ({ ...rest, videoUrl: video_url, thumbnailUrl: thumbnail_url }));
+}
+
+export const getCookingClasses = async (): Promise<CookingClass[]> => {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.from('cooking_classes').select('*');
+    if (error) throw error;
+    return data.map(({ thumbnail_url, what_you_will_learn, techniques_covered, pro_tips, ...rest }) => ({
+        ...rest,
+        thumbnailUrl: thumbnail_url,
+        whatYouWillLearn: what_you_will_learn,
+        techniquesCovered: techniques_covered,
+        proTips: pro_tips,
+    }));
+}
+
+export const getExpertQuestions = async (): Promise<ExpertQuestion[]> => {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.from('expert_questions').select('*').order('submitted_date', { ascending: false });
+    if (error) throw error;
+    return data.map(({ submitted_date, ...rest }) => ({ ...rest, submittedDate: submitted_date }));
+}
+
+export const addExpertQuestion = async (question: string, topic: string) => {
+    const supabase = getSupabaseClient();
+    const newQuestion = {
+        id: `q_${Date.now()}`,
+        question,
+        topic,
+        status: 'Pending',
+        submitted_date: new Date().toISOString()
+    };
+    const { error } = await supabase.from('expert_questions').insert(newQuestion);
+    if (error) throw error;
+}
+
+export const addRecipe = async (recipe: Recipe, addToNew?: boolean): Promise<void> => {
+    const supabase = getSupabaseClient();
+    const { cookTime, winePairing, ...rest } = recipe;
+    const dbRecipe = { ...rest, cook_time: cookTime, wine_pairing: winePairing };
+    
+    const { error } = await supabase.from('recipes').upsert(dbRecipe);
+    if (error) throw error;
+
+    if(addToNew) {
+        const { error: newError } = await supabase.from('new_recipes').upsert(dbRecipe);
+        if (newError) console.error("Error adding to new_recipes:", newError);
+    }
+};
+
+export const deleteRecipe = async (recipeId: number) => {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.from('recipes').delete().eq('id', recipeId);
+    if (error) throw error;
 };
 
 export const updateRecipeWithAI = async (recipeId: number, title: string) => {
-    // This is a placeholder as it requires Gemini.
-    // In a real scenario, you'd fetch, update, and save.
-    console.log(`AI update requested for ${recipeId} - ${title}`);
+    console.log(`AI update requested for ${recipeId} - ${title}. This is a placeholder.`);
 };
 
-export const removeFromNew = (recipeId: number) => {
-    updateDatabase(db => {
-        db.recipes.new = db.recipes.new.filter(r => r.id !== recipeId);
-    });
+export const removeFromNew = async (recipeId: number) => {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.from('new_recipes').delete().eq('id', recipeId);
+    if (error) throw error;
 };
 
-export const addToNew = (recipeId: number) => {
-    updateDatabase(db => {
-        const recipe = db.recipes.all.find(r => r.id === recipeId);
-        if (recipe && !db.recipes.new.some(r => r.id === recipeId)) {
-            db.recipes.new.unshift(recipe);
-        }
-    });
+export const addToNew = async (recipeId: number) => {
+    const supabase = getSupabaseClient();
+    const { data: recipe, error: fetchError } = await supabase.from('recipes').select('*').eq('id', recipeId).single();
+    if (fetchError || !recipe) throw fetchError || new Error("Recipe not found");
+    
+    const { error: insertError } = await supabase.from('new_recipes').upsert(recipe);
+    if (insertError) throw insertError;
 };
 
-export const addToRotd = (recipeId: number) => {
-    updateDatabase(db => {
-        const recipe = db.recipes.all.find(r => r.id === recipeId);
-        if (recipe && !db.recipes.scheduled.some(r => r.id === recipeId)) {
-            db.recipes.scheduled.unshift(recipe);
-        }
-    });
+export const addToRotd = async (recipeId: number) => {
+    const supabase = getSupabaseClient();
+    const { data: recipe, error: fetchError } = await supabase.from('recipes').select('*').eq('id', recipeId).single();
+    if (fetchError || !recipe) throw fetchError || new Error("Recipe not found");
+    
+    const { error: insertError } = await supabase.from('scheduled_recipes').upsert(recipe);
+    if (insertError) throw insertError;
 };
 
 export const saveScheduledRecipes = async (recipes: Recipe[]): Promise<void> => {
-    updateDatabase(db => {
-        db.recipes.scheduled = recipes;
-    });
-};
+    const supabase = getSupabaseClient();
+    // Clear the table first
+    const { error: deleteError } = await supabase.from('scheduled_recipes').delete().neq('id', -1);
+    if (deleteError) throw deleteError;
 
-export const getRecipesByIds = (ids: (number | string)[]): Recipe[] => {
-    if (!ids || ids.length === 0) return [];
-    const numericIds = ids.map(id => Number(id));
-    const db = getDatabase();
-    return db.recipes.all.filter(r => numericIds.includes(r.id));
+    if (recipes.length === 0) return;
+
+    const dbRecipes = recipes.map(({ cookTime, winePairing, ...rest }) => ({ ...rest, cook_time: cookTime, wine_pairing: winePairing }));
+    const { error: insertError } = await supabase.from('scheduled_recipes').insert(dbRecipes);
+    if (insertError) throw insertError;
 };
 
 export const getRecommendedRecipes = (preferences: string[], allRecipes: Recipe[], count: number = 10): Recipe[] => {
@@ -135,7 +196,6 @@ export const getRecommendedRecipes = (preferences: string[], allRecipes: Recipe[
             }
         }
         
-        // Boost score for recipes that have a high rating
         if (recipe.rating && recipe.rating.score > 4) {
             score += 0.5;
         }
@@ -143,19 +203,16 @@ export const getRecommendedRecipes = (preferences: string[], allRecipes: Recipe[
         return { recipe, score };
     });
 
-    // Filter out recipes with no matching tags and sort by score
     const sorted = scoredRecipes
         .filter(item => item.score > 0)
         .sort((a, b) => b.score - a.score);
 
-    // Get the top recipes
     const topRecipes = sorted.map(item => item.recipe);
 
-    // If not enough recommended recipes, fill with other popular ones
     if (topRecipes.length < count) {
         const otherRecipes = allRecipes
-            .filter(r => !topRecipes.some(tr => tr.id === r.id)) // Exclude already selected
-            .sort((a, b) => (b.rating?.count || 0) - (a.rating?.count || 0)); // Sort by popularity
+            .filter(r => !topRecipes.some(tr => tr.id === r.id))
+            .sort((a, b) => (b.rating?.count || 0) - (a.rating?.count || 0));
         
         const needed = count - topRecipes.length;
         topRecipes.push(...otherRecipes.slice(0, needed));

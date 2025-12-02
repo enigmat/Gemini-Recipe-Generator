@@ -1,43 +1,45 @@
 import { ShoppingList } from '../types';
-import { getDatabase, updateDatabase } from './database';
+import { getSupabaseClient } from './supabaseClient';
+import { getUserData } from './userService';
 
-export const getLists = (userEmail: string | null): ShoppingList[] => {
-    if (!userEmail) return [];
-    const db = getDatabase();
-    return db.userData[userEmail]?.shoppingLists || [];
+const saveUserShoppingLists = async (userId: string, lists: ShoppingList[]) => {
+    const supabase = getSupabaseClient();
+    const currentData = await getUserData(userId);
+    currentData.shoppingLists = lists;
+
+    const { error } = await supabase
+        .from('user_data')
+        .upsert({ user_id: userId, data: currentData }, { onConflict: 'user_id' });
+    if (error) throw error;
+}
+
+export const getLists = async (userId: string): Promise<ShoppingList[]> => {
+    const data = await getUserData(userId);
+    return data.shoppingLists || [];
 };
 
-const saveLists = (lists: ShoppingList[], userEmail: string): void => {
-  if (!userEmail) return;
-  updateDatabase(db => {
-      if (db.userData[userEmail]) {
-        db.userData[userEmail].shoppingLists = lists;
-      }
-  });
-};
-
-export const saveList = (userEmail: string, name: string, recipeIds: number[]) => {
-    const lists = getLists(userEmail);
+export const saveList = async (userId: string, name: string, recipeIds: number[]) => {
+    const lists = await getLists(userId);
     const existingList = lists.find(list => list.name.toLowerCase() === name.toLowerCase());
     if (existingList) {
         existingList.recipeIds = Array.from(new Set([...existingList.recipeIds, ...recipeIds]));
     } else {
         lists.push({ id: Date.now().toString(), name: name, recipeIds: recipeIds });
     }
-    saveLists(lists, userEmail);
+    await saveUserShoppingLists(userId, lists);
 };
 
-export const deleteList = (userEmail: string, listId: string) => {
-    let lists = getLists(userEmail);
+export const deleteList = async (userId: string, listId: string) => {
+    let lists = await getLists(userId);
     lists = lists.filter(list => list.id !== listId);
-    saveLists(lists, userEmail);
+    await saveUserShoppingLists(userId, lists);
 };
 
-export const renameList = (userEmail: string, listId: string, newName: string) => {
-    const lists = getLists(userEmail);
+export const renameList = async (userId: string, listId: string, newName: string) => {
+    const lists = await getLists(userId);
     const list = lists.find(l => l.id === listId);
     if (list) {
         list.name = newName;
     }
-    saveLists(lists, userEmail);
+    await saveUserShoppingLists(userId, lists);
 };

@@ -1,32 +1,26 @@
-import React, { useState, useEffect } from 'react';
+
+import React from 'react';
 import WifiSlashIcon from './icons/WifiSlashIcon';
 
-const OfflineBanner: React.FC = () => {
-    const [isOffline, setIsOffline] = useState(!navigator.onLine);
+interface OfflineBannerProps {
+    forceActive?: boolean;
+    message?: string;
+}
 
-    useEffect(() => {
-        const handleOffline = () => setIsOffline(true);
-        const handleOnline = () => setIsOffline(false);
-
-        window.addEventListener('offline', handleOffline);
-        window.addEventListener('online', handleOnline);
-
-        return () => {
-            window.removeEventListener('offline', handleOffline);
-            window.removeEventListener('online', handleOnline);
-        };
-    }, []);
-
-    if (!isOffline) {
-        return null;
+const OfflineBanner: React.FC<OfflineBannerProps> = ({ forceActive, message }) => {
+    // In Local Mode, we are technically "offline" from a DB perspective, but we don't need to show
+    // the scary red/amber banner unless specifically requested or if the browser itself is offline.
+    
+    if (forceActive) {
+        return (
+            <div className="fixed bottom-0 left-0 right-0 p-2 text-center text-xs font-medium z-50 flex items-center justify-center gap-2 animate-fade-in bg-slate-800 text-slate-300 opacity-90 hover:opacity-100 transition-opacity">
+                <WifiSlashIcon className="w-4 h-4" />
+                <span>{message || "Local Standalone Mode (Data is not saved permanently)"}</span>
+            </div>
+        );
     }
 
-    return (
-        <div className="fixed bottom-0 left-0 right-0 bg-slate-800 text-white p-3 text-center text-sm z-50 flex items-center justify-center gap-2 animate-fade-in">
-            <WifiSlashIcon className="w-5 h-5" />
-            <span>You are currently offline. The app is running from cache.</span>
-        </div>
-    );
+    return null;
 };
 
 export default OfflineBanner;

@@ -1,8 +1,11 @@
 import { Recipe } from '../types';
-import * as recipeService from './recipeService';
-import { updateDatabase, getDatabase } from './database';
+import { getSupabaseClient } from './supabaseClient';
 
-const LAST_ARCHIVE_KEY = 'recipeAppLastArchiveDate';
+const mapRecipeFromDb = (dbRecipe: any): Recipe => {
+    if (!dbRecipe) return null as any;
+    const { cook_time, wine_pairing, ...rest } = dbRecipe;
+    return { ...rest, cookTime: cook_time, winePairing: wine_pairing } as Recipe;
+};
 
 const getDayOfYear = (date: Date): number => {
     const start = new Date(date.getFullYear(), 0, 0);
@@ -11,17 +14,19 @@ const getDayOfYear = (date: Date): number => {
     return Math.floor(diff / oneDay);
 };
 
-export const getTodaysRecipe = (scheduledRecipes: Recipe[]): Recipe | null => {
+export const getTodaysRecipe = async (): Promise<Recipe | null> => {
+    const supabase = getSupabaseClient();
     try {
-        if (scheduledRecipes.length === 0) {
-            console.warn("Recipe of the Day pool is empty. Admin needs to generate recipes.");
+        const { data: scheduledRecipes, error } = await supabase.from('scheduled_recipes').select('*');
+        if (error || scheduledRecipes.length === 0) {
+            console.warn("Recipe of the Day pool is empty or failed to load.", error?.message);
             return null;
         }
 
         const dayIndex = getDayOfYear(new Date()) % scheduledRecipes.length;
         const recipe = scheduledRecipes[dayIndex];
 
-        return recipe;
+        return mapRecipeFromDb(recipe);
 
     } catch (error) {
         console.error("Failed to get Recipe of the Day:", error);
@@ -29,63 +34,42 @@ export const getTodaysRecipe = (scheduledRecipes: Recipe[]): Recipe | null => {
     }
 };
 
-export const archiveRecipe = (recipe: Recipe): boolean => {
-    let moved = false;
-    updateDatabase(draftDb => {
-        // Add to main list only if it's not there by ID
-        const isAlreadyInMainList = draftDb.recipes.all.some(r => r.id === recipe.id);
-        if (!isAlreadyInMainList) {
-            draftDb.recipes.all.push(recipe);
-            console.log(`Archived "${recipe.title}" to main list.`);
-        } else {
-            console.log(`Recipe "${recipe.title}" is already in the main list.`);
-        }
+export const archiveRecipe = async (recipe: Recipe): Promise<boolean> => {
+    const supabase = getSupabaseClient();
+    
+    const { cookTime, winePairing, ...rest } = recipe;
+    const dbRecipe = { ...rest, cook_time: cookTime, wine_pairing: winePairing };
 
-        // Always remove from the scheduled pool
-        const initialScheduledCount = draftDb.recipes.scheduled.length;
-        const updatedScheduled = draftDb.recipes.scheduled.filter(r => r.id !== recipe.id);
-
-        if (updatedScheduled.length < initialScheduledCount) {
-            draftDb.recipes.scheduled = updatedScheduled;
-            console.log(`Removed "${recipe.title}" from scheduled list.`);
-            moved = true; // The operation was successful if a recipe was removed
-        }
-    });
-    return moved;
+    // Upsert into main list to be safe
+    const { error: upsertError } = await supabase.from('recipes').upsert(dbRecipe, { onConflict: 'id' });
+    if (upsertError) {
+        console.error(`Failed to archive recipe ${recipe.id} to main list`, upsertError);
+        return false;
+    }
+    
+    // Remove from scheduled list
+    const { error: deleteError } = await supabase.from('scheduled_recipes').delete().eq('id', recipe.id);
+    if (deleteError) {
+        console.error(`Failed to remove recipe ${recipe.id} from scheduled list`, deleteError);
+        // Don't return false, as the main goal was to get it into the main list
+    }
+    
+    return true;
 };
 
-export const archiveYesterdaysRecipe = (): Recipe | null => {
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const lastArchiveDate = localStorage.getItem(LAST_ARCHIVE_KEY);
-
-    if (lastArchiveDate === today) {
-        return null; // Already ran today
+export const getFeaturedChefs = async (): Promise<Recipe[]> => {
+    // In a real application, this would be a separate 'featured_chefs' table.
+    // For now, we'll just pull a few from the main recipe list.
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.from('recipes').select('*').limit(3).order('id', {ascending: false});
+    if (error) {
+        console.error("Error fetching featured chefs:", error);
+        return [];
     }
+    return data.map(mapRecipeFromDb);
+}
 
-    try {
-        const scheduledRecipes = getDatabase().recipes.scheduled;
-        if (scheduledRecipes.length === 0) {
-            localStorage.setItem(LAST_ARCHIVE_KEY, today);
-            return null; // No recipes to archive
-        }
-
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        
-        const dayIndex = getDayOfYear(yesterday) % scheduledRecipes.length;
-        const yesterdaysRecipe = scheduledRecipes[dayIndex];
-
-        if (yesterdaysRecipe) {
-            if(archiveRecipe(yesterdaysRecipe)) {
-                localStorage.setItem(LAST_ARCHIVE_KEY, today);
-                return yesterdaysRecipe;
-            }
-        }
-        localStorage.setItem(LAST_ARCHIVE_KEY, today);
-        return null;
-    } catch (error) {
-        console.error("Failed to archive yesterday's recipe:", error);
-        localStorage.setItem(LAST_ARCHIVE_KEY, today); // Still mark as run to avoid repeated errors
-        return null;
-    }
-};
+export const featureChef = async (recipe: Recipe): Promise<void> => {
+    // This is a placeholder as there's no dedicated 'featured_chefs' table to write to.
+    console.log(`Placeholder: Chef ${recipe.chef?.name} would be featured.`);
+}

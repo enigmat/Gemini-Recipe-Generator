@@ -1,19 +1,20 @@
+
 import React, { useState } from 'react';
-import * as userService from '../services/userService';
-import { User } from '../types';
 import EyeIcon from './icons/EyeIcon';
 import EyeSlashIcon from './icons/EyeSlashIcon';
   
 interface LoginModalProps {
   onClose: () => void;
+  onLogin: (email: string, password?: string) => Promise<void>; // Updated to async
 }
 
-const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
+const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
   const [isLoginView, setIsLoginView] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,19 +23,16 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
       return;
     }
     setError('');
+    setIsLoading(true);
 
     try {
-        if (isLoginView) {
-            await userService.signIn(email, password);
-        } else {
-            await userService.signup(email, password);
-        }
-        // On success, the onAuthStateChange listener in App.tsx will handle
-        // setting the user and closing the modal. We can just call onClose here
-        // for a faster UI response.
-        onClose();
-    } catch (err: any) {
-        setError(err.message || 'An unexpected error occurred.');
+        await onLogin(email, password);
+        // If login succeeds, the modal is closed by the parent component.
+        // We only handle errors here.
+    } catch (e: any) {
+        setError(e.message || "Authentication failed. Please check your credentials.");
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -50,6 +48,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
         <h2 className="text-2xl font-bold text-center text-slate-800 mb-6">
           {isLoginView ? 'Welcome Back' : 'Create an Account'}
         </h2>
+        
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="email">
@@ -63,6 +62,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
               className="w-full py-2 px-3 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-shadow text-slate-900 placeholder-slate-500"
               placeholder="you@example.com"
               required
+              disabled={isLoading}
             />
           </div>
           <div className="mb-6">
@@ -78,6 +78,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
                     className="w-full py-2 px-3 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-shadow text-slate-900 placeholder-slate-500"
                     placeholder="******************"
                     required
+                    disabled={isLoading}
                 />
                 <button
                     type="button"
@@ -92,13 +93,18 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
                 </button>
             </div>
           </div>
-          {error && <p className="text-red-500 text-xs italic mb-4">{error}</p>}
+          
+          <div className="min-h-[1.5rem] mb-4">
+            {error && <p className="text-red-500 text-xs italic font-medium">{error}</p>}
+          </div>
+
           <div className="flex items-center justify-between">
             <button
               type="submit"
-              className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-colors"
+              disabled={isLoading}
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-colors disabled:bg-amber-300"
             >
-              {isLoginView ? 'Log In' : 'Sign Up'}
+              {isLoading ? 'Processing...' : (isLoginView ? 'Log In' : 'Sign Up')}
             </button>
           </div>
         </form>

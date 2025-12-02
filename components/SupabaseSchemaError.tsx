@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import ServerStackIcon from './icons/ServerStackIcon';
 import ClipboardIcon from './icons/ClipboardIcon';
@@ -6,6 +7,8 @@ import ExternalLinkIcon from './icons/ExternalLinkIcon';
 import ChevronRightIcon from './icons/ChevronRightIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import CheckIcon from './icons/CheckIcon';
+import { getSupabaseClient } from '../services/supabaseClient';
+import Spinner from './Spinner';
 
 const sqlSchema = `--
 -- ULTIMATE RESET SCRIPT - Drop and recreate the entire 'public' schema.
@@ -67,20 +70,21 @@ CREATE TABLE public.user_data (
 ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
 
 -- Create all other application tables
+-- Using BIGINT for IDs to support Date.now() which exceeds standard INTEGER range
 CREATE TABLE public.recipes (
-    id INTEGER PRIMARY KEY, title TEXT, image TEXT, description TEXT, cook_time TEXT, servings TEXT,
+    id BIGINT PRIMARY KEY, title TEXT, image TEXT, description TEXT, cook_time TEXT, servings TEXT,
     ingredients JSONB, instructions TEXT[], calories TEXT, tags TEXT[], cuisine TEXT, wine_pairing JSONB, rating JSONB, chef JSONB
 );
 ALTER TABLE public.recipes ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE public.new_recipes (
-    id INTEGER PRIMARY KEY, title TEXT, image TEXT, description TEXT, cook_time TEXT, servings TEXT,
+    id BIGINT PRIMARY KEY, title TEXT, image TEXT, description TEXT, cook_time TEXT, servings TEXT,
     ingredients JSONB, instructions TEXT[], calories TEXT, tags TEXT[], cuisine TEXT, wine_pairing JSONB, rating JSONB, chef JSONB
 );
 ALTER TABLE public.new_recipes ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE public.scheduled_recipes (
-    id REAL PRIMARY KEY, title TEXT, image TEXT, description TEXT, cook_time TEXT, servings TEXT,
+    id DOUBLE PRECISION PRIMARY KEY, title TEXT, image TEXT, description TEXT, cook_time TEXT, servings TEXT,
     ingredients JSONB, instructions TEXT[], calories TEXT, tags TEXT[], cuisine TEXT, wine_pairing JSONB, rating JSONB, chef JSONB
 );
 ALTER TABLE public.scheduled_recipes ENABLE ROW LEVEL SECURITY;
@@ -91,7 +95,7 @@ CREATE TABLE public.products (
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE public.sent_newsletters (
-    id TEXT PRIMARY KEY, subject TEXT, message TEXT, recipe_ids INTEGER[], target TEXT, sent_date TEXT
+    id TEXT PRIMARY KEY, subject TEXT, message TEXT, recipe_ids BIGINT[], target TEXT, sent_date TEXT
 );
 ALTER TABLE public.sent_newsletters ENABLE ROW LEVEL SECURITY;
 
@@ -99,7 +103,7 @@ CREATE TABLE public.leads ( email TEXT PRIMARY KEY, date_collected TEXT );
 ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE public.ratings (
-    recipe_id INTEGER PRIMARY KEY, total_score INTEGER, count INTEGER, user_ratings JSONB
+    recipe_id BIGINT PRIMARY KEY, total_score INTEGER, count INTEGER, user_ratings JSONB
 );
 ALTER TABLE public.ratings ENABLE ROW LEVEL SECURITY;
 
@@ -121,7 +125,7 @@ CREATE TABLE public.about_us (
 ALTER TABLE public.about_us ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE public.meal_plans (
-    id TEXT PRIMARY KEY, title TEXT, description TEXT, recipe_ids INTEGER[]
+    id TEXT PRIMARY KEY, title TEXT, description TEXT, recipe_ids BIGINT[]
 );
 ALTER TABLE public.meal_plans ENABLE ROW LEVEL SECURITY;
 
@@ -364,24 +368,65 @@ const Step2 = ({ onNext, onBack }: { onNext: () => void, onBack: () => void }) =
     );
 };
 
-const Step3 = ({ onNext, onBack }: { onNext: () => void, onBack: () => void }) => (
-    <div className="text-center animate-fade-in">
-        <h2 className="text-xl font-semibold text-slate-700 flex items-center justify-center gap-2">
-            Paste and Run
-        </h2>
-        <p className="text-slate-600 mt-2 max-w-xl mx-auto">
-            In the Supabase SQL Editor, click <strong>"+ New query"</strong>, paste the script you just copied, and click the green <strong>"RUN"</strong> button.
-        </p>
-        <div className="mt-6 flex flex-col sm:flex-row justify-center gap-4">
-            <button onClick={onBack} className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-slate-700 font-bold rounded-lg shadow-md border hover:bg-slate-100 transition-colors">
-                <ChevronLeftIcon className="w-5 h-5" /> Back
-            </button>
-            <button onClick={onNext} className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition-colors">
-                I've Run the Script <ChevronRightIcon className="w-5 h-5" />
-            </button>
+const Step3 = ({ onNext, onBack }: { onNext: () => void, onBack: () => void }) => {
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleVerify = async () => {
+        setIsVerifying(true);
+        setError(null);
+        try {
+            const supabase = getSupabaseClient();
+            // Try to select from the recipes table to see if it exists
+            const { error: dbError } = await supabase.from('recipes').select('count', { count: 'exact', head: true });
+            
+            if (dbError) {
+                // If code is still 42P01 (undefined table), it means script wasn't run or failed
+                if (dbError.code === '42P01') {
+                    throw new Error("Tables are still missing. Please make sure you ran the entire script successfully in Supabase.");
+                } else {
+                    throw new Error(`Verification failed: ${dbError.message}`);
+                }
+            }
+            // If no error, success!
+            onNext();
+        } catch (e: any) {
+            console.error("Verification error:", e);
+            setError(e.message);
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    return (
+        <div className="text-center animate-fade-in">
+            <h2 className="text-xl font-semibold text-slate-700 flex items-center justify-center gap-2">
+                Paste and Run
+            </h2>
+            <p className="text-slate-600 mt-2 max-w-xl mx-auto">
+                In the Supabase SQL Editor, click <strong>"+ New query"</strong>, paste the script you just copied, and click the green <strong>"RUN"</strong> button.
+            </p>
+            <div className="mt-6 flex flex-col sm:flex-row justify-center gap-4">
+                <button onClick={onBack} className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-slate-700 font-bold rounded-lg shadow-md border hover:bg-slate-100 transition-colors">
+                    <ChevronLeftIcon className="w-5 h-5" /> Back
+                </button>
+                <button 
+                    onClick={handleVerify} 
+                    disabled={isVerifying}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition-colors disabled:bg-blue-300"
+                >
+                    {isVerifying ? <Spinner /> : <CheckCircleIcon className="w-5 h-5" />}
+                    <span>{isVerifying ? 'Verifying...' : "I've Run the Script"}</span>
+                </button>
+            </div>
+            {error && (
+                <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm border border-red-200">
+                    {error}
+                </div>
+            )}
         </div>
-    </div>
-);
+    );
+};
 
 const Step4 = () => (
     <div className="text-center animate-fade-in">

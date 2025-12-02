@@ -4,8 +4,16 @@ const STORE_NAME = 'product_images';
 
 let db: IDBDatabase;
 
+const isIndexedDBAvailable = () => {
+    return typeof window !== 'undefined' && 'indexedDB' in window && window.indexedDB !== null;
+};
+
 const openDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
+    if (!isIndexedDBAvailable()) {
+        return reject("IndexedDB is not available in this environment.");
+    }
+
     if (db) {
       return resolve(db);
     }
@@ -31,48 +39,63 @@ const openDB = (): Promise<IDBDatabase> => {
 };
 
 export const setImage = async (id: string, data: string): Promise<void> => {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.put({ id, data });
+  try {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.put({ id, data });
 
-    request.onsuccess = () => resolve();
-    request.onerror = () => {
-        console.error('Error saving image to IndexedDB:', request.error);
-        reject(request.error)
-    };
-  });
+        request.onsuccess = () => resolve();
+        request.onerror = () => {
+            console.error('Error saving image to IndexedDB:', request.error);
+            reject(request.error)
+        };
+      });
+  } catch (e) {
+      console.warn("setImage failed (likely IndexedDB unavailable):", e);
+      return Promise.resolve(); // Fail silently to keep app running
+  }
 };
 
 export const getImage = async (id: string): Promise<string | null> => {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.get(id);
+  try {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get(id);
 
-    request.onsuccess = () => {
-      resolve(request.result ? request.result.data : null);
-    };
-    request.onerror = () => {
-        console.error('Error getting image from IndexedDB:', request.error);
-        reject(request.error);
-    };
-  });
+        request.onsuccess = () => {
+          resolve(request.result ? request.result.data : null);
+        };
+        request.onerror = () => {
+            console.error('Error getting image from IndexedDB:', request.error);
+            reject(request.error);
+        };
+      });
+  } catch (e) {
+      console.warn("getImage failed (likely IndexedDB unavailable):", e);
+      return Promise.resolve(null);
+  }
 };
 
 export const deleteImage = async (id: string): Promise<void> => {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.delete(id);
+  try {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.delete(id);
 
-    request.onsuccess = () => resolve();
-    request.onerror = () => {
-        console.error('Error deleting image from IndexedDB:', request.error);
-        reject(request.error);
-    };
-  });
+        request.onsuccess = () => resolve();
+        request.onerror = () => {
+            console.error('Error deleting image from IndexedDB:', request.error);
+            reject(request.error);
+        };
+      });
+  } catch (e) {
+      console.warn("deleteImage failed (likely IndexedDB unavailable):", e);
+      return Promise.resolve();
+  }
 };
